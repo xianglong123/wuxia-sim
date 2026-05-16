@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>🏯 江湖经营 · 登录</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:-apple-system,"PingFang SC","Noto Serif SC",serif;
+  background:#0a0a12;color:#d4c9a8;min-height:100vh;
+  display:flex;align-items:center;justify-content:center;
+  background-image:radial-gradient(ellipse at center,#1a1410 0%,#0a0a12 70%)
+}
+.container{width:360px;padding:20px}
+.card{
+  background:linear-gradient(180deg,#12100e,#0d0b09);
+  border:1px solid #3a3020;border-radius:16px;padding:36px 28px
+}
+.title{font-size:28px;font-weight:700;color:#e8d5a3;text-align:center;letter-spacing:3px;margin-bottom:4px}
+.subtitle{text-align:center;color:#6a5a4a;font-size:13px;margin-bottom:28px}
+.tab{display:flex;gap:0;margin-bottom:20px;border:1px solid #2a2218;border-radius:8px;overflow:hidden}
+.tab-btn{flex:1;padding:10px;border:none;background:#0d0b09;color:#6a5a4a;font-size:14px;cursor:pointer;font-family:inherit;transition:all .2s}
+.tab-btn.active{background:#1a1410;color:#e8d5a3;font-weight:600}
+.tab-btn:hover{color:#d4c9a8}
+.form-group{margin-bottom:16px}
+.form-group label{display:block;font-size:12px;color:#6a5a4a;margin-bottom:4px}
+.form-group input{
+  width:100%;padding:10px 14px;border-radius:8px;border:1px solid #2a2218;
+  background:#0d0b09;color:#d4c9a8;font-size:14px;font-family:inherit;outline:none;transition:border-color .2s
+}
+.form-group input:focus{border-color:#8a7a5a}
+.form-group input::placeholder{color:#3a2a3a}
+.submit-btn{
+  width:100%;padding:12px;border-radius:8px;border:1px solid #8a6a20;
+  background:linear-gradient(135deg,#3a2a10,#5a3a10);color:#ffd700;
+  font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s
+}
+.submit-btn:hover{background:linear-gradient(135deg,#5a3a10,#7a4a10);transform:translateY(-1px)}
+.error-msg{color:#e85a5a;font-size:12px;text-align:center;min-height:20px;margin-bottom:8px}
+.hint{text-align:center;font-size:11px;color:#3a2a3a;margin-top:14px}
+.loading{display:none;text-align:center;padding:12px;color:#6a5a4a;font-size:13px}
+.loading .sp{animation:bounce 1.2s ease infinite;display:inline-block}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="card">
+    <div class="title">🏯 江湖经营</div>
+    <div class="subtitle">武侠宗门模拟器</div>
+
+    <div class="tab">
+      <button class="tab-btn active" id="tabLogin" onclick="switchTab('login')">登录</button>
+      <button class="tab-btn" id="tabReg" onclick="switchTab('reg')">注册</button>
+    </div>
+
+    <div class="error-msg" id="errorMsg"></div>
+
+    <div id="loginForm">
+      <div class="form-group">
+        <label>用户名</label>
+        <input type="text" id="loginUser" placeholder="输入用户名" autocomplete="username">
+      </div>
+      <div class="form-group">
+        <label>密码</label>
+        <input type="password" id="loginPass" placeholder="输入密码" autocomplete="current-password">
+      </div>
+      <button class="submit-btn" onclick="doLogin()">🗡️ 进入江湖</button>
+    </div>
+
+    <div id="regForm" style="display:none">
+      <div class="form-group">
+        <label>用户名</label>
+        <input type="text" id="regUser" placeholder="2个字符以上" autocomplete="off">
+      </div>
+      <div class="form-group">
+        <label>密码</label>
+        <input type="password" id="regPass" placeholder="4个字符以上" autocomplete="new-password">
+      </div>
+      <button class="submit-btn" onclick="doRegister()">⚔️ 创立门派</button>
+    </div>
+
+    <div class="loading" id="loading"><span class="sp">🏯</span> 江湖在召唤……</div>
+
+    <div class="hint">数据自动保存，多设备可同步</div>
+  </div>
+</div>
+
+<script>
+function switchTab(tab){
+  document.getElementById("tabLogin").className = "tab-btn" + (tab==="login"?" active":"");
+  document.getElementById("tabReg").className = "tab-btn" + (tab==="reg"?" active":"");
+  document.getElementById("loginForm").style.display = tab==="login"?"block":"none";
+  document.getElementById("regForm").style.display = tab==="reg"?"block":"none";
+  document.getElementById("errorMsg").textContent = "";
+}
+
+function showLoading(v){
+  document.getElementById("loading").style.display = v?"block":"none";
+  document.getElementById("loginForm").style.display = v?"none":"";
+  document.getElementById("regForm").style.display = v?"none":"";
+}
+
+async function doLogin(){
+  const user = document.getElementById("loginUser").value.trim();
+  const pass = document.getElementById("loginPass").value;
+  if(!user||!pass){document.getElementById("errorMsg").textContent="请填写完整";return}
+  showLoading(true);
+  try{
+    const r = await fetch("/api/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username:user,password:pass})});
+    const d = await r.json();
+    if(d.ok) window.location.href="/";
+    else document.getElementById("errorMsg").textContent=d.error;
+  }catch(e){document.getElementById("errorMsg").textContent="网络错误"}
+  showLoading(false);
+}
+
+async function doRegister(){
+  const user = document.getElementById("regUser").value.trim();
+  const pass = document.getElementById("regPass").value;
+  if(!user||!pass){document.getElementById("errorMsg").textContent="请填写完整";return}
+  if(user.length<2){document.getElementById("errorMsg").textContent="用户名至少2个字符";return}
+  if(pass.length<4){document.getElementById("errorMsg").textContent="密码至少4个字符";return}
+  showLoading(true);
+  try{
+    const r = await fetch("/api/register",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username:user,password:pass})});
+    const d = await r.json();
+    if(d.ok) window.location.href="/";
+    else document.getElementById("errorMsg").textContent=d.error;
+  }catch(e){document.getElementById("errorMsg").textContent="网络错误"}
+  showLoading(false);
+}
+
+document.addEventListener("keydown",e=>{
+  if(e.key==="Enter"){
+    if(document.getElementById("loginForm").style.display!=="none") doLogin();
+    else doRegister();
+  }
+});
+
+// Check if already logged in
+(async()=>{
+  try{
+    const r=await fetch("/api/me");const d=await r.json();
+    if(d.logged_in) window.location.href="/";
+  }catch(e){}
+})();
+</script>
+</body>
+</html>
