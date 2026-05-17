@@ -488,49 +488,24 @@ function handlePassiveAction(act){
 
 function handleCardPlayAction(act){} // removed
 function showCardHand(){} // removed
-  document.getElementById("roundIndicator").textContent="🎴 战术卡";
-  // 大号卡牌弹出
-  const popEl=document.createElement("div");popEl.className="card-popup";
-  const qColors={"凡品":"#888","良品":"#5adb7a","极品":"#4a8eff","绝品":"#b84aff","传说":"#ffd700"};
-  const qCls={"凡品":"fan","良品":"liang","极品":"jipin","绝品":"jue","传说":"chuan"};
-  const col=qColors[card?.rarity]||"#ffd700";
-  const rCls=qCls[card?.rarity]||"";
-  popEl.innerHTML=`<div class="cp-border" style="border-color:${col}"><div class="cp-rarity ${rCls}">${card?.rarity||""}</div><div class="cp-name" style="color:${col}">${card?.name||""}</div><div class="cp-desc">${card?.desc||""}</div><div class="cp-cost">⚡${card?.cost||0}</div></div>`;
-  document.getElementById("cardHand").appendChild(popEl);
-  setTimeout(()=>popEl.remove(),1400);
-  sfx("gold");
-  // 根据效果类型增加反馈
-  if(!ef)return;
-  const etype=ef.type;
-  if(etype==="buff_current"||etype==="buff_all_ally"||etype==="shield_all_ally"){
-    buffNotify(`${ef.desc||card?.desc||"增益"} [${card?.name}]`,"#ffd700");
-  }else if(etype==="debuff_all_enemy"){
-    buffNotify(`敌人${ef.desc||"被削弱"} [${card?.name}]`,"#e85a5a");
-    setTimeout(()=>sfx("red"),200);
-  }else if(etype==="heal"){
-    buffNotify(`回复 ${ef.desc||""} [${card?.name}]`,"#5adb7a");
-    sfxSkill("green");
-    // 治疗浮字
-    if(act.target_name&&act.heal){
-      const tIdx=window._lastBr?.my_heroes?.findIndex(h=>h.name===act.target_name);
-      if(tIdx>=0){const te=document.getElementById("bchptxt-my-"+tIdx);if(te){const d=document.createElement("div");d.className="bc-dmg-num heal-c";d.textContent=`+${act.heal}❤️`;te.parentElement.appendChild(d);setTimeout(()=>d.remove(),1100)}}
-    }
-  }else if(etype==="dmg"){
-    setTimeout(()=>sfx("red"),200);
-    document.body.style.animation="shake .25s ease";setTimeout(()=>{document.body.style.animation=""},300);
-    // 伤害浮字
-    if(act.target_name&&act.damage){
-      const tIdx=window._lastBr?.enemies?.findIndex(e=>e.name===act.target_name);
-      if(tIdx>=0){const te=document.getElementById("bchptxt-enemy-"+tIdx);if(te){const d=document.createElement("div");d.className="bc-dmg-num ally-c";d.textContent=`-${act.damage}${act.killed?"💀":""}`;te.parentElement.appendChild(d);setTimeout(()=>d.remove(),1100)}}
-    }
-  }else if(etype==="extra_action"){
-    buffNotify(`额外行动! [${card?.name}]`,"#b84aff");
-  }else if(etype==="taunt"){
-    buffNotify(`嘲讽敌人 [${card?.name}]`,"#ff8c00");
-  }else if(etype==="energy_all_ally"){
-    buffNotify(`全体充能 [${card?.name}]`,"#4a8eff");
-  }
+// (card system removed)
+
+function showBattleBoard(d){
+  window._lastBr=d;
+  const init = d.initial_state || d;
+  renderBF(init.my_heroes, init.enemies, false, init.lv9_buffs);
+  document.getElementById("battleStageName").textContent=`⚔️ 第${game.stage.index}关·${game.stage.name}${game.stage.boss?' 👑BOSS':''}`;
+  document.getElementById("battleOverlay").style.display="flex";
+  document.getElementById("battleResult").style.display="none";
+  document.getElementById("vsText").style.display="flex";
+  document.getElementById("battleLogT").innerHTML="";
+  document.getElementById("battleStats").style.display="none";
 }
+async function toggleAuto(){}
+async function skipCard(){}
+async function playCard(cardId){}
+
+const RARITY_CLS={"凡品":"fan","良品":"liang","极品":"jipin","绝品":"jue","传说":"chuan"};
 
 function showBattleBoard(d){
   window._lastBr=d;
@@ -544,101 +519,9 @@ function showBattleBoard(d){
   document.getElementById("battleStats").style.display="none";
 }
 
-const RARITY_CLS={"凡品":"fan","良品":"liang","极品":"jipin","绝品":"jue","传说":"chuan"};
-
-function showCardHand(){
-  battlePhase="card";
-  const handEl=document.getElementById("cardHand");
-  const energyEl=document.getElementById("cardEnergyBar");
-  // 能量条
-  let dots="";for(let i=0;i<3;i++)dots+=`<div class="ce-dot${i<battleEnergy?" filled":""}"></div>`;
-  energyEl.innerHTML=`<span style="color:#6a5a4a">⚡费用</span> ${dots}`;
-  // 手牌
-  if(!battleHand||!battleHand.length){
-    handEl.innerHTML=`<button class="card-skip-btn" onclick="skipCard()">⚡跳过(自动)</button>`;
-    return;
-  }
-  let h="";
-  const QC={"凡品":"#888","良品":"#5adb7a","极品":"#4a8eff","绝品":"#b84aff","传说":"#ffd700"};
-  for(let c of battleHand){
-    const col=QC[c.rarity]||"#888";
-    const cant=c.cost>battleEnergy?" cant":"";
-    const rcli=RARITY_CLS[c.rarity]||"fan";
-    const costCls=c.rarity==="传说"?" legend":"";
-    h+=`<div class="card-slot${cant}" onclick="${c.cost>battleEnergy?'':`playCard('${c.id}')`}" style="border-color:${col}">
-      <div class="c-rarity ${rcli}">${c.rarity}</div>
-      <div class="c-cost${costCls}">${c.cost}</div>
-      <div class="c-name" style="color:${col}">${c.name}</div>
-      <div class="c-desc">${c.desc}</div>
-    </div>`;
-  }
-  h+=`<button class="card-skip-btn" onclick="skipCard()">跳过</button>`;
-  // 托管切换按钮
-  const autoLabel=battleAuto?"✋ 手动":"⚡ 托管";
-  const autoCls=battleAuto?" auto-on":"";
-  h+=`<button class="card-auto-btn${autoCls}" onclick="toggleAuto()">${autoLabel}</button>`;
-  handEl.innerHTML=h;
-}
-
-async function playCard(cardId){
-  battlePhase="busy";
-  document.getElementById("cardHand").innerHTML='<span style="font-size:9px;color:#6a5a4a">打出中...</span>';
-  try{
-    const d=await apiFetch("/api/battle/card",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({card_id:cardId})});
-    if(d.phase==="done"){showBattleResult(d);return}
-    battleHand=d.hand||[];
-    battleEnergy=d.card_energy||0;
-    // 更新棋盘
-    renderBF(d.my_heroes,d.enemies,false);
-    window._lastBr=d;
-    // 播放下一个批次的action
-    playActionsBatch(d.actions,()=>showCardHand());
-  }catch(e){showError(e.message)}
-}
-
-async function toggleAuto(){
-  if(!battlePhase)return;
-  try{
-    const d=await apiFetch("/api/battle/toggle-auto",{method:"POST"});
-    if(d.error){showError(d.error);return}
-    if(d.phase==="done"){
-      battleAuto=false;
-      // 播放剩余行动
-      playActionsBatch(d.actions,()=>showBattleResult(d));
-      return;
-    }
-    battleAuto=!!d.auto;
-    // 如果切回手动，刷新手牌
-    if(!battleAuto)showCardHand();
-    else{
-      // 切到自动后后端跑完了，但还有actions要播
-      if(d.actions&&d.actions.length){
-        playActionsBatch(d.actions,()=>showCardHand());
-      }
-    }
-  }catch(e){showError(e.message)}
-}
-
-function autoContinue(){
-  // 托管模式自动继续（前端透明，后端直接打完）
-  battleAuto=false; // 避免循环
-  // 后端已经自动打完，前端只需显示结果
-  // 这个函数实际上由toggleAuto触发
-}
-
-async function skipCard(){
-  battlePhase="busy";
-  document.getElementById("cardHand").innerHTML='<span style="font-size:9px;color:#6a5a4a">继续战斗中...</span>';
-  try{
-    const d=await apiFetch("/api/battle/skip",{method:"POST"});
-    if(d.phase==="done"){showBattleResult(d);return}
-    battleHand=d.hand||[];
-    battleEnergy=d.card_energy||0;
-    renderBF(d.my_heroes,d.enemies,false,d.initial_state?.lv9_buffs);
-    window._lastBr=d;
-    playActionsBatch(d.actions,()=>showCardHand());
-  }catch(e){showError(e.message)}
-}
+function toggleAuto(){}
+function skipCard(){}
+function autoContinue(){}
 
 function showBattleResult(d){
   const win=d.win||false;
@@ -1201,14 +1084,9 @@ function showBR(br){
 }
 function closeBattle(){
   document.getElementById("battleOverlay").style.display="none";
-  document.getElementById("cardHand").innerHTML="";
-  document.getElementById("cardEnergyBar").innerHTML="";
-  battleHand=null;battleEnergy=0;battlePhase=null;battleAuto=false;
+  battlePhase=null;battleAuto=false;
   // Reset stats
-  Object.keys(liveStats).forEach(k=>{
-    if(typeof liveStats[k]==="object")liveStats[k]={};
-    else liveStats[k]=0;
-  });
+  Object.assign(liveStats,{dmg:{},heal:{},taken:{},bestHit:{name:"",val:0},crits:0});
   document.getElementById("battleStatsPanel").innerHTML="";
 }
 
