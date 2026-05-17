@@ -499,15 +499,15 @@ def gen_enemy(name, ps, boss=False):
     c=random.choice(ECS)
     skill=random.choice(ENEMY_SKILLS)
     if boss:
-        hp=int(ps*random.uniform(4.0, 7.0))
+        hp=int(ps*random.uniform(10.0, 18.0))
         atk=int(ps*random.uniform(0.05, 0.10))
         q=random.choices(["极品","绝品","传说"],weights=[50,35,15])[0]
         crit=random.randint(15,40)
         spd=random.randint(100,160)
         name="【BOSS】"+name
     else:
-        # 血多攻少，让战斗有回合感
-        hp=int(ps*random.uniform(2.5, 4.0))
+        # 血多才爽，让技能有地方打
+        hp=int(ps*random.uniform(4.0, 7.0))
         atk=int(ps*random.uniform(0.025, 0.045))
         q=random.choices(["凡品","良品","极品","绝品","传说"],weights=[30,30,25,12,3])[0]
         crit=random.randint(5,30)
@@ -858,29 +858,32 @@ def run_speed_battle(my_heroes, enemies, stage):
                     if unit["energy"] > 200: unit["energy"] = 200
                     act = hero_basic_attack(unit, my_heroes, enemies)
                 act["energy_after"] = unit["energy"]
-                all_actions.append(act)
-                # 注入当时HP状态(分敌我列表计算idx)
-                a2=act
-                if a2.get("type")!="card_play":
-                    a2["attacker_idx"]=next((i for i,uu in enumerate(my_heroes) if uu.get("name")==a2.get("attacker_name")),0)
-                    # 注入攻击者当时的有效攻暴
-                    a2["hero_eff_atk"]=cstat(unit,"atk",unit["atk"])
-                    a2["hero_eff_crit"]=cstat(unit,"crit",unit["crit"])
-                    a2["hero_base_atk"]=unit["atk"]
-                    a2["hero_base_crit"]=unit["crit"]
-                    a2["hero_buffs"]=[b["stat"] for b in unit.get("buffs",[])]
-                    a2["hero_debuffs"]=[d["stat"] for d in unit.get("debuffs",[])]
-                    if a2.get("aoe") and a2.get("targets"):
-                        tlist=enemies if a2.get("side")=="ally" else my_heroes
-                        for tg in a2["targets"]:
-                            uu=next((uu2 for uu2 in tlist if uu2.get("name")==tg.get("name")),None)
-                            if uu: tg["hp_pct"]=max(0,uu["hp"]/max(1,uu["max_hp"])); tg["max_hp"]=uu["max_hp"]; tg["idx"]=next((i for i,uu2 in enumerate(tlist) if uu2.get("name")==tg.get("name")),0)
-                            if tg.get("killed") and uu: tg["hp_pct"]=0
-                    elif a2.get("target_name"):
-                        tlist=enemies if a2.get("side")=="ally" else my_heroes
-                        uu=next((uu2 for uu2 in tlist if uu2.get("name")==a2["target_name"]),None)
-                        if uu: a2["target_hp_pct"]=max(0,uu["hp"]/max(1,uu["max_hp"])); a2["target_max_hp"]=uu["max_hp"]; a2["target_idx"]=next((i for i,uu2 in enumerate(tlist) if uu2.get("name")==a2["target_name"]),0)
-                        if a2.get("killed") and uu: a2["target_hp_pct"]=0
+                # 多段拆分
+                mhc=act.get("multi_hit_count",1)
+                sub_acts=expand_multi_hit_action(act,mhc) if mhc>1 else [act]
+                for sa in sub_acts:
+                    all_actions.append(sa)
+                    # 注入当时HP状态
+                    a2=sa
+                    if a2.get("type")!="card_play":
+                        a2["attacker_idx"]=next((i for i,uu in enumerate(my_heroes) if uu.get("name")==a2.get("attacker_name")),0)
+                        a2["hero_eff_atk"]=cstat(unit,"atk",unit["atk"])
+                        a2["hero_eff_crit"]=cstat(unit,"crit",unit["crit"])
+                        a2["hero_base_atk"]=unit["atk"]
+                        a2["hero_base_crit"]=unit["crit"]
+                        a2["hero_buffs"]=[b["stat"] for b in unit.get("buffs",[])]
+                        a2["hero_debuffs"]=[d["stat"] for d in unit.get("debuffs",[])]
+                        if a2.get("aoe") and a2.get("targets"):
+                            tlist=enemies if a2.get("side")=="ally" else my_heroes
+                            for tg in a2["targets"]:
+                                uu=next((uu2 for uu2 in tlist if uu2.get("name")==tg.get("name")),None)
+                                if uu: tg["hp_pct"]=max(0,uu["hp"]/max(1,uu["max_hp"])); tg["max_hp"]=uu["max_hp"]; tg["idx"]=next((i for i,uu2 in enumerate(tlist) if uu2.get("name")==tg.get("name")),0)
+                                if tg.get("killed") and uu: tg["hp_pct"]=0
+                        elif a2.get("target_name"):
+                            tlist=enemies if a2.get("side")=="ally" else my_heroes
+                            uu=next((uu2 for uu2 in tlist if uu2.get("name")==a2["target_name"]),None)
+                            if uu: a2["target_hp_pct"]=max(0,uu["hp"]/max(1,uu["max_hp"])); a2["target_max_hp"]=uu["max_hp"]; a2["target_idx"]=next((i for i,uu2 in enumerate(tlist) if uu2.get("name")==a2["target_name"]),0)
+                            if a2.get("killed") and uu: a2["target_hp_pct"]=0
 
                 # ===== 打牌阶段 (AI自动选牌) =====
                 if hand and card_energy > 0:
@@ -1107,8 +1110,12 @@ class BattleSession:
                 if unit["energy"]>200: unit["energy"]=200
                 act=hero_basic_attack(unit,self.my_heroes,self.enemies)
             act["energy_after"]=unit["energy"]
-            self.all_actions.append(act)
-            self._inject_action_hp(act)
+            # 多段拆分
+            mhc=act.get("multi_hit_count",1)
+            sub_acts=expand_multi_hit_action(act,mhc) if mhc>1 else [act]
+            for sa in sub_acts:
+                self.all_actions.append(sa)
+                self._inject_action_hp(sa)
             # 被动触发检查
             for pu in self.my_heroes:
                 phd=pu.get("_hd")
@@ -1990,12 +1997,69 @@ def hero_use_skill(unit, allies, enemies):
 
     if is_aoe:
         return {"side":"ally","type":"skill","attacker_name":unit["name"],"skill":sk_name,
-                "aoe":True,"targets":all_targets_data}
+                "aoe":True,"targets":all_targets_data,"multi_hit_count":multi_hit_count}
     else:
         # 单目标多段: 取最后一个目标显示
         last=all_targets_data[-1] if all_targets_data else {"name":"","damage":0,"crit":False,"killed":False}
         return {"side":"ally","type":"skill","attacker_name":unit["name"],"skill":sk_name,
-                "aoe":False,"target_name":last["name"],"damage":last["damage"],"crit":last["crit"],"killed":last["killed"]}
+                "aoe":False,"target_name":last["name"],"damage":last["damage"],"crit":last["crit"],"killed":last["killed"],"multi_hit_count":multi_hit_count,"all_hits":all_targets_data}
+
+# ═══ 多段攻击拆分 ═══
+def expand_multi_hit_action(act, multi_hit_count):
+    """将多段技能的一个action拆成多个独立动作，前端依次播放"""
+    if multi_hit_count <= 1 or act.get("type") != "skill":
+        return [act]
+    is_aoe = act.get("aoe", False)
+    all_hits = act.get("all_hits") or act.get("targets", [])
+    if not all_hits:
+        return [act]
+    new_acts = []
+    # 对所有目标按段数均分伤害
+    per_enemy = {}
+    for t in all_hits:
+        name = t.get("name","")
+        dmg = t.get("damage", 0)
+        crit = t.get("crit", False)
+        max_hp = t.get("max_hp", 0)
+        idx = t.get("idx", 0)
+        if name not in per_enemy:
+            per_enemy[name] = {"dmg":0,"crit":False,"max_hp":max_hp,"idx":idx}
+        if is_aoe:
+            # AOE多段: 每hit均分总伤害
+            hit_dmg = int(dmg / multi_hit_count)
+            if multi_hit_count * int(dmg / multi_hit_count) < dmg:
+                hit_dmg = int(dmg / multi_hit_count)
+            per_enemy[name]["dmg"] = per_enemy[name].get("dmg", 0) + hit_dmg
+        per_enemy[name]["crit"] = per_enemy[name]["crit"] or crit
+
+    for hi in range(multi_hit_count):
+        if is_aoe:
+            hit_targets = []
+            for name, info in per_enemy.items():
+                d = int(info["dmg"] / multi_hit_count)
+                if hi == multi_hit_count - 1:
+                    leftover = info["dmg"] - (multi_hit_count-1) * int(info["dmg"] / multi_hit_count)
+                    if leftover > 0: d = leftover
+                hit_targets.append({"name":name,"damage":d,"crit":info["crit"],
+                    "idx":info.get("idx",0),"max_hp":info.get("max_hp",0),"hp_pct":info.get("hp_pct",0)})
+            new_act = dict(act)
+            new_act["targets"] = hit_targets
+            new_act["hit_no"] = hi + 1
+            new_act["total_hits"] = multi_hit_count
+            new_acts.append(new_act)
+        else:
+            for hi2 in range(multi_hit_count):
+                if hi2 < len(all_hits):
+                    hit = all_hits[hi]
+                    new_act = dict(act)
+                    new_act["target_name"] = hit.get("name","")
+                    new_act["damage"] = hit.get("damage", 0)
+                    new_act["crit"] = hit.get("crit", False)
+                    new_act["killed"] = hit.get("killed", False)
+                    new_act["hit_no"] = hi2 + 1
+                    new_act["total_hits"] = multi_hit_count
+                    new_acts.append(new_act)
+    return new_acts
 
 def enemy_basic_attack(unit, allies, enemies):
     alive_h = [a for a in allies if a.get("alive",True)]
