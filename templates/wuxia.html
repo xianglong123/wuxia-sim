@@ -1,13 +1,11 @@
 <!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>🏯 江湖经营</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
+<style>*{margin:0;padding:0;box-sizing:border-box}
 body{font-family:-apple-system,"PingFang SC","Noto Serif SC",serif;background:#0a0a12;color:#d4c9a8;min-height:100vh;overflow-x:hidden}
 .header{background:linear-gradient(135deg,#1a1410,#0f0d0a);border-bottom:1px solid #3a3020;padding:8px 14px;position:sticky;top:0;z-index:20}
 .header-row{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px}
 .game-title{font-size:15px;font-weight:700;color:#e8d5a3;letter-spacing:1px}
 .res-bar{display:flex;align-items:center;gap:10px;font-size:12px;color:#6a5a4a;flex-wrap:wrap}
-.pity-bar{display:flex;gap:2px}
-.pity-dot{width:7px;height:7px;border-radius:50%}
+.pity-bar{display:flex;gap:2px}.pity-dot{width:7px;height:7px;border-radius:50%}
 .pity-done{background:#5adb7a}.pity-empty{background:#1a1a24;border:1px solid #2a2a3a}
 .pity-gold{background:#ffd700;box-shadow:0 0 6px rgba(255,215,0,.5)}
 .main{max-width:720px;margin:0 auto;padding:10px 12px 40px}
@@ -16,8 +14,7 @@ body{font-family:-apple-system,"PingFang SC","Noto Serif SC",serif;background:#0
 .info-card{flex:1;background:linear-gradient(180deg,#12100e,#0d0b09);border:1px solid #2a2218;border-radius:8px;padding:10px 12px;text-align:center;min-width:100px}
 .info-card .l{font-size:10px;color:#6a5a4a}
 .info-card .v{font-size:18px;font-weight:700;margin-top:2px}
-.info-card .v.gold{color:#ffd700}
-.info-card .v.green{color:#5adb7a}
+.info-card .v.gold{color:#ffd700}.info-card .v.green{color:#5adb7a}
 .bond-bar{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:10px}
 .bond-tag{font-size:10px;padding:2px 8px;border-radius:4px;background:rgba(90,219,122,.1);border:1px solid rgba(90,219,122,.3);color:#5adb7a}
 .bond-empty{font-size:10px;color:#3a2a3a}
@@ -63,51 +60,84 @@ body{font-family:-apple-system,"PingFang SC","Noto Serif SC",serif;background:#0
 @keyframes pullPop{0%{transform:scale(0)}100%{transform:scale(1)}}
 .pull-btn{margin-top:16px;padding:8px 28px;border-radius:8px;border:1px solid #3a3020;background:#1a1410;color:#d4c9a8;font-size:13px;cursor:pointer;font-family:inherit}
 
-/* Battle */
-.battle-overlay{position:fixed;inset:0;background:rgba(5,5,10,.96);display:none;flex-direction:column;align-items:center;z-index:250;padding:12px;overflow-y:auto}
-.battle-title{font-size:16px;font-weight:700;color:#ffd700;margin:8px 0;text-align:center}
-.battle-field{display:flex;gap:12px;justify-content:center;align-items:flex-start;width:100%;max-width:600px;margin:6px 0;flex-wrap:wrap}
+/* ── Battle ── */
+.battle-overlay{position:fixed;inset:0;background:rgba(5,5,10,.96);display:none;flex-direction:column;align-items:center;z-index:250;padding:8px;overflow-y:auto}
+.battle-title{font-size:14px;font-weight:700;color:#ffd700;margin:4px 0;text-align:center}
+.battle-field{display:flex;gap:10px;justify-content:center;align-items:flex-start;width:100%;max-width:600px;flex-wrap:wrap}
 .battle-side{flex:1;min-width:140px;max-width:280px}
-.battle-side-label{font-size:11px;color:#6a5a4a;margin-bottom:4px;text-align:center}
-.bc{display:flex;flex-direction:column;gap:3px}
-.bc-card{display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:6px;border:1px solid #2a2218;background:#0d0b09;transition:all .3s;font-size:11px;position:relative;min-height:38px}
-.bc-card.bc-attack{animation:bcAttack .45s ease;border-color:#ffd700!important;box-shadow:0 0 12px rgba(255,215,0,.4)}
-.bc-card.bc-hit{animation:bcHit .3s ease}
-.bc-card.bc-heal{animation:bcHeal .4s ease}
-.bc-card.bc-dead{opacity:.25}
+.battle-side-label{font-size:10px;color:#6a5a4a;margin-bottom:3px;text-align:center}
+.bc{display:flex;flex-direction:column;gap:2px}
+.bc-card{display:flex;align-items:center;gap:4px;padding:4px 6px;border-radius:5px;border:1px solid #2a2218;background:#0d0b09;transition:all .3s;font-size:10px;position:relative;min-height:34px}
+.bc-card.bc-attack{animation:bcAttack .4s ease;border-color:#ffd700!important;box-shadow:0 0 10px rgba(255,215,0,.4)!important}
+.bc-card.bc-hit{animation:bcHit .3s ease}.bc-card.bc-heal{animation:bcHeal .35s ease}
+.bc-card.bc-dead{opacity:.2}
 @keyframes bcAttack{0%{transform:scale(1)}35%{transform:scale(1.06);border-color:#ffd700}100%{transform:scale(1)}}
 @keyframes bcHit{0%{border-color:#e85a5a;background:rgba(232,90,90,.15)}100%{border-color:#2a2218;background:#0d0b09}}
-@keyframes bcHeal{0%{border-color:#5adb7a;background:rgba(90,219,122,.12);box-shadow:0 0 10px rgba(90,219,122,.3)}100%{border-color:#2a2218;background:#0d0b09}}
-.bc-icon{font-size:15px;flex-shrink:0}
-.bc-info{flex:1;min-width:0}
-.bc-name{font-weight:600;font-size:11px}
-.bc-class{font-size:8px;color:#6a5a4a}
-.bc-hp-strip{position:relative;height:5px;background:#1a1a24;border-radius:3px;overflow:hidden;margin-top:1px}
-.bc-hp-fill{height:100%;border-radius:3px;transition:width .4s ease}
-.bc-shield{position:absolute;top:0;right:0;height:100%;background:rgba(74,142,255,.4);border-radius:3px;transition:width .4s ease}
-.bc-dmg-num{position:absolute;top:-6px;left:50%;transform:translateX(-50%);font-weight:700;font-size:16px;font-family:monospace;pointer-events:none;animation:dmgFloat 1s ease forwards;z-index:10;text-shadow:0 0 6px currentColor}
-@keyframes dmgFloat{0%{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}100%{opacity:0;transform:translateX(-50%) translateY(-35px) scale(1.3)}}
-.bc-dmg-num.ally-c{color:#ff8a4a}.bc-dmg-num.enemy-c{color:#e85a5a}.bc-dmg-num.crit-c{color:#ffd700;font-size:22px}.bc-dmg-num.heal-c{color:#5adb7a;font-size:16px}
+@keyframes bcHeal{0%{border-color:#5adb7a;background:rgba(90,219,122,.12);box-shadow:0 0 8px rgba(90,219,122,.3)}100%{border-color:#2a2218;background:#0d0b09}}
+.bc-icon{font-size:13px;flex-shrink:0}.bc-info{flex:1;min-width:0}.bc-name{font-weight:600;font-size:10px}.bc-class{font-size:7px;color:#6a5a4a}
+.bc-hp-strip{position:relative;height:4px;background:#1a1a24;border-radius:2px;overflow:hidden;margin-top:1px}
+.bc-hp-fill{height:100%;border-radius:2px;transition:width .35s ease}
+.bc-shield{position:absolute;top:0;right:0;height:100%;background:rgba(74,142,255,.4);border-radius:2px;transition:width .35s ease}
+.bc-dmg-num{position:absolute;top:-5px;left:50%;transform:translateX(-50%);font-weight:700;font-size:14px;font-family:monospace;pointer-events:none;animation:dmgFloat .9s ease forwards;z-index:10;text-shadow:0 0 6px currentColor}
+@keyframes dmgFloat{0%{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}100%{opacity:0;transform:translateX(-50%) translateY(-30px) scale(1.3)}}
+.bc-dmg-num.ally-c{color:#ff8a4a}.bc-dmg-num.enemy-c{color:#e85a5a}.bc-dmg-num.crit-c{color:#ffd700;font-size:20px}.bc-dmg-num.heal-c{color:#5adb7a}
 
-/* Buff/Debuff icons */
-.bc-status{display:flex;gap:2px;flex-wrap:wrap;margin-top:1px}
-.status-icon{font-size:8px;padding:1px 3px;border-radius:2px;font-weight:600}
-.status-buff{background:rgba(90,219,122,.15);color:#5adb7a}
-.status-debuff{background:rgba(232,90,90,.15);color:#e85a5a}
-.aoe-tag{font-size:8px;padding:1px 4px;border-radius:3px;background:rgba(255,215,0,.15);color:#ffd700;font-weight:600;margin-left:4px}
+/* Battle stats panel */
+.battle-stats-panel{width:100%;max-width:600px;display:flex;gap:8px;margin:4px 0;flex-wrap:wrap}
+.stats-col{flex:1;min-width:100px;background:rgba(0,0,0,.3);border-radius:6px;padding:6px 8px;border:1px solid #1a1a24}
+.stats-col-title{font-size:9px;color:#6a5a4a;margin-bottom:4px;font-weight:600;text-align:center;letter-spacing:1px}
+.stats-row{display:flex;justify-content:space-between;font-size:10px;color:#8a7a5a;padding:2px 0;border-bottom:1px solid #0a0a12;animation:stPop .2s ease}
+@keyframes stPop{0%{opacity:.5;transform:translateX(-4px)}100%{opacity:1;transform:translateX(0)}}
+.stats-row .sr-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:50px}
+.stats-row .sr-val{font-weight:600;font-family:monospace}
+.sr-dmg{color:#ff8a4a}.sr-heal{color:#5adb7a}.sr-tank{color:#4a8eff}.sr-best{color:#ffd700}
+.sr-crit{color:#ffd700}
+.stats-best-hit{text-align:center;padding:3px;border-radius:4px;background:rgba(255,215,0,.08);border:1px solid rgba(255,215,0,.2);margin-bottom:4px}
+.stats-best-hit .sbh-val{font-size:16px;font-weight:900;color:#ffd700;font-family:monospace;text-shadow:0 0 8px rgba(255,215,0,.3)}
+.stats-best-hit .sbh-name{font-size:9px;color:#8a7a5a}
 
-/* Battle log */
-.battle-log-t{width:100%;max-width:600px;max-height:100px;overflow-y:auto;margin:4px 0;font-size:10px;color:#8a7a5a;line-height:1.5;padding:4px 8px;background:rgba(0,0,0,.3);border-radius:6px}
-.battle-log-t .bl-line{animation:blFade .2s ease}
-@keyframes blFade{0%{opacity:0;transform:translateX(-6px)}100%{opacity:1}}
-.bl-ally{color:#d4c9a8}.bl-enemy{color:#b86a6a}.bl-heal{color:#5adb7a}
-.battle-result{text-align:center;padding:10px;margin-top:6px;border-top:1px solid #2a2218;width:100%;max-width:600px}
-.br-title{font-size:20px;font-weight:700;margin:6px 0}
+/* Screen effects */
+.sfx{position:fixed;inset:0;pointer-events:none;z-index:280;animation:sfxFlash .4s ease forwards}
+@keyframes sfxFlash{0%{opacity:.6}100%{opacity:0}}
+.sfx-red{background:radial-gradient(ellipse at center,rgba(232,90,90,.4),transparent 70%)}
+.sfx-green{background:radial-gradient(ellipse at center,rgba(90,219,122,.3),transparent 70%)}
+.sfx-gold{background:radial-gradient(ellipse at center,rgba(255,215,0,.5),transparent 70%)}
+
+/* Skill popup */
+.skill-popup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:260;pointer-events:none;text-align:center;animation:spPop .6s ease forwards}
+@keyframes spPop{0%{opacity:0;transform:translate(-50%,-50%) scale(.3)}30%{opacity:1;transform:translate(-50%,-50%) scale(1.15)}60%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-70%) scale(1)}}
+.skill-popup .s-icon{font-size:36px;display:block;margin-bottom:2px}
+.skill-popup .s-name{font-size:18px;font-weight:700;text-shadow:0 0 20px currentColor;letter-spacing:2px}
+.skill-popup .s-side{font-size:10px;opacity:.6;margin-top:2px}
+
+/* KO popup */
+.ko-popup{position:fixed;top:40%;left:50%;transform:translate(-50%,-50%);z-index:260;pointer-events:none;text-align:center;animation:koAnim .8s ease forwards}
+@keyframes koAnim{0%{opacity:1;transform:translate(-50%,-50%) scale(0) rotate(-20deg)}30%{opacity:1;transform:translate(-50%,-50%) scale(1.5) rotate(0)}60%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-60%) scale(1.2)}}
+.ko-popup .ko-text{font-size:48px;font-weight:900;color:#ffd700;text-shadow:0 0 30px rgba(255,215,0,.6),0 0 60px rgba(255,215,0,.3)}
+
+/* Round transition */
+.round-popup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:260;pointer-events:none;text-align:center;animation:rPop .8s ease forwards}
+@keyframes rPop{0%{opacity:0;transform:translate(-50%,-50%) scale(0)}20%{opacity:1;transform:translate(-50%,-50%) scale(1.1)}50%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-80%) scale(.8)}}
+.round-popup .r-text{font-size:24px;font-weight:700;color:#8a7a5a;letter-spacing:4px}
+
+/* Battle stats panel */
+.battle-stats{width:100%;max-width:600px;margin:8px 0;padding:10px;background:rgba(0,0,0,.3);border-radius:8px;display:none}
+.stats-title{font-size:13px;font-weight:700;color:#ffd700;text-align:center;margin-bottom:6px}
+.stat-row{display:flex;justify-content:space-between;font-size:11px;color:#8a7a5a;padding:3px 0;border-bottom:1px solid #1a1a24}
+.stat-row .s-val{color:#5adb7a;font-weight:600}
+.stat-mvp{padding:6px;border:1px solid #8a6a20;border-radius:6px;text-align:center;background:linear-gradient(135deg,#3a2a10,#5a3a10);margin:6px 0}
+.stat-mvp .mvp-name{font-size:15px;font-weight:700;color:#ffd700}
+.stat-mvp .mvp-stat{font-size:11px;color:#e8b84a}
+
+/* Battle result */
+.battle-result{text-align:center;padding:8px;margin-top:4px;border-top:1px solid #2a2218;width:100%;max-width:600px}
+.br-title{font-size:18px;font-weight:700;margin:4px 0}
 .br-title.win{color:#ffd700}.br-title.lose{color:#e85a5a}
-.br-btn{padding:8px 28px;border-radius:8px;border:1px solid #8a7a5a;background:#1a1410;color:#e8d5a3;font-size:13px;cursor:pointer;font-family:inherit}
-.vs-text{font-size:22px;font-weight:700;color:#e85a5a;align-self:center;text-shadow:0 0 16px rgba(232,90,90,.3);animation:vsPulse 1.5s ease infinite}
-@keyframes vsPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
-.round-indicator{font-size:11px;color:#6a5a4a;text-align:center;padding:3px 0}
+.br-btn{padding:8px 24px;border-radius:8px;border:1px solid #8a7a5a;background:#1a1410;color:#e8d5a3;font-size:12px;cursor:pointer;font-family:inherit}
+.vs-text{font-size:18px;font-weight:700;color:#e85a5a;align-self:center;text-shadow:0 0 12px rgba(232,90,90,.3);animation:vsPulse 1.2s ease infinite}
+@keyframes vsPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+.round-indicator{font-size:10px;color:#6a5a4a;text-align:center;padding:2px 0}
+.battle-log-t{width:100%;max-width:600px;max-height:80px;overflow-y:auto;font-size:9px;color:#8a7a5a;line-height:1.4;padding:3px 6px;background:rgba(0,0,0,.3);border-radius:4px;margin:2px 0}
 .loading{position:fixed;inset:0;background:rgba(10,10,18,.95);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:150}
 .loading .spinner{font-size:36px;animation:bounce 1.2s ease infinite}
 @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
@@ -129,17 +159,19 @@ body{font-family:-apple-system,"PingFang SC","Noto Serif SC",serif;background:#0
 <div class="battle-overlay" id="battleOverlay">
   <div class="battle-title" id="battleStageName">⚔️ 战斗</div>
   <div class="battle-field" id="battleField"></div>
+  <div class="battle-stats-panel" id="battleStatsPanel"></div>
   <div class="vs-text" id="vsText">⚡ VS ⚡</div>
   <div class="round-indicator" id="roundIndicator"></div>
   <div class="battle-log-t" id="battleLogT"></div>
+  <div class="battle-stats" id="battleStats"></div>
   <div class="battle-result" id="battleResult" style="display:none"></div>
 </div>
 <div id="errorToast"></div><div id="modal" class="modal"></div><div id="pullModal" style="display:none"></div>
 <div class="main">
-  <div class="msg-box" id="msgBox">☯ 江湖经营 · 技能大改版</div>
+  <div class="msg-box" id="msgBox">☯ 江湖经营</div>
   <div class="info-row">
     <div class="info-card"><div class="l">阵容战力</div><div class="v gold" id="powerDisplay">0</div></div>
-    <div class="info-card" style="cursor:pointer" onclick="startBattle()"><div class="l">当前关卡</div><div class="v green" id="stageDisplay">-</div></div>
+    <div class="info-card" style="cursor:pointer" onclick="startBattle()"><div class="l">关卡</div><div class="v green" id="stageDisplay">-</div></div>
     <div class="info-card"><div class="l">关数</div><div class="v" id="stageIndexDisplay">0</div></div>
     <div class="info-card"><div class="l">人数</div><div class="v" id="lineupCount">0/6</div></div>
   </div>
@@ -153,15 +185,14 @@ body{font-family:-apple-system,"PingFang SC","Noto Serif SC",serif;background:#0
     <button class="action-btn" onclick="doSweep()"><span class="ab-icon">⚡</span><span class="ab-label">一键收菜</span></button>
   </div>
   <div class="inv-section">
-    <div class="inv-toggle" onclick="toggleInv()">📦 查看全部英雄 (<span id="invTotalCount">0</span>)</div>
+    <div class="inv-toggle" onclick="toggleInv()">📦 全部英雄 (<span id="invTotalCount">0</span>)</div>
     <div class="inv-grid" id="invGrid"></div>
   </div>
 </div>
-
 <script>
 let game=null;
 const QO={"凡品":0,"良品":1,"极品":2,"绝品":3,"传说":4},QC={"凡品":"#888","良品":"#5adb7a","极品":"#4a8eff","绝品":"#b84aff","传说":"#ffd700"},CI={"战士":"🗡️","肉盾":"🛡️","刺客":"💀","法师":"🔥","射手":"🎯","奶妈":"💚"};
-const SI={"atk":"⚔️攻","crit":"💥暴","dmg_reduce":"🛡️减","crit_dmg":"🎯爆"};
+const SI={"atk":"⚔️攻","crit":"💥暴","dmg_reduce":"🛡️减","crit_dmg":"🎯爆","immune":"🛡️免疫"};
 function qs(q){return "★".repeat(QO[q]+1)}
 
 function render(g){
@@ -170,87 +201,119 @@ function render(g){
   document.getElementById("jadeDisplay").textContent=g.jade||0;
   document.getElementById("pullCount").textContent=g.pull_count;
   document.getElementById("invTotalCount").textContent=g.inventory_count||0;
-  document.getElementById("powerDisplay").textContent = (g.power||0).toLocaleString();
-  document.getElementById("stageDisplay").textContent = g.stage?.name||"-";
-  const si = document.getElementById("stageIndexDisplay");
-  if(si) si.textContent = g.stage?.index!==undefined ? `第${g.stage.index}关` : "0";
-  document.getElementById("lineupCount").textContent = g.lineup_count+"/6";
+  document.getElementById("powerDisplay").textContent=(g.power||0).toLocaleString();
+  document.getElementById("stageDisplay").textContent=g.stage?.name||"-";
+  if(document.getElementById("stageIndexDisplay"))document.getElementById("stageIndexDisplay").textContent=g.stage?.index!==undefined?`第${g.stage.index}关`:"0";
+  document.getElementById("lineupCount").textContent=g.lineup_count+"/6";
   document.getElementById("msgBox").innerHTML=g.msg||"";
   if(g.username)document.getElementById("userDisplay").textContent=`👤 ${g.username}`;
   if(g.offline_msg){document.getElementById("msgBox").innerHTML=`<span style="color:#ffd700">${g.offline_msg}</span>`;g.offline_msg=""}
   if(g.jade_per_min)document.getElementById("jadeRate").textContent=`+${g.jade_per_min}/分`;
-  }catch(e){showError("渲染错误:"+e.message)}
-
   const p=g.pity||{count:0,next_guaranteed:10};
   document.getElementById("pityBar").innerHTML=`<span style="font-size:9px">保底</span>${
     Array.from({length:10},(_,i)=>i<10-p.next_guaranteed?'<div class="pity-dot pity-done"></div>':i===9?'<div class="pity-dot pity-gold"></div>':'<div class="pity-dot pity-empty"></div>').join("")}`;
-
   const bb=document.getElementById("bondBar");
   bb.innerHTML=(g.bonds&&g.bonds.length)?g.bonds.map(b=>`<span class="bond-tag">🔗 ${b.name}</span>`).join(""):'<span class="bond-empty">暂无羁绊</span>';
-
   const lg=document.getElementById("lineupGrid");
   lg.innerHTML=g.lineup.length===0?'<div class="hero-card" style="padding:30px;text-align:center"><div style="color:#3a2a3a">还没有上阵英雄</div></div>':'';
-  if(g.lineup.length){
-    (async()=>{
-      try{
-        const r=await fetch("/api/inventory_heroes");const all=await r.json();
-        lg.innerHTML="";
-        for(let hid of g.lineup){
-          const h=all.find(x=>x.hero_id===hid);if(!h)continue;
-          const col=h.color||QC[h.quality],ci=CI[h.class]||"❓";
-          const card=document.createElement("div");card.className="hero-card";card.style.borderColor=col;
-          card.innerHTML=`<div class="h-lv" style="color:${col}">${qs(h.quality)}</div><div class="h-class" style="color:${col}">${ci} ${h.class}</div><div class="h-name">${h.name}</div><div class="h-power" style="color:${col}">⚔️${h.power.toLocaleString()}</div>`;
-          card.onclick=(()=>showHeroDetail(hid));lg.appendChild(card);
-        }
-      }catch(e){}
-    })();
-  }
+  if(g.lineup.length){!async function(){try{
+    const r=await fetch("/api/inventory_heroes");const all=await r.json();
+    lg.innerHTML="";
+    for(let hid of g.lineup){const h=all.find(x=>x.hero_id===hid);if(!h)continue;
+      const col=h.color||QC[h.quality],ci=CI[h.class]||"❓";
+      const card=document.createElement("div");card.className="hero-card";card.style.borderColor=col;
+      card.innerHTML=`<div class="h-lv" style="color:${col}">${qs(h.quality)}</div><div class="h-class" style="color:${col}">${ci} ${h.class}</div><div class="h-name">${h.name}</div><div class="h-power" style="color:${col}">⚔️${h.power.toLocaleString()}</div>`;
+      card.onclick=(()=>showHeroDetail(hid));lg.appendChild(card);
+    }}catch(e){}}()}
+  }catch(e){showError("渲染:"+e.message)}
 }
 
 // ═══ Battle ═══
 async function startBattle(){
   if(!game||!game.lineup||!game.lineup.length){showError("请先上阵英雄");return}
   document.getElementById("loading").style.display="flex";
-  try{
-    const d=await apiFetch("/api/battle");
-    game=d;const br=d.battle_result;
-    if(!br){showError("战斗异常");document.getElementById("loading").style.display="none";return}
-    showBattle(br);
-  }catch(e){}
+  try{const d=await apiFetch("/api/battle");game=d;if(!d.battle_result){showError("异常");document.getElementById("loading").style.display="none";return}showBattle(d.battle_result)}catch(e){}
   document.getElementById("loading").style.display="none";
 }
 
 function showBattle(br){
   const ov=document.getElementById("battleOverlay");ov.style.display="flex";
-  document.getElementById("battleStageName").textContent=`⚔️ 第${game.stage.index}关 · ${game.stage.name}`;
+  document.getElementById("battleStageName").textContent=`⚔️ 第${game.stage.index}关·${game.stage.name}`;
   document.getElementById("battleResult").style.display="none";document.getElementById("roundIndicator").textContent="";
   document.getElementById("vsText").style.display="flex";document.getElementById("battleLogT").innerHTML="";
+  document.getElementById("battleStats").style.display="none";
   renderBF(br.my_heroes,br.enemies,false);
   let ti=0;const aa=br.turns.flatMap(t=>t.actions),total=aa.length;
+  // Stats tracking (实时)
+  const liveStats={dmg:{},heal:{},taken:{},bestHit:{name:"",val:0},crits:0};
+  // Round tracking
+  let lastRound=0;
+  function updateStats(act){
+    // 输出统计（我方）
+    if(act.side==="ally"){
+      const dmg=act.aoe&&act.targets?act.targets.reduce((s,t)=>s+(t.damage||0),0):(act.damage||0);
+      if(dmg>0){
+        liveStats.dmg[act.attacker_name]=(liveStats.dmg[act.attacker_name]||0)+dmg;
+        if(dmg>liveStats.bestHit.val)liveStats.bestHit={name:act.attacker_name,val:dmg};
+      }
+      if(act.crit)liveStats.crits++;
+    }
+    // 治疗统计：AOE群奶用targets数组汇总，单体奶用act.heal
+    if(act.side==="heal"){
+      const heal=act.aoe&&act.targets?act.targets.reduce((s,t)=>s+(t.heal||0),0):(act.heal||0);
+      if(heal>0)liveStats.heal[act.attacker_name]=(liveStats.heal[act.attacker_name]||0)+heal;
+    }
+    // 扛伤统计：AOE遍历targets，单体用target_name
+    if(act.damage>0){
+      if(act.aoe&&act.targets){
+        for(let tg of act.targets){
+          if(tg.name)liveStats.taken[tg.name]=(liveStats.taken[tg.name]||0)+(tg.damage||0);
+        }
+      }else if(act.target_name){
+        liveStats.taken[act.target_name]=(liveStats.taken[act.target_name]||0)+act.damage;
+      }
+    }
+    renderStatsPanel(liveStats);
+  }
+  // Round tracking
   function nxt(){
     if(ti>=total){
-      document.getElementById("vsText").style.display="none";
-      document.getElementById("roundIndicator").textContent="⚔️ 战斗结束";
+      document.getElementById("vsText").style.display="none";document.getElementById("roundIndicator").textContent="⚔️ 战斗结束";
       renderBF(br.my_heroes,br.enemies,true);
-      setTimeout(()=>showBR(br),400);return;
+      setTimeout(()=>showBR(br),500);return;
     }
     const act=aa[ti];
-    // Log text
-    let lt="",lc="bl-line";
-    if(act.heal>0){lt=`💚 ${act.attacker_name} 【${act.skill}】 ${act.target_name} ❤️+${act.heal}`;lc+=" bl-heal"}
-    else {
-      const ct=act.crit?" ⭐":"";const kt=act.killed?" 💀":"";
-      const at=act.aoe?"(群攻)":"";
-      lt=`${act.side==="ally"?"⚔️":"💀"} ${act.attacker_name} ${act.skill}${at}→${act.target_name} 💥${act.damage}${ct}${kt}`;
-      lc+=act.side==="ally"?" bl-ally":" bl-enemy";
+    updateStats(act);
+    // Round transition
+    const thisRound=br.turns.findIndex(t=>t.actions.includes(act))+1;
+    if(thisRound!==lastRound&&thisRound>1){lastRound=thisRound;
+      // 回合边界检测：是否一方已全灭
+      const allEnemyCards=document.querySelectorAll("#bc-enemy .bc-card");
+      const allAllyCards=document.querySelectorAll("#bc-my .bc-card");
+      const enemyAllDead=allEnemyCards.length>0&&Array.from(allEnemyCards).every(c=>c.classList.contains("bc-dead"));
+      const allyAllDead=allAllyCards.length>0&&Array.from(allAllyCards).every(c=>c.classList.contains("bc-dead"));
+      if(enemyAllDead||allyAllDead){
+        document.getElementById("vsText").style.display="none";document.getElementById("roundIndicator").textContent="⚔️ 战斗结束";
+        renderBF(br.my_heroes,br.enemies,true);
+        setTimeout(()=>showBR(br),500);
+        ti=total;return;
+      }
+      const rp=document.createElement("div");rp.className="round-popup";
+      rp.innerHTML=`<div class="r-text">⚔️ 第${thisRound}回合</div>`;
+      document.body.appendChild(rp);setTimeout(()=>rp.remove(),900);
     }
+    // Log
+    let lt="",lc="bl-line";
+    if(act.heal&&act.heal>0&&!act.aoe){lt=`💚 ${act.attacker_name}${act.skill}→${act.target_name||""}❤️+${act.heal}`;lc+=" bl-heal"}
+    else if(act.heal&&act.aoe&&act.targets){lt=`💚 ${act.attacker_name}${act.skill}(群奶)❤️${act.targets.reduce((s,t)=>s+(t.heal||0),0)}`;lc+=" bl-heal"}
+    else if(act.aoe&&act.targets){lt=`${act.side==="ally"?"⚔️":"💀"}${act.attacker_name}${act.skill}(群攻)`;lc+=act.side==="ally"?" bl-ally":" bl-enemy"}
+    else{lt=`${act.side==="ally"?"⚔️":"💀"}${act.attacker_name}${act.skill}→${act.target_name}💥${act.damage}${act.crit?"⭐":""}`;lc+=act.side==="ally"?" bl-ally":" bl-enemy"}
     const ld=document.createElement("div");ld.className=lc;ld.textContent=lt;
-    document.getElementById("battleLogT").appendChild(ld);
-    document.getElementById("battleLogT").scrollTop=document.getElementById("battleLogT").scrollHeight;
-    document.getElementById("roundIndicator").textContent=act.side==="ally"?"⚔️ 我方回合":act.side==="heal"?"💚 治疗":"💀 敌方回合";
-    animateAct(act,()=>{ti++;setTimeout(nxt,400+(act.killed?200:0))});
+    document.getElementById("battleLogT").appendChild(ld);document.getElementById("battleLogT").scrollTop=document.getElementById("battleLogT").scrollHeight;
+    document.getElementById("roundIndicator").textContent=act.side==="ally"?"⚔️ 我方":act.side==="heal"?"💚 治疗":"💀 敌方";
+    animateAct(act,()=>{ti++;setTimeout(nxt,300+(act.killed?250:0)+(act.crit?200:0))});
   }
-  setTimeout(nxt,500);
+  setTimeout(nxt,600);
 }
 
 function renderBF(myH,enemies,isFinal){
@@ -262,76 +325,176 @@ function renderBF(myH,enemies,isFinal){
         const hpCol=hpPct>50?'#5adb7a':hpPct>25?'#e8b84a':'#e85a5a';
         const alive=isFinal?(u.alive!==false):true;
         const shieldPct=isFinal?(u.shield_pct||0)*100:0;
-        // Status icons
-        let stHTML="";
-        const buffs=u.buffs||[];const debuffs=u.debuffs||[];
-        if(buffs.length)stHTML+=buffs.map(s=>`<span class="status-icon status-buff">${SI[s]||s}</span>`).join("");
-        if(debuffs.length)stHTML+=debuffs.map(s=>`<span class="status-icon status-debuff">${SI[s]||s}</span>`).join("");
-        return `<div class="bc-card ${alive?'':'bc-dead'}" id="bc-${side}-${i}" style="border-color:${u.color}">
-          <span class="bc-icon">${ci}</span>
-          <div class="bc-info">
-            <div class="bc-name">${u.name}</div>
-            <div class="bc-class">${u.class} <span style="color:${u.color}">${u.quality}</span></div>
-            <div style="display:flex;gap:6px;font-size:9px;color:#6a5a4a;margin:1px 0">
-              <span>❤️${Math.round((u.max_hp||0)*(isFinal?Math.max(0,u.hp_pct||0):1))}</span>
-              <span>⚔️${u.atk||0}</span>
-            </div>
-            <div class="bc-hp-strip">
-              <div class="bc-hp-fill" id="bchp-${side}-${i}" style="width:${hpPct}%;background:${hpCol}"></div>
-              ${shieldPct>0?`<div class="bc-shield" style="width:${shieldPct}%"></div>`:""}
-            </div>
-            ${stHTML?`<div class="bc-status">${stHTML}</div>`:""}
-          </div>
-        </div>`;
+        const baseAtk=u.atk||0;const effAtk=u.eff_atk||baseAtk;const atkChanged=effAtk!==baseAtk;
+        const currentHp=Math.round((u.max_hp||0)*(isFinal?Math.max(0,u.hp_pct||0):1));
+        const baseCrit=u.crit||0;const effCrit=u.eff_crit||baseCrit;
+        const buffCount=(u.buffs||[]).filter(s=>s!=="immune").length;
+        const debuffCount=(u.debuffs||[]).length;
+        const immuneFlag=(u.buffs||[]).includes("immune");
+        const hpShow=isFinal?`<span>❤️${currentHp}</span>`:`<span id="bchptxt-${side}-${i}">❤️${currentHp}</span>`;
+        const atkShow=atkChanged?`<span style="color:#5adb7a;font-weight:700">⚔️${effAtk}</span><span style="font-size:7px;color:#5a4a3a">(${baseAtk})</span>`:`<span>⚔️${baseAtk}</span>`;
+        const critShow=effCrit!==baseCrit?`<span style="color:#5adb7a;font-weight:700">⚡${effCrit}%</span><span style="font-size:7px;color:#5a4a3a">(${baseCrit}%)</span>`:`<span>⚡${baseCrit}%</span>`;
+        const glow=buffCount>0?`box-shadow:0 0 8px rgba(90,219,122,.3)`:(debuffCount>0?`box-shadow:0 0 8px rgba(232,90,90,.3)`:"");
+        const sts=immuneFlag?`<span style="color:#4a8eff;font-weight:700">🛡️</span>`:"";
+        return `<div class="bc-card ${alive?'':'bc-dead'}" id="bc-${side}-${i}" style="border-color:${u.color};${glow}"><span class="bc-icon">${ci}</span>
+          <div class="bc-info"><div class="bc-name">${u.name}</div><div class="bc-class">${u.class}</div>
+          <div style="display:flex;gap:4px;font-size:9px;color:#6a5a4a">${hpShow}${atkShow}${sts}</div>
+          <div class="bc-hp-strip"><div class="bc-hp-fill" id="bchp-${side}-${i}" style="width:${hpPct}%;background:${hpCol}"></div></div>
+          </div></div>`;
       }).join("")}</div></div>`;
   };
   document.getElementById("battleField").innerHTML=RS(myH,"my")+RS(enemies,"enemy");
   document.getElementById("vsText").style.display="flex";
 }
 
+// ── Animate + Effects ──
+function sfx(type){
+  const el=document.createElement("div");el.className=`sfx sfx-${type}`;document.body.appendChild(el);setTimeout(()=>el.remove(),450);
+}
+function skillPopup(skill,side,clr){
+  const el=document.createElement("div");el.className="skill-popup";
+  el.innerHTML=`<span class="s-icon">${side==="ally"?"⚔️":"💀"}</span><div class="s-name" style="color:${clr||"#ffd700"}">⚡${skill}⚡</div><div class="s-side">${side==="ally"?"我方":"敌方"}</div>`;
+  document.body.appendChild(el);setTimeout(()=>el.remove(),700);
+}
+function koPopup(){
+  const el=document.createElement("div");el.className="ko-popup";
+  el.innerHTML=`<div class="ko-text">💀 KO!</div>`;document.body.appendChild(el);setTimeout(()=>el.remove(),900);
+}
+
+function renderStatsPanel(st){
+  const panel=document.getElementById("battleStatsPanel");
+  if(!panel)return;
+  // 输出榜
+  const dmgSorted=Object.entries(st.dmg).sort((a,b)=>b[1]-a[1]);
+  const healSorted=Object.entries(st.heal).sort((a,b)=>b[1]-a[1]);
+  const takenSorted=Object.entries(st.taken).sort((a,b)=>b[1]-a[1]);
+  const bh=st.bestHit;
+  let h=`<div class="stats-col" style="flex:1.5"><div class="stats-col-title">🏆 最强一击</div>`;
+  if(bh.val>0)h+=`<div class="stats-best-hit"><div class="sbh-val">${bh.val}</div><div class="sbh-name">${bh.name}</div></div>`;
+  else h+=`<div class="sbh-name" style="padding:4px;text-align:center">尚未出手</div>`;
+  h+=`<div class="stats-row"><span>⭐暴击</span><span class="sr-val sr-best">${st.crits}次</span></div></div>`;
+  // 输出
+  h+=`<div class="stats-col"><div class="stats-col-title">⚔️ 输出榜</div>`;
+  if(dmgSorted.length){dmgSorted.slice(0,4).forEach(([n,v])=>{h+=`<div class="stats-row"><span class="sr-name">${n}</span><span class="sr-val sr-dmg">${v}</span></div>`})}
+  else h+=`<div style="font-size:9px;color:#3a2a3a;text-align:center;padding:4px">暂无</div>`;
+  h+=`</div>`;
+  // 治疗
+  h+=`<div class="stats-col"><div class="stats-col-title">💚 治疗榜</div>`;
+  if(healSorted.length){healSorted.slice(0,4).forEach(([n,v])=>{h+=`<div class="stats-row"><span class="sr-name">${n}</span><span class="sr-val sr-heal">+${v}</span></div>`})}
+  else h+=`<div style="font-size:9px;color:#3a2a3a;text-align:center;padding:4px">暂无</div>`;
+  h+=`</div>`;
+  // 扛伤
+  h+=`<div class="stats-col"><div class="stats-col-title">🛡️ 扛伤榜</div>`;
+  if(takenSorted.length){takenSorted.slice(0,4).forEach(([n,v])=>{h+=`<div class="stats-row"><span class="sr-name">${n}</span><span class="sr-val sr-tank">${v}</span></div>`})}
+  else h+=`<div style="font-size:9px;color:#3a2a3a;text-align:center;padding:4px">暂无</div>`;
+  h+=`</div>`;
+  panel.innerHTML=h;
+}
+
+function screenFlash(type){
+  if(type==="gold"||!type){sfx("gold");return}
+  if(type==="red"){sfx("red");return}
+}
+
 function animateAct(act,cb){
   const isAlly=act.side==="ally";let ts=isAlly?"enemy":"my",as=isAlly?"my":"enemy";
   if(act.side==="heal"){ts="my";as="my"}
-  const ti=act.target_idx||0,ai=act.attacker_idx||0;
-  const ac=document.querySelectorAll(`#bc-${as} .bc-card`),tc=document.querySelectorAll(`#bc-${ts} .bc-card`);
-  const acard=ac[Math.min(ai,ac.length-1)],tcard=tc[Math.min(ti,tc.length-1)];
+  // 快速跳过：目标已全部死亡，不播放动画
+  if(act.aoe && act.targets && act.targets.length>0){
+    const allDead=act.targets.every(tg=>{
+      const tc=document.querySelectorAll(`#bc-${ts} .bc-card`);
+      const tcard=tc[Math.min(tg.idx||0,tc.length-1)];
+      return tcard&&tcard.classList.contains("bc-dead");
+    });
+    if(allDead){if(cb)setTimeout(cb,30);return}
+  }else if(!act.aoe && (act.damage>0||act.killed)){
+    const ti=act.target_idx||0;
+    const tc=document.querySelectorAll(`#bc-${ts} .bc-card`);
+    const tcard=tc[Math.min(ti,tc.length-1)];
+    if(tcard&&tcard.classList.contains("bc-dead")){if(cb)setTimeout(cb,30);return}
+  }
+  const ai=act.attacker_idx||0;
+  const ac=document.querySelectorAll(`#bc-${as} .bc-card`);
+  const acard=ac[Math.min(ai,ac.length-1)];
   if(acard&&!acard.classList.contains("bc-dead")){acard.classList.add("bc-attack")}
+  // Skill popup
+  skillPopup(act.skill,act.side,act.attacker_color||"#ffd700");
+
+  // ── AOE ──
+  if(act.aoe){
+    // 如果 targets 为空（敌人已全死），直接跳过动画
+    if(!act.targets||act.targets.length===0){
+      if(cb)setTimeout(cb,150);
+      return;
+    }
+    const isHeal=act.heal>0;
+    if(isHeal)sfx("green");else{screenFlash(act.crit?"gold":"red");if(act.crit)sfx("gold")}
+    setTimeout(()=>{
+      if(acard)acard.classList.remove("bc-attack");
+      if(isHeal&&acard)acard.classList.add("bc-heal");
+      act.targets.forEach(tg=>{
+        const tc=document.querySelectorAll(`#bc-${ts} .bc-card`);
+        const tcard=tc[Math.min(tg.idx||0,tc.length-1)];
+        if(tcard){
+          if(tg.heal)tcard.classList.add("bc-heal");else tcard.classList.add("bc-hit");
+          if(tg.heal){const d=document.createElement("div");d.className="bc-dmg-num heal-c";d.textContent=`+${tg.heal}❤️`;tcard.appendChild(d);setTimeout(()=>d.remove(),1000)}
+          else if(tg.damage>0){const d=document.createElement("div");d.className="bc-dmg-num";if(tg.crit)d.classList.add("crit-c");else if(isAlly)d.classList.add("ally-c");else d.classList.add("enemy-c");d.textContent=`-${tg.damage}${tg.crit?"⭐":""}`;tcard.appendChild(d);setTimeout(()=>d.remove(),1000)}
+          const np=Math.max(0,(tg.hp_pct||0)*100);const hpEl=document.getElementById(`bchp-${ts}-${tg.idx}`);
+          if(hpEl){hpEl.style.width=np+"%";hpEl.style.background=np>50?'#5adb7a':np>25?'#e8b84a':'#e85a5a'}
+          if(tg.killed){tcard.classList.add("bc-dead");koPopup();sfx("gold")}
+        }
+      });
+      if(cb)setTimeout(cb,350);
+    },400);
+    return;
+  }
+
+  // ── Single ──
+  const ti=act.target_idx||0;
+  const tc=document.querySelectorAll(`#bc-${ts} .bc-card`);
+  const tcard=tc[Math.min(ti,tc.length-1)];
+  if(act.heal>0)sfx("green");else screenFlash(act.crit?"gold":"red");
   setTimeout(()=>{
     if(acard)acard.classList.remove("bc-attack");
-    if(tcard){
-      if(act.heal>0)tcard.classList.add("bc-heal");
-      else tcard.classList.add("bc-hit");
-    }
+    if(tcard){if(act.heal>0)tcard.classList.add("bc-heal");else tcard.classList.add("bc-hit")}
     const hpEl=document.getElementById(`bchp-${ts}-${ti}`);
     if(hpEl){const np=Math.max(0,(act.target_hp_pct||0)*100);hpEl.style.width=np+"%";hpEl.style.background=np>50?'#5adb7a':np>25?'#e8b84a':'#e85a5a'}
+    // 实时更新血量文字
+    const hpTx=document.getElementById(`bchptxt-${ts}-${ti}`);
+    if(hpTx){hpTx.textContent=`❤️${Math.round((act.target_hp_pct||0)*(act.target_max_hp||100))}`}
     if((act.damage>0||act.heal>0)&&tcard){
       const d=document.createElement("div");d.className="bc-dmg-num";
       if(act.crit)d.classList.add("crit-c");else if(act.heal>0)d.classList.add("heal-c");else if(isAlly)d.classList.add("ally-c");else d.classList.add("enemy-c");
-      d.textContent=act.heal>0?`+${act.heal}`:`-${act.damage}${act.crit?"⭐":""}`;
+      d.textContent=act.heal>0?`+${act.heal}❤️`:`-${act.damage}${act.crit?"⭐":""}`;
       tcard.appendChild(d);setTimeout(()=>d.remove(),1000);
     }
-    // Reflect text
-    if(act.reflect_dmg){
-      const rt=document.getElementById("battleLogT");
-      if(rt)rt.innerHTML+=`<div class="bl-line bl-enemy" style="color:#ff8a4a">🪞 ${act.attacker_name} 受到反伤 ${act.reflect_dmg}</div>`;
-    }
-    if(act.lifesteal&&tcard){
-      const lt=document.getElementById("battleLogT");
-      if(lt)lt.innerHTML+=`<div class="bl-line bl-heal" style="color:#e8b84a">🩸 ${act.attacker_name} 吸血 ${act.lifesteal}</div>`;
-    }
-    if(act.killed&&tcard)tcard.classList.add("bc-dead");
-    if(cb)setTimeout(cb,200);
-  },300);
+    if(act.killed&&tcard){tcard.classList.add("bc-dead");koPopup();sfx("gold")}
+    if(cb)setTimeout(cb,300);
+  },400);
+}
+
+function showStageStats(br,stats){
+  const sd=document.getElementById("battleStats");sd.style.display="block";
+  const topDmg=Object.entries(stats.allyDmg||{}).sort((a,b)=>b[1]-a[1]);
+  const mvp=topDmg[0];
+  const totalAllyDmg=Object.values(stats.allyDmg||{}).reduce((a,b)=>a+b,0);
+  const totalAllyHeal=Object.values(stats.allyHeal||{}).reduce((a,b)=>a+b,0);
+  let h=`<div class="stats-title">📊 战斗总结</div>`;
+  if(mvp)h+=`<div class="stat-mvp"><div class="mvp-name">🏆 ${mvp[0]}</div><div class="mvp-stat">伤害输出 ${mvp[1]}</div></div>`;
+  h+=`<div class="stat-row"><span>总伤害</span><span class="s-val">${totalAllyDmg}</span></div>`;
+  h+=`<div class="stat-row"><span>总治疗</span><span class="s-val">${totalAllyHeal}</span></div>`;
+  h+=`<div class="stat-row"><span>暴击次数</span><span class="s-val">${stats.allyCrit||0}</span></div>`;
+  h+=`<div class="stat-row"><span>战斗回合</span><span class="s-val">${br.rounds}</span></div>`;
+  sd.innerHTML=h;
 }
 
 function showBR(br){
   const rd=document.getElementById("battleResult");rd.style.display="block";
-  document.getElementById("roundIndicator").textContent="";
   const win=br.win,jr=br.jade_reward||0,eq=br.equip_reward;
-  let lh=`<span>💎+${jr}</span>`;
-  if(eq)lh+=`<span style="color:${eq.color};margin-left:8px">${eq.type==="武器"?"🗡️":eq.type==="防具"?"🛡️":"💍"} ${eq.name}</span>`;
-  if(br.new_stage)lh+=`<span style="color:#5adb7a;margin-left:8px">➡️${br.new_stage}</span>`;
-  rd.innerHTML=`<div class="br-title ${win?'win':'lose'}">${win?'🏆胜利':'💀败北'}</div><div style="font-size:11px;color:#6a5a4a">${br.rounds||1}回合</div><div style="margin:8px 0;font-size:13px">${lh}</div><button class="br-btn" onclick="closeBattle();render(game)">继续</button>`;
+  let lh=`💎+${jr}`;
+  if(eq)lh+=` <span style="color:${eq.color}">${eq.type==="武器"?"🗡️":eq.type==="防具"?"🛡️":"💍"}${eq.name}</span>`;
+  if(br.new_stage)lh+=` <span style="color:#5adb7a">➡️${br.new_stage}</span>`;
+  rd.innerHTML=`<div class="br-title ${win?'win':'lose'}">${win?'🏆胜利':'💀败北'}</div><div style="font-size:11px;color:#6a5a4a">${br.rounds}回合</div><div style="margin:6px 0;font-size:12px">${lh}</div><button class="br-btn" onclick="closeBattle();render(game)">继续征战</button>`;
   render(game);
 }
 function closeBattle(){document.getElementById("battleOverlay").style.display="none"}
@@ -339,130 +502,93 @@ function closeBattle(){document.getElementById("battleOverlay").style.display="n
 // ═══ Hero Detail ═══
 async function showHeroDetail(hid){
   document.getElementById("loading").style.display="flex";
-  try{
-    const h=await apiFetch(`/api/hero_detail/${hid}`);
-    if(h.error){showError(h.error);document.getElementById("loading").style.display="none";return}
+  try{const h=await apiFetch(`/api/hero_detail/${hid}`);if(h.error){showError(h.error);document.getElementById("loading").style.display="none";return}
     const col=h.color||QC[h.quality],ci=CI[h.class]||"❓";
     let skUp=Object.entries(h.skill_upgrades||{}).map(([lv,desc])=>`<div class="hd-upgrade" style="color:${parseInt(lv)<=h.skill_lv?'#5adb7a':'#3a2a3a'}">${parseInt(lv)<=h.skill_lv?'🔓':'🔒'}Lv${lv}:${desc}</div>`).join("");
     let paUp=Object.entries(h.passive_upgrades||{}).map(([lv,desc])=>`<div class="hd-upgrade" style="color:${parseInt(lv)<=h.skill_lv?'#5adb7a':'#3a2a3a'}">${parseInt(lv)<=h.skill_lv?'🔓':'🔒'}Lv${lv}:${desc}</div>`).join("");
     const eq=h.equipped||{};
-    let eqH=["武器","防具","饰品"].map(s=>{
-      const e=eq[s];
-      return e?`<div class="equip-slot" onclick="showEquipSel('${h.hero_id}','${s}')" style="border-color:${e.color}"><div style="font-weight:600;font-size:12px;color:${e.color}">${e.name}</div>${e.exclusive?'<div style="font-size:9px;color:#ffd700">✓专武</div>':''}</div>`
-        :`<div class="equip-slot" onclick="showEquipSel('${h.hero_id}','${s}')"><div class="es-empty" style="color:#3a2a3a">空</div></div>`;
-    }).join("");
+    let eqH=["武器","防具","饰品"].map(s=>{const e=eq[s];return e?`<div class="equip-slot" onclick="showEquipSel('${h.hero_id}','${s}')" style="border-color:${e.color}"><div style="font-size:12px;font-weight:600;color:${e.color}">${e.name}</div>${e.exclusive?'<div style="font-size:9px;color:#ffd700">✓专武</div>':''}</div>`:`<div class="equip-slot" onclick="showEquipSel('${h.hero_id}','${s}')"><div style="color:#3a2a3a">空</div></div>`}).join("");
     const aoeTag=h.skill_aoe?'<span style="font-size:10px;padding:1px 6px;border-radius:3px;background:rgba(255,215,0,.15);color:#ffd700;font-weight:600;margin-left:6px">群攻</span>':'';
     const modal=document.getElementById("modal");modal.style.display="flex";
     modal.innerHTML=`<div class="modal-inner">
-      <div style="font-size:18px;font-weight:700;color:${col}">${h.name} ${ci} ${h.class}</div>
-      <div style="font-size:12px;color:${col};margin-bottom:10px">${qs(h.quality)} ${h.quality}</div>
-      <div class="hd-stats">
-        <div class="hd-stat"><div>❤️血量</div><div class="sv">${h.hp.toLocaleString()}</div></div>
-        <div class="hd-stat"><div>💥攻击</div><div class="sv">${h.atk.toLocaleString()}</div></div>
-        <div class="hd-stat"><div>⚡暴击</div><div class="sv">${h.crit}%</div></div>
-        <div class="hd-stat"><div>⚔️战力</div><div class="sv" style="color:${col}">${h.power.toLocaleString()}</div></div>
-      </div>
-      <div class="hd-section"><div class="hd-section-title">📜 ${h.skill_name}${aoeTag} <span style="display:inline-block;padding:1px 6px;border-radius:3px;font-size:10px;background:${col};color:#000;margin-left:4px">Lv${h.skill_lv}</span></div>
-        <div class="hd-skill">${h.skill_desc}</div>${skUp}</div>
-      <div class="hd-section"><div class="hd-section-title">⭐ ${h.passive_name}</div><div class="hd-skill" style="color:#6a5a4a">${h.passive_desc}</div>${paUp}</div>
+      <div style="font-size:18px;font-weight:700;color:${col}">${h.name} ${ci}${h.class}</div>
+      <div style="font-size:12px;color:${col};margin-bottom:8px">${qs(h.quality)}${h.quality}</div>
+      <div class="hd-stats"><div class="hd-stat"><div>❤️血量</div><div class="sv">${h.hp.toLocaleString()}</div></div><div class="hd-stat"><div>💥攻击</div><div class="sv">${h.atk.toLocaleString()}</div></div><div class="hd-stat"><div>⚡暴击</div><div class="sv">${h.crit}%</div></div><div class="hd-stat"><div>⚔️战力</div><div class="sv" style="color:${col}">${h.power.toLocaleString()}</div></div></div>
+      <div class="hd-section"><div class="hd-section-title">📜${h.skill_name}${aoeTag}<span style="display:inline-block;padding:1px 6px;border-radius:3px;font-size:10px;background:${col};color:#000;margin-left:4px">Lv${h.skill_lv}</span></div><div class="hd-skill">${h.skill_desc}</div>${skUp}</div>
+      <div class="hd-section"><div class="hd-section-title">⭐${h.passive_name}</div><div class="hd-skill" style="color:#6a5a4a">${h.passive_desc}</div>${paUp}</div>
       <div class="hd-section"><div class="hd-section-title">🛡️装备</div><div class="equip-slots">${eqH}</div></div>
-      <div style="text-align:center;margin-top:8px;display:flex;gap:6px;justify-content:center">
-        <button class="pull-btn" onclick="toggleLU('${h.hero_id}')">🔄 ${h.in_lineup?'下阵':'上阵'}</button>
-        <button class="pull-btn" onclick="closeModal()">关闭</button>
-      </div>
-    </div>`;
+      <div style="text-align:center;margin-top:8px"><button class="pull-btn" onclick="toggleLU('${h.hero_id}')">🔄${h.in_lineup?'下阵':'上阵'}</button><button class="pull-btn" onclick="closeModal()" style="margin-left:6px">关闭</button></div></div>`
   }catch(e){}
   document.getElementById("loading").style.display="none";
 }
 
 // ═══ Misc ═══
-async function toggleLU(hid){
-  closeModal();document.getElementById("loading").style.display="flex";
-  try{const d=await apiFetch(`/api/lineup/${hid}`);render(d)}catch(e){}
-  document.getElementById("loading").style.display="none";
+async function toggleLU(hid){closeModal();document.getElementById("loading").style.display="flex";try{render(await apiFetch(`/api/lineup/${hid}`))}catch(e){}document.getElementById("loading").style.display="none"}
+async function showEquipSel(hid,slot){document.getElementById("loading").style.display="flex";try{const bag=await apiFetch("/api/equip_bag");const fl=bag.filter(e=>e.type===slot);
+  const m=document.getElementById("modal");m.style.display="flex";m.innerHTML=`<div class="modal-inner"><div style="font-size:14px;font-weight:700;margin-bottom:10px">🔧选择${slot}</div>${fl.length===0?'<div style="color:#3a2a3a;padding:12px">没有该类装备</div>':''}
+  <div style="display:grid;gap:4px">${fl.map(e=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;border-radius:6px;border:1px solid ${e.color};cursor:pointer;font-size:11px;background:#0d0b09" onclick="doEquip2('${hid}','${slot}','${e.id}')"><div><span style="font-weight:600;color:${e.color}">${e.name}</span><span style="font-size:9px;color:#6a5a4a">×${e.count}</span></div><div>⚔️+${e.atk}❤️+${e.hp}</div></div>`).join("")}</div>
+  <div style="margin-top:4px"><div class="pull-btn" onclick="doEquip2('${hid}','${slot}','none')" style="display:inline-block">卸下</div></div>
+  <div style="text-align:center;margin-top:8px"><button class="pull-btn" onclick="closeModal()">取消</button></div></div>`}catch(e){}document.getElementById("loading").style.display="none"}
+async function doEquip2(hid,slot,eid){document.getElementById("loading").style.display="flex";try{const d=await apiFetch(`/api/equip/${hid}/${slot}/${eid}`);closeModal();render(d)}catch(e){}document.getElementById("loading").style.display="none"}
+async function singlePull(){if(!game)return;document.getElementById("loading").style.display="flex";try{const d=await apiFetch("/api/pull");render(d);if(d.pull)showPullM(d.pull,false)}catch(e){}document.getElementById("loading").style.display="none"}
+async function tenPull(){if(!game)return;document.getElementById("loading").style.display="flex";try{const d=await apiFetch("/api/pull10");render(d);if(d.pull)showPullM(d.pull,true)}catch(e){}document.getElementById("loading").style.display="none"}
+function showPullM(pull,is10){const pm=document.getElementById("pullModal");pm.style.display="flex";
+  if(is10&&Array.isArray(pull)){const s=[...pull].sort((a,b)=>QO[b.quality]-QO[a.quality]);
+    pm.innerHTML=`<div class="pull-overlay" onclick="closePull()"><div style="margin-bottom:8px;text-align:center"><span style="font-size:16px;font-weight:700;color:#ffd700">✨十连</span></div><div class="pull10-grid">${s.map((c,i)=>{const col=QC[c.quality]||"#888",ci=CI[c.hero_class]||"❓";return `<div class="pull10-item" style="border-color:${col};animation-delay:${i*0.06}s"><div class="p10-r" style="color:${col}">${c.quality}</div><span class="p10-i" style="color:${col}">${ci}</span><div class="p10-n">${c.hero_name}</div></div>`}).join("")}</div><button class="pull-btn" onclick="closePull()">继续</button></div>`}
+  else if(pull){const col=QC[pull.quality]||"#888",ci=CI[pull.hero_class]||"🎴";pm.innerHTML=`<div class="pull-overlay" style="cursor:pointer" onclick="closePull()"><div class="pull-card"><div class="pull-rarity" style="color:${col}">✦${pull.quality}✦</div><div class="pull-icon" style="color:${col}">${ci}</div><div class="pull-name" style="color:${col}">${pull.hero_name}</div></div><div style="margin-top:6px;font-size:11px;color:#5a4a3a">点击继续</div></div>`}}
+function closePull(){document.getElementById("pullModal").style.display="none";if(game)render(game);const gr=document.getElementById("invGrid");if(gr&&gr.classList.contains("open")){gr.innerHTML="";gr.classList.remove("open");document.querySelector(".inv-toggle")?.click()}}
+
+// ═══ Missing Functions ═══
+async function apiFetch(url, options){
+  const r=await fetch(url, options||{});
+  if(r.redirected||r.status===401||r.status===302){window.location.href="/login";throw new Error("未登录")}
+  const d=await r.json();
+  if(d.error){showError(d.error);throw new Error(d.error)}
+  return d;
 }
-async function showEquipSel(hid,slot){
-  document.getElementById("loading").style.display="flex";
+function showError(msg){
+  const el=document.getElementById("errorToast");if(!el)return;
+  el.textContent=msg;el.style.display="block";
+  setTimeout(()=>{el.style.display="none"},3000);
+}
+async function toggleInv(){
+  const ig=document.getElementById("invGrid");const tog=document.querySelector(".inv-toggle");
+  if(ig.classList.contains("open")){ig.classList.remove("open");ig.innerHTML="";tog.textContent=`📦 全部英雄 (${game?.inventory_count||0})`;return}
   try{
-    const bag=await apiFetch("/api/equip_bag");
-    const fl=bag.filter(e=>e.type===slot);
-    const m=document.getElementById("modal");m.style.display="flex";
-    m.innerHTML=`<div class="modal-inner"><div style="font-size:14px;font-weight:700;margin-bottom:10px">🔧选择${slot}</div>
-      ${fl.length===0?'<div style="color:#3a2a3a;padding:12px;text-align:center">没该类装备</div>':''}
-      <div style="display:grid;gap:4px">${fl.map(e=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;border-radius:6px;border:1px solid ${e.color};cursor:pointer;font-size:11px;background:#0d0b09" onclick="doEquip2('${hid}','${slot}','${e.id}')"><div><span style="font-weight:600;color:${e.color}">${e.name}</span><span style="font-size:9px;color:#6a5a4a">×${e.count}</span></div><div>⚔️+${e.atk}❤️+${e.hp}</div></div>`).join("")}</div>
-      <div style="margin-top:4px"><div class="pull-btn" onclick="doEquip2('${hid}','${slot}','none')" style="display:inline-block">卸下</div></div>
-      <div style="text-align:center;margin-top:8px"><button class="pull-btn" onclick="closeModal()">取消</button></div>
-    </div>`;
+    document.getElementById("loading").style.display="flex";
+    const r=await apiFetch("/api/inventory_heroes");
+    if(!Array.isArray(r))return;
+    ig.innerHTML=r.map(h=>{
+      const col=h.color||QC[h.quality]||"#888";
+      const ci=CI[h.class]||"❓";
+      const star="★".repeat((QO[h.quality]||0)+1);
+      return `<div class="inv-hero" style="border-left:3px solid ${col}" onclick="showHeroDetail('${h.hero_id}')">
+        <div class="iq" style="color:${col}">${star}${h.quality}</div>
+        <div class="in" style="color:${col}">${ci}${h.name}</div>
+        <div class="ip">Lv${h.skill_lv} ⚔️${h.power.toLocaleString()}${h.in_lineup?' <span style="color:#5adb7a">✓上阵</span>':''}</div>
+      </div>`
+    }).join("");
+    ig.classList.add("open");tog.textContent=`📦 全部英雄 (${r.length})`;
   }catch(e){}
   document.getElementById("loading").style.display="none";
 }
-async function doEquip2(hid,slot,eid){
-  document.getElementById("loading").style.display="flex";
-  try{const d=await apiFetch(`/api/equip/${hid}/${slot}/${eid}`);closeModal();render(d)}catch(e){}
-  document.getElementById("loading").style.display="none";
-}
-async function singlePull(){
-  if(!game)return;document.getElementById("loading").style.display="flex";
-  try{const d=await apiFetch("/api/pull");render(d);if(d.pull)showPullM(d.pull,false)}catch(e){}
-  document.getElementById("loading").style.display="none";
-}
-async function tenPull(){
-  if(!game)return;document.getElementById("loading").style.display="flex";
-  try{const d=await apiFetch("/api/pull10");render(d);if(d.pull)showPullM(d.pull,true)}catch(e){}
-  document.getElementById("loading").style.display="none";
-}
-function showPullM(pull,is10){
-  const pm=document.getElementById("pullModal");pm.style.display="flex";
-  if(is10&&Array.isArray(pull)){
-    const s=[...pull].sort((a,b)=>QO[b.quality]-QO[a.quality]);
-    pm.innerHTML=`<div class="pull-overlay" onclick="closePull()"><div style="margin-bottom:10px;text-align:center"><span style="font-size:18px;font-weight:700;color:#ffd700">✨十连</span></div>
-      <div class="pull10-grid">${s.map((c,i)=>{const col=QC[c.quality]||"#888",ci=CI[c.hero_class]||"❓";return `<div class="pull10-item" style="border-color:${col};animation-delay:${i*0.06}s"><div class="p10-r" style="color:${col}">${c.quality}</div><span class="p10-i" style="color:${col}">${ci}</span><div class="p10-n">${c.hero_name}</div></div>`}).join("")}</div>
-      <div style="text-align:center;margin-top:10px"><button class="pull-btn" onclick="closePull()">继续</button></div></div>`;
-  }else if(pull){
-    const col=QC[pull.quality]||"#888",ci=CI[pull.hero_class]||"🎴";
-    pm.innerHTML=`<div class="pull-overlay" style="cursor:pointer" onclick="closePull()"><div class="pull-card"><div class="pull-rarity" style="color:${col}">✦${pull.quality}✦</div><div class="pull-icon" style="color:${col}">${ci}</div><div class="pull-name" style="color:${col}">${pull.hero_name}</div></div><div style="margin-top:6px;font-size:11px;color:#5a4a3a">点击继续</div></div>`;
-  }
-}
-function closePull(){document.getElementById("pullModal").style.display="none";if(game)render(game)}
-async function toggleInv(){
-  const g=document.getElementById("invGrid");g.classList.toggle("open");
-  if(g.classList.contains("open")){
-    document.getElementById("loading").style.display="flex";
-    try{
-      const list=await apiFetch("/api/inventory_heroes");
-      g.innerHTML=list.map(h=>{
-        const col=h.color||QC[h.quality],inL=h.in_lineup;
-        return `<div class="inv-hero" onclick='invClick({hero_id:"${h.hero_id}",in_lineup:${inL}})' style="border-color:${inL?col:"#2a2218"};opacity:${inL?1:.7}">
-          <div class="iq" style="color:${col}">${h.quality} ${h.class}</div><div class="in">${h.name}</div><div class="ip">⚔️${h.power.toLocaleString()}</div>
-        </div>`;
-      }).join("");
-    }catch(e){}
-    document.getElementById("loading").style.display="none";
-  }
-}
-function invClick(h){if(h.in_lineup)showHeroDetail(h.hero_id);else toggleLU(h.hero_id)}
-async function doSweep(){
-  document.getElementById("loading").style.display="flex";
-  try{const d=await apiFetch("/api/sweep");render(d);if(d.sweep_result){const r=d.sweep_result;document.getElementById("msgBox").innerHTML=`⚡扫荡${r.count}次·💎+${r.total_jade}`}}catch(e){}
-  document.getElementById("loading").style.display="none";
-}
-function doLogout(){fetch("/api/logout").then(()=>window.location.href="/login")}
-async function apiFetch(url,opts={}){
-  const r=await fetch(url,opts);
-  if(r.redirected||r.status===401){window.location.href="/login";throw new Error("auth")}
-  const d=await r.json();
-  if(d&&d.need_login){window.location.href="/login";throw new Error("auth")}
-  return d;
-}
+
+// ═══ More Missing Functions ═══
 function closeModal(){document.getElementById("modal").style.display="none"}
-function showError(m){const t=document.getElementById("errorToast");if(!t)return;t.textContent="❌"+m;t.style.display="block";setTimeout(()=>t.style.display="none",3000)}
-
-setInterval(async()=>{
-  try{const d=await apiFetch("/api/tick");if(d.tick_gain){document.getElementById("jadeDisplay").textContent=d.jade;if(d.jade_per_min)document.getElementById("jadeRate").textContent=`+${d.jade_per_min}/分`}}catch(e){}
-},30000);
-
-(async()=>{
-  try{const r=await fetch("/api/load");if(r.redirected||r.status===401){window.location.href="/login";return}const d=await r.json();if(d.need_login){window.location.href="/login";return}render(d)}catch(e){window.location.href="/login"}
+function doLogout(){
+  closeModal();closePull();
+  fetch("/api/logout").then(()=>{window.location.href="/login?nocache="+Date.now()}).catch(()=>{window.location.href="/login"});
+}
+async function doSweep(){
+  if(!game||!game.lineup||!game.lineup.length){showError("请先上阵英雄");return}
+  document.getElementById("loading").style.display="flex";
+  try{const d=await apiFetch("/api/sweep");game=d;if(d.sweep_result){showError(`⚡收菜完成 +${d.sweep_result.total_jade}💎${d.sweep_result.count>0?' +装备':''}`)}render(d)}catch(e){}
   document.getElementById("loading").style.display="none";
-})();
-</script></body></html>
+}
+
+// ═══ Auto tick & startup ═══
+setInterval(async()=>{try{const d=await apiFetch("/api/tick");if(d.tick_gain){document.getElementById("jadeDisplay").textContent=d.jade;if(d.jade_per_min)document.getElementById("jadeRate").textContent=`+${d.jade_per_min}/分`}}catch(e){}},30000);
+(async()=>{try{const r=await fetch("/api/load");if(r.redirected||r.status===401){window.location.href="/login";return}const d=await r.json();if(d.need_login){window.location.href="/login";return}render(d)}catch(e){window.location.href="/login"}document.getElementById("loading").style.display="none"})();
+</script>
+</body>
+</html>

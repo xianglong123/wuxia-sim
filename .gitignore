@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+data/wuxia.db
+data/*.db
+*.db
+.DS_Store

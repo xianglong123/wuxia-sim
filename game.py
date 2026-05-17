@@ -60,9 +60,10 @@ def api_register():
     if conn.execute("SELECT id FROM users WHERE username=?", (username,)).fetchone():
         conn.close(); return jsonify({"error":"用户名已存在"})
     conn.execute("INSERT INTO users (username, password_hash) VALUES (?,?)", (username, generate_password_hash(password)))
+    conn.commit()
     uid = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
     g = new_game_inner()
-    conn.execute("INSERT INTO game_saves (user_id, game_data) VALUES (?,?)", (uid, json.dumps(g, ensure_ascii=False)))
+    conn.execute("INSERT INTO game_saves (user_id, game_data) VALUES (?,?) ON CONFLICT(user_id) DO UPDATE SET game_data=?", (uid, json.dumps(g, ensure_ascii=False), json.dumps(g, ensure_ascii=False)))
     conn.commit(); conn.close()
     session["user_id"] = uid; session["username"] = username
     return jsonify({"ok":True, "username":username})
@@ -316,7 +317,7 @@ def new_game_inner():
 def calc_pow(all_data, lineup, inventory, equip_bag):
     t=0
     for hid in lineup:
-        inv=next((i for i in inventory if i["hero_id"]==hid and i["active"]),None)
+        inv=next((i for i in inventory if i["hero_id"]==hid),None)
         if not inv: continue
         hd=all_data.get(hid)
         if not hd: continue
@@ -355,13 +356,29 @@ def pull_h(pity):
 # 战斗引擎
 # ═══════════════════════════════════════════
 
+ENEMY_SKILLS = [
+    {"name":"横扫","aoe":True,"desc":"对全体造成伤害","debuffs":[],"buffs":[]},
+    {"name":"重击","aoe":False,"desc":"对单体造成伤害","debuffs":[],"buffs":[]},
+    {"name":"破甲","aoe":False,"desc":"降低目标防御","debuffs":[{"stat":"dmg_reduce","pct":-0.2,"dur":2}],"buffs":[]},
+    {"name":"威吓","aoe":True,"desc":"降低全体攻击","debuffs":[{"stat":"atk","pct":-0.15,"dur":2}],"buffs":[]},
+    {"name":"嗜血","aoe":False,"desc":"攻击并吸血","debuffs":[],"buffs":[]},
+    {"name":"鬼哭","aoe":True,"desc":"全体攻击+降低暴击","debuffs":[{"stat":"crit","pct":-0.2,"dur":2}],"buffs":[]},
+    {"name":"狂暴","aoe":False,"desc":"提升自身攻击","debuffs":[],"buffs":[{"stat":"atk","pct":0.25,"dur":3}]},
+    {"name":"铁壁","aoe":True,"desc":"提升全体防御","debuffs":[],"buffs":[{"stat":"dmg_reduce","pct":0.2,"dur":2}]},
+    {"name":"邪咒","aoe":True,"desc":"全体攻击+降低暴击率","debuffs":[{"stat":"atk","pct":-0.1,"dur":2,"chance":0.8}],"buffs":[]},
+    {"name":"回春","aoe":True,"desc":"回复全体血量","debuffs":[],"buffs":[],"heal":0.15},
+]
+
 def gen_enemy(name, ps):
     c=random.choice(ECS)
     hp=int(ps*random.uniform(2.0, 3.5)); atk=int(ps*random.uniform(0.08,0.15))
     q=random.choices(["凡品","良品","极品","绝品","传说"],weights=[30,30,25,12,3])[0]
+    skill=random.choice(ENEMY_SKILLS)
     return {"name":name,"class":c,"quality":q,"color":RARITY_COLORS.get(q,"#888"),
             "hp":hp,"max_hp":hp,"atk":atk,"crit":random.randint(5,30),
-            "alive":True,"shield":0,"buffs":[],"debuffs":[],"stunned":False,"frozen":False,"reflect":False}
+            "alive":True,"shield":0,"buffs":[],"debuffs":[],"stunned":False,"frozen":False,"reflect":False,
+            "skill_name":skill["name"],"skill_aoe":skill["aoe"],"skill_debuffs":skill.get("debuffs",[]),
+            "skill_buffs":skill.get("buffs",[]),"skill_heal":skill.get("heal",0)}
 
 def h2f(hid, inv):
     hd=HERO_DATA.get(hid)
@@ -374,8 +391,14 @@ def h2f(hid, inv):
             "alive":True,"shield":0,"buffs":[],"debuffs":[],"stunned":False,"frozen":False,"reflect":False,"_hd":hd}
 
 def dmg(t, raw):
+    # 免疫检查
+    immune=False
+    for b in t.get("buffs",[]):
+        if b["stat"]=="immune" and b["dur"]>0:
+            immune=True; break
+    if immune: return {"damage":0,"shield_damage":0,"immune":True}
     sh=t.get("shield",0); sd=min(sh,raw); ad=raw-sd; t["shield"]=sh-sd; t["hp"]-=ad
-    return {"damage":ad,"shield_damage":sd}
+    return {"damage":ad,"shield_damage":sd,"immune":False}
 
 def tick_b(units):
     for u in units:
@@ -398,10 +421,10 @@ def run_battle(g, stage):
         if not inv: continue
         f=h2f(hid,inv)
         if f: my_h.append(f)
-    ec=max(1,min(len(my_h)+random.randint(-1,1),5)); pp=stage["power"]/max(1,ec)
-    ene=[]; un=set()
+    ene=[]; un=set(); ec=6
     for _ in range(ec):
         n=random.choice([x for x in ENEMY_NAMES if x not in un] or ENEMY_NAMES); un.add(n)
+        pp=stage["power"]/6.0
         ene.append(gen_enemy(n,pp))
     bonds=get_bonds(g["lineup"]); turns=[]; max_r=30
     alive_h=[f for f in my_h]; alive_e=[e for e in ene]
@@ -433,41 +456,120 @@ def run_battle(g, stage):
                 if t.get("reflect") and ad>0: ref=int(ad*0.5); dmg(at,ref)
                 ls=0
                 if hd and "lifesteal" in hd.get("skill_special",[]): ls=int(ad*0.3); at["hp"]=min(at["max_hp"],at["hp"]+ls)
-                ai=my_h.index(at) if at in my_h else 0
+            ai=my_h.index(at) if at in my_h else 0
+            if aoe and len(tars)>1:
+                # 群攻：统一一个action，记录所有目标
+                targets_data=[]
+                any_crit=False
+                any_kill=False
+                for t in tars:
+                    if not t.get("alive",True): continue
+                    ba=cstat(at,"atk",at["atk"]); d=int(ba*random.uniform(0.6,1.0))
+                    sl=next((i["skill_lv"] for i in g["inventory"] if i["hero_id"]==at.get("id")),1)
+                    d=int(d*(1+(sl-1)*0.15))
+                    cr=random.random()<at["crit"]/100
+                    if cr: d=int(d*1.5)
+                    dr=cstat(t,"dmg_reduce",0); d=int(d*(1-dr))
+                r=dmg(t,d); ad=r["damage"]+r["shield_damage"]; imm=r.get("immune",False)
+                killed=t["hp"]<=0
+                if killed: t["alive"]=False
                 ti=ene.index(t) if t in ene else 0
+                if cr: any_crit=True
+                if killed: any_kill=True
+                targets_data.append({"idx":ti,"name":t["name"],"class":t["class"],"color":t["color"],
+                    "damage":ad,"crit":cr,"killed":killed,"hp_pct":max(0,t["hp"]/max(1,t["max_hp"])),
+                    "max_hp":t["max_hp"],"immune":imm})
+                # 反伤/吸血（简化：只取第一个目标的）
+                first_ad=targets_data[0]["damage"] if targets_data else 0
+                ref=0; ls=0
+                if tars and tars[0].get("reflect") and first_ad>0: ref=int(first_ad*0.5); dmg(at,ref)
+                if hd and "lifesteal" in hd.get("skill_special",[]): ls=int(first_ad*0.3); at["hp"]=min(at["max_hp"],at["hp"]+ls)
                 rt.append({"side":"ally","attacker_name":at["name"],"attacker_class":at["class"],
                     "attacker_color":at["color"],"attacker_idx":ai,
-                    "skill":hd["skill_name"] if hd else "攻击","aoe":aoe,
-                    "target_name":t["name"],"target_class":t["class"],"target_color":t["color"],"target_idx":ti,
-                    "damage":ad,"crit":cr,"killed":killed,"heal":0,"reflect_dmg":ref,"lifesteal":ls,
-                    "target_hp_pct":max(0,t["hp"]/max(1,t["max_hp"]))})
+                    "skill":hd["skill_name"] if hd else "攻击","aoe":True,
+                    "targets":targets_data,
+                    "damage":first_ad,"crit":any_crit,"killed":any_kill,"heal":0,"reflect_dmg":ref,"lifesteal":ls})
+            else:
+                for t in tars:
+                    if not t.get("alive",True): continue
+                    ba=cstat(at,"atk",at["atk"]); d=int(ba*random.uniform(0.6,1.0))
+                    sl=next((i["skill_lv"] for i in g["inventory"] if i["hero_id"]==at.get("id")),1)
+                    d=int(d*(1+(sl-1)*0.15))
+                    cr=random.random()<at["crit"]/100
+                    if cr: d=int(d*1.5)
+                    dr=cstat(t,"dmg_reduce",0); d=int(d*(1-dr))
+                    r=dmg(t,d); ad=r["damage"]+r["shield_damage"]
+                    killed=t["hp"]<=0
+                    if killed: t["alive"]=False
+                    ref=0
+                    if t.get("reflect") and ad>0: ref=int(ad*0.5); dmg(at,ref)
+                    ls=0
+                    if hd and "lifesteal" in hd.get("skill_special",[]): ls=int(ad*0.3); at["hp"]=min(at["max_hp"],at["hp"]+ls)
+                    ti=ene.index(t) if t in ene else 0
+                    rt.append({"side":"ally","attacker_name":at["name"],"attacker_class":at["class"],
+                        "attacker_color":at["color"],"attacker_idx":ai,
+                        "skill":hd["skill_name"] if hd else "攻击","aoe":False,
+                        "target_name":t["name"],"target_class":t["class"],"target_color":t["color"],"target_idx":ti,
+                        "damage":ad,"crit":cr,"killed":killed,"heal":0,"reflect_dmg":ref,"lifesteal":ls,
+                        "target_hp_pct":max(0,t["hp"]/max(1,t["max_hp"])),"target_max_hp":t["max_hp"]})
+            # buff/debuff：统一应用到所有目标（而非逐个）
             if hd:
-                for b in hd.get("skill_buffs",[]): at["buffs"].append({"stat":b["stat"],"pct":b["pct"],"dur":b["dur"]})
-                for d_ in hd.get("skill_debuffs",[]):
-                    for t in tars:
-                        if random.random()<(d_.get("chance",1.0)): t["debuffs"].append({"stat":d_["stat"],"pct":d_["pct"],"dur":d_["dur"]})
-        # 敌方
+                for b in hd.get("skill_buffs",[]):
+                    at["buffs"].append({"stat":b["stat"],"pct":b["pct"],"dur":b["dur"]})
+                if hd.get("skill_debuffs"):
+                    for d_ in hd["skill_debuffs"]:
+                        for t in tars:
+                            if random.random()<(d_.get("chance",1.0)):
+                                t["debuffs"].append({"stat":d_["stat"],"pct":d_["pct"],"dur":d_["dur"]})
+        # 敌方（带技能）
         for at in list(alive_e):
-            if not at.get("alive",True): continue
-            t=random.choice(alive_h) if alive_h else None
-            if not t: continue
-            ba=cstat(at,"atk",at["atk"]); d=int(ba*random.uniform(0.4,0.8))
-            cr=random.random()<at["crit"]/100
-            if cr: d=int(d*1.5)
-            dr=cstat(t,"dmg_reduce",0); d=int(d*(1-dr))
-            r=dmg(t,d); ad=r["damage"]+r["shield_damage"]
-            killed=t["hp"]<=0
-            if killed: t["alive"]=False
-            ref=0
-            if t.get("reflect") and ad>0: ref=int(ad*0.5); dmg(at,ref)
-            ti=my_h.index(t) if t in my_h else 0
-            ai=ene.index(at) if at in ene else 0
+            if not at.get("alive",True) or at.get("stunned") or at.get("frozen"): continue
+            sk_name=at.get("skill_name","攻击"); sk_aoe=at.get("skill_aoe",False)
+            heal_pct=at.get("skill_heal",0)
+            # 治疗
+            if heal_pct>0 and random.random()<0.35:
+                for target in alive_e:
+                    if not target.get("alive",True): continue
+                    heal=int(target["max_hp"]*heal_pct)
+                    target["hp"]=min(target["max_hp"],target["hp"]+heal)
+                    ti=ene.index(target) if target in ene else 0; ai=ene.index(at) if at in ene else 0
+                    rt.append({"side":"heal","attacker_name":at["name"],"attacker_class":at["class"],
+                        "attacker_color":at["color"],"attacker_idx":ai,
+                        "skill":sk_name,"aoe":True,
+                        "target_name":target["name"],"target_class":target["class"],"target_color":target["color"],"target_idx":ti,
+                        "damage":0,"crit":False,"killed":False,"heal":heal,"reflect_dmg":0,"lifesteal":0,
+                        "target_hp_pct":target["hp"]/max(1,target["max_hp"])})
+                continue
+            # 攻击
+            if sk_aoe:
+                tars=list(alive_h)
+            else:
+                tars=[random.choice(alive_h)] if alive_h else []
+            for t in tars:
+                if not t.get("alive",True): continue
+                ba=cstat(at,"atk",at["atk"]); d=int(ba*random.uniform(0.4,0.8))
+                cr=random.random()<at["crit"]/100
+                if cr: d=int(d*1.5)
+                dr=cstat(t,"dmg_reduce",0); d=int(d*(1-dr))
+                r=dmg(t,d); ad=r["damage"]+r["shield_damage"]; imm=r.get("immune",False)
+                killed=t["hp"]<=0
+                if killed: t["alive"]=False
+                ref=0; ls=0
+                if t.get("reflect") and ad>0: ref=int(ad*0.5); dmg(at,ref)
+                ti=my_h.index(t) if t in my_h else 0; ai=ene.index(at) if at in ene else 0
+                # 应用debuff
+                for d_ in at.get("skill_debuffs",[]):
+                    if random.random()<(d_.get("chance",1.0)):
+                        t["debuffs"].append({"stat":d_["stat"],"pct":d_["pct"],"dur":d_["dur"]})
             rt.append({"side":"enemy","attacker_name":at["name"],"attacker_class":at["class"],
                 "attacker_color":at["color"],"attacker_idx":ai,
-                "skill":"攻击","aoe":False,
+                "skill":sk_name,"aoe":sk_aoe,
                 "target_name":t["name"],"target_class":t["class"],"target_color":t["color"],"target_idx":ti,
                 "damage":ad,"crit":cr,"killed":killed,"heal":0,"reflect_dmg":ref,"lifesteal":0,
-                "target_hp_pct":max(0,t["hp"]/max(1,t["max_hp"]))})
+                "target_hp_pct":max(0,t["hp"]/max(1,t["max_hp"])),"target_max_hp":t["max_hp"]})
+            # 自身buff
+            for b in at.get("skill_buffs",[]):
+                at["buffs"].append({"stat":b["stat"],"pct":b["pct"],"dur":b["dur"]})
         # 治疗
         for f in alive_h:
             if not f.get("alive",True): continue
@@ -482,13 +584,34 @@ def run_battle(g, stage):
                 for t in tars:
                     heal=int(t["max_hp"]*hpct)
                     t["hp"]=min(t["max_hp"],t["hp"]+heal)
-                    ti=my_h.index(t) if t in my_h else 0; ai=my_h.index(f) if f in my_h else 0
+                    hd_skill=hd["skill_name"] if hd else "回春术"
+                # 群奶buff：应用到所有被治疗的目标
+                if hd:
+                    for t in tars:
+                        for b in hd.get("skill_buffs",[]):
+                            t["buffs"].append({"stat":b["stat"],"pct":b["pct"],"dur":b["dur"]})
+                        if "immunity" in hd.get("skill_special",[]):
+                            t["buffs"].append({"stat":"immune","pct":1.0,"dur":2})
+                if hd.get("skill_target")=="all_ally" and len(tars)>1:
+                    ti_list=[]
+                    for t in tars:
+                        ti=my_h.index(t) if t in my_h else 0
+                        ti_list.append({"idx":ti,"name":t["name"],"heal":int(t["max_hp"]*hpct),"hp_pct":t["hp"]/max(1,t["max_hp"]),
+                            "buffs":hd.get("skill_buffs",[]) if hd else [],"max_hp":t["max_hp"]})
+                    ai=my_h.index(f) if f in my_h else 0
                     rt.append({"side":"heal","attacker_name":f["name"],"attacker_class":f["class"],
                         "attacker_color":f["color"],"attacker_idx":ai,
-                        "skill":"回春术","aoe":len(tars)>1,
-                        "target_name":t["name"],"target_class":t["class"],"target_color":t["color"],"target_idx":ti,
-                        "damage":0,"crit":False,"killed":False,"heal":heal,"reflect_dmg":0,"lifesteal":0,
-                        "target_hp_pct":t["hp"]/max(1,t["max_hp"])})
+                        "skill":hd_skill,"aoe":True,"heal":len(tars)>0,
+                        "targets":ti_list,"damage":0,"crit":False,"killed":False,"reflect_dmg":0,"lifesteal":0})
+                else:
+                    ai=my_h.index(f) if f in my_h else 0
+                    ti=my_h.index(tars[0]) if tars and tars[0] in my_h else 0
+                    rt.append({"side":"heal","attacker_name":f["name"],"attacker_class":f["class"],
+                        "attacker_color":f["color"],"attacker_idx":ai,
+                        "skill":hd_skill,"aoe":False,
+                        "target_name":tars[0]["name"],"target_class":tars[0]["class"],"target_color":tars[0]["color"],"target_idx":ti,
+                        "damage":0,"crit":False,"killed":False,"heal":int(tars[0]["max_hp"]*hpct),"reflect_dmg":0,"lifesteal":0,
+                        "target_hp_pct":tars[0]["hp"]/max(1,tars[0]["max_hp"])})
         if rt: turns.append({"round":ri+1,"actions":rt})
         alive_h=[f for f in my_h if f.get("alive",True)]
         alive_e=[e for e in ene if e.get("alive",True)]
@@ -497,10 +620,13 @@ def run_battle(g, stage):
     r["my_heroes"]=[{"name":f["name"],"class":f["class"],"quality":f["quality"],"color":f["color"],
         "max_hp":f["max_hp"],"atk":f["atk"],"hp_pct":max(0,f["hp"]/max(1,f["max_hp"])),"alive":f.get("alive",True),
         "shield_pct":f.get("shield",0)/max(1,f["max_hp"]),
+        "eff_atk":cstat(f,"atk",f["atk"]),
+        "eff_crit":cstat(f,"crit",f["crit"]),
         "buffs":[b["stat"] for b in f.get("buffs",[])],
         "debuffs":[d["stat"] for d in f.get("debuffs",[])]} for f in my_h]
     r["enemies"]=[{"name":e["name"],"class":e["class"],"quality":e["quality"],"color":e["color"],
         "max_hp":e["max_hp"],"atk":e["atk"],"hp_pct":max(0,e["hp"]/max(1,e["max_hp"])),"alive":e.get("alive",True),
+        "eff_atk":cstat(e,"atk",e["atk"]),
         "buffs":[b["stat"] for b in e.get("buffs",[])],
         "debuffs":[d["stat"] for d in e.get("debuffs",[])]} for e in ene]
     r["bonds"]=[{"name":b["name"],"desc":b["desc"]} for b in bonds]
@@ -616,9 +742,15 @@ def api_pull10():
 def api_lineup_toggle(hero_id):
     g=load_game()
     if not g: return api_new()
-    if hero_id in g["lineup"]: g["lineup"].remove(hero_id)
-    elif len(g["lineup"])>=6: return jsonify({"error":"阵容最多6人",**to_client(g)})
-    else: g["lineup"].append(hero_id)
+    if hero_id in g["lineup"]:
+        g["lineup"].remove(hero_id)
+    elif len(g["lineup"])>=6:
+        return jsonify({"error":"阵容最多6人",**to_client(g)})
+    else:
+        g["lineup"].append(hero_id)
+        # 确保 active 标记
+        inv=next((i for i in g["inventory"] if i["hero_id"]==hero_id),None)
+        if inv: inv["active"]=True
     save_game(g); return jsonify(to_client(g))
 
 @app.route("/api/equip/<hero_id>/<slot>/<eq_id>")
