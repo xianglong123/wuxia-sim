@@ -1120,11 +1120,16 @@ function closePull(){document.getElementById("pullModal").style.display="none";i
 
 // ═══ Missing Functions ═══
 async function apiFetch(url, options){
-  const r=await fetch(url, options||{});
+  if(!options)options={};
+  if(options.method==="POST"){
+    if(!options.headers)options.headers={"Content-Type":"application/json"};
+    if(!options.body)options.body="{}";
+  }
+  const r=await fetch(url, options);
   if(r.redirected||r.status===401||r.status===302){window.location.href="/login";throw new Error("未登录")}
-  const d=await r.json();
-  if(d.error){showError(d.error);throw new Error(d.error)}
-  return d;
+  const txt=await r.text();
+  try{const d=JSON.parse(txt);if(d.error){showError(d.error);throw new Error(d.error)};return d}
+  catch(e){if(txt.startsWith("<!doctype")){window.location.href="/login";throw new Error("未登录")};showError("请求失败");throw new Error("解析失败")}
 }
 function showError(msg){
   const el=document.getElementById("errorToast");if(!el)return;
