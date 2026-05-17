@@ -297,7 +297,7 @@ reg({"id":"zhaoyun","name":"赵云","class":"战士","quality":"传说","color":
     "hp":3200,"atk":420,"crit":22,"spd":150,"skill_cost":130,
     "skill_name":"七进七出","skill_desc":"冲入敌阵连续冲锋7次，每次对全体敌人造成30%伤害+10%吸血",
     "skill_aoe":True,"skill_target":"all_enemy","skill_dmg_pct":0.3,"skill_special":["multi_hit","lifesteal"],
-    "skill_upgrades":{3:"冲锋吸血20%",5:"优先攻击后排",7:"终结一击:半血以下直接斩杀", 9:"#1开局满能量"},
+    "skill_upgrades":{3:"冲锋吸血20%",5:"优先攻击后排",7:"终结一击:15%以下斩杀", 9:"#1开局满能量"},
     "basic_name":"龙胆亮银","basic_desc":"亮银枪出如龙，攻击2次每次100%伤害","basic_dmg_pct":1.0,"basic_energy_gain":40,
     "basic_aoe":False,"basic_target":"single","basic_special":[{"type":"multi_hit","count":2}],
     "passive_name":"一身是胆","passive_desc":"每损失10%血量攻击+8%","passive_upgrades":{3:"每损失10%额外+5%暴击",5:"低于30%无敌1秒",7:"损失血量加成翻倍"}})
@@ -305,7 +305,7 @@ reg({"id":"guanyu","name":"关羽","class":"战士","quality":"传说","color":"
     "hp":3500,"atk":500,"crit":28,"spd":155,"skill_cost":120,
     "skill_name":"青龙偃月","skill_desc":"蓄力后挥出惊世一刀，对全体敌人造成300%伤害",
     "skill_aoe":True,"skill_target":"all_enemy","skill_special":["execute"],
-    "skill_upgrades":{3:"蓄力期间免疫控制",5:"刀气留痕每秒20%×3回合",7:"血量低于50%的敌人直接斩杀", 9:"#1攻击+30%+武圣"},
+    "skill_upgrades":{3:"蓄力期间免疫控制",5:"刀气留痕每秒20%×3回合",7:"血量低于20%直接斩杀", 9:"#1攻击+30%+武圣"},
     "basic_name":"拖刀斩","basic_desc":"拖刀蓄力势如破竹，造成100%伤害","basic_dmg_pct":1.0,"basic_energy_gain":40,
     "basic_aoe":False,"basic_target":"single","basic_special":[],
     "passive_name":"武圣","passive_desc":"开局第一刀必定暴击伤害+50%","passive_upgrades":{3:"第一刀伤害翻倍",5:"前三刀必定暴击",7:"武圣降临:第一次技能真实伤害"}})
@@ -1386,12 +1386,12 @@ def apply_skill_upgrades(unit, hd, sk_lv, allies, enemies, sk_context):
     # ─── Lv7 ───
     if sk_lv>=7:
         if hid=="zhaoyun":
-            extra["execute_pct"]=True  # 赵云Lv7: 终结一击，血量低于50%直接斩杀
+            extra["execute_pct"]=0.15  # 赵云Lv7: 终结一击，血量低于15%直接斩杀
         if hid=="zhangfei":
             if not extra.get("extra_buffs"): extra["extra_buffs"]=[]
             extra["extra_buffs"].append({"stat":"invincible","pct":1.0,"dur":1})  # 张飞Lv7: 全体无敌1回合
         if hid=="guanyu":
-            extra["execute_pct"]=True  # 关羽Lv7: 血量低于50%斩杀
+            extra["execute_pct"]=0.2  # 关羽Lv7: 血量低于20%斩杀
         if hid=="lihai":
             extra["guaranteed_crit"]=True  # 李白Lv7: 剑开天门必定暴击
             extra["extra_damage"]=5.0  # 剑开天门: ATK×5真实伤害
@@ -1703,8 +1703,8 @@ def hero_use_skill(unit, allies, enemies):
         if cr: d=int(d*1.5)
         # 养由基Lv5: 暴击4倍
         if cr and up and up.get("quad_crit"): d*=4
-        # 关羽Lv7: 斩杀(HP<50%直接杀)
-        if up and up.get("execute_pct") and t["hp"]/max(1,t["max_hp"])<0.5:
+        # 赵云Lv7/关羽Lv7: 斩杀(HP低于阈值直接杀)
+        if up and up.get("execute_pct") and t["hp"]/max(1,t["max_hp"])<up["execute_pct"]:
             d=t["hp"]
         # 减伤
         dr=get_dmg_reduce(t)

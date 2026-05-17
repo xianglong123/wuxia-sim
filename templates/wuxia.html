@@ -714,7 +714,7 @@ function updateCardEnergy(act){
   const myCards=document.querySelectorAll("#bc-my .bc-card");
   for(let c of myCards){
     const nm=c.querySelector(".bc-name");
-    if(nm&&nm.textContent===act.attacker_name){
+    if(nm&&nm.textContent.includes(act.attacker_name)){
       const enEl=c.querySelector(".bc-energy-num");
       if(enEl){enEl.textContent="⚡"+energy}
       const efEl=c.querySelector(".bc-energy-fill");
