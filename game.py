@@ -128,7 +128,7 @@ reg({"id":"lisi","name":"李四","class":"战士","quality":"凡品","color":"#8
     "hp":800,"atk":100,"crit":5,"spd":90,"skill_cost":70,
     "skill_name":"乱砍","skill_desc":"对单个敌人造成80%伤害，30%概率降低目标攻击10%×2回合",
     "skill_aoe":False,"skill_target":"single","skill_special":[],"skill_debuffs":[{"stat":"atk","pct":-0.1,"dur":2,"chance":0.3}],
-    "skill_upgrades":{3:"伤害120%, 削弱概率50%"},
+    "skill_upgrades":{3:"伤害120%, 削弱概率50%", 9:"#1攻击+15%"},
     "basic_name":"横劈","basic_desc":"挥刀横斩，造成100%伤害","basic_dmg_pct":1.0,"basic_energy_gain":40,
     "basic_aoe":False,"basic_target":"single","basic_special":[],
     "passive_name":"蛮力","passive_desc":"攻击力+10%","passive_upgrades":{3:"攻击力+20%"}})
@@ -136,7 +136,7 @@ reg({"id":"wangdazhuang","name":"王大壮","class":"肉盾","quality":"凡品",
     "hp":2000,"atk":60,"crit":2,"spd":80,"skill_cost":80,
     "skill_name":"站住别跑","skill_desc":"嘲讽一个敌人，自身减伤30%×2回合",
     "skill_aoe":False,"skill_target":"single","skill_special":["taunt"],"skill_buffs":[{"stat":"dmg_reduce","pct":0.3,"dur":2}],
-    "skill_upgrades":{3:"嘲讽两个敌人，减伤50%"},
+    "skill_upgrades":{3:"嘲讽两个敌人，减伤50%", 9:"#2血量+20%"},
     "basic_name":"盾击","basic_desc":"盾牌猛击，造成80%伤害并自身减伤5%×1回合","basic_dmg_pct":0.8,"basic_energy_gain":40,
     "basic_aoe":False,"basic_target":"single","basic_special":[{"type":"self_buff","stat":"dmg_reduce","pct":0.05,"dur":1}],
     "passive_name":"皮厚","passive_desc":"血量+15%","passive_upgrades":{3:"血量+25%"}})
@@ -145,7 +145,7 @@ reg({"id":"xiaocui","name":"小翠","class":"奶妈","quality":"凡品","color":
     "skill_name":"包扎","skill_desc":"回复一个队友20%血量，增加防御15%×2回合",
     "skill_aoe":False,"skill_target":"lowest_hp_ally","skill_heal_pct":0.2,
     "skill_buffs":[{"stat":"dmg_reduce","pct":0.15,"dur":2}],
-    "skill_upgrades":{3:"回复30%，防御加成25%"},
+    "skill_upgrades":{3:"回复30%，防御加成25%", 9:"#3治疗+15%"},
     "basic_name":"针灸","basic_desc":"银针轻刺，回复最低血量队友15%","basic_dmg_pct":0,"basic_energy_gain":50,
     "basic_aoe":False,"basic_target":"lowest_hp_ally","basic_special":[{"type":"heal","pct":0.15}],
     "passive_name":"细心","passive_desc":"治疗量+10%","passive_upgrades":{3:"治疗量+20%"}})
@@ -153,7 +153,7 @@ reg({"id":"zhangtiezhu","name":"张铁柱","class":"射手","quality":"凡品","
     "hp":700,"atk":120,"crit":8,"spd":120,"skill_cost":70,
     "skill_name":"扔石头","skill_desc":"对单个敌人造成100%伤害，20%概率眩晕",
     "skill_aoe":False,"skill_target":"single","skill_special":["stun"],
-    "skill_upgrades":{3:"伤害120%，眩晕概率35%"},
+    "skill_upgrades":{3:"伤害120%，眩晕概率35%", 9:"#4暴击+8%"},
     "basic_name":"射击","basic_desc":"瞄准射击，造成120%伤害","basic_dmg_pct":1.2,"basic_energy_gain":50,
     "basic_aoe":False,"basic_target":"single","basic_special":[],
     "passive_name":"鹰眼","passive_desc":"命中率+10%","passive_upgrades":{3:"命中率+20%"}})
@@ -163,7 +163,7 @@ reg({"id":"huangzhong","name":"黄忠老将","class":"射手","quality":"良品"
     "hp":1000,"atk":220,"crit":15,"spd":95,"skill_cost":90,
     "skill_name":"百步穿杨","skill_desc":"狙击敌方后排，造成200%伤害，必定暴击",
     "skill_aoe":False,"skill_target":"back_row","skill_special":["guaranteed_crit"],
-    "skill_upgrades":{3:"伤害250%，爆伤翻倍",5:"攻击后排全体"},
+    "skill_upgrades":{3:"伤害250%，爆伤翻倍",5:"攻击后排全体", 9:"#4攻击+20%"},
     "basic_name":"劲射","basic_desc":"强力射击，造成120%伤害","basic_dmg_pct":1.2,"basic_energy_gain":50,
     "basic_aoe":False,"basic_target":"single","basic_special":[],
     "passive_name":"老当益壮","passive_desc":"高于50%血量时攻击+20%","passive_upgrades":{3:"攻击+35%",5:"触发条件降至30%"}})
@@ -171,7 +171,7 @@ reg({"id":"guojia","name":"郭奉孝","class":"法师","quality":"良品","color
     "hp":800,"atk":280,"crit":12,"spd":135,"skill_cost":110,
     "skill_name":"冰霜术","skill_desc":"对全体敌人造成80%伤害，40%概率冰冻1回合",
     "skill_aoe":True,"skill_target":"all_enemy","skill_special":["freeze"],
-    "skill_upgrades":{3:"冰冻概率60%，伤害120%",5:"冰冻持续2回合"},
+    "skill_upgrades":{3:"冰冻概率60%，伤害120%",5:"冰冻持续2回合", 9:"#5能量+40"},
     "basic_name":"凝冰","basic_desc":"冰晶飞射，造成80%伤害，10%概率冰冻","basic_dmg_pct":0.8,"basic_energy_gain":40,
     "basic_aoe":False,"basic_target":"single","basic_special":[{"type":"debuff","stat":"stun","chance":0.1,"dur":1}],
     "passive_name":"奇谋","passive_desc":"战斗开始回复全体15%血量","passive_upgrades":{3:"回复25%",5:"额外增加10%攻击buff"}})
@@ -179,7 +179,7 @@ reg({"id":"yanshisan","name":"燕十三","class":"刺客","quality":"良品","co
     "hp":500,"atk":350,"crit":35,"spd":170,"skill_cost":90,
     "skill_name":"背刺","skill_desc":"对血量最低敌人造成250%伤害，击杀后刷新技能",
     "skill_aoe":False,"skill_target":"lowest_hp","skill_special":["refresh_on_kill"],
-    "skill_upgrades":{3:"伤害350%",5:"击杀后攻击+20%×2回合"},
+    "skill_upgrades":{3:"伤害350%",5:"击杀后攻击+20%×2回合", 9:"#6暴击+15%"},
     "basic_name":"暗影刺","basic_desc":"迅捷突刺，造成130%伤害，能量回复+10","basic_dmg_pct":1.3,"basic_energy_gain":50,
     "basic_aoe":False,"basic_target":"single","basic_special":[],
     "passive_name":"影步","passive_desc":"闪避率+15%","passive_upgrades":{3:"闪避+25%",5:"闪避后回血10%"}})
@@ -197,7 +197,7 @@ reg({"id":"xiahoudun","name":"夏侯惇","class":"战士","quality":"极品","co
     "hp":2800,"atk":340,"crit":15,"spd":100,"skill_cost":120,
     "skill_name":"拔矢啖睛","skill_desc":"自损10%血量，对全体造成血量×6伤害，50%吸血",
     "skill_aoe":True,"skill_target":"all_enemy","skill_special":["lifesteal"],
-    "skill_upgrades":{3:"伤害系数×10，自损5%",5:"获得护盾(吸收30%最大血量)"},
+    "skill_upgrades":{3:"伤害系数×10，自损5%",5:"获得护盾(吸收30%最大血量)", 9:"#1血量+30%+反伤"},
     "basic_name":"怒斩","basic_desc":"含怒挥刀，造成100%伤害，吸血20%","basic_dmg_pct":1.0,"basic_energy_gain":40,
     "basic_aoe":False,"basic_target":"single","basic_special":[{"type":"lifesteal","pct":0.2}],
     "passive_name":"刚烈","passive_desc":"受到暴击时反弹150%伤害","passive_upgrades":{3:"反弹200%",5:"任何攻击30%反弹"}})
@@ -205,7 +205,7 @@ reg({"id":"caiwenji","name":"蔡文姬","class":"奶妈","quality":"极品","col
     "hp":1500,"atk":180,"crit":8,"spd":115,"skill_cost":130,
     "skill_name":"胡笳十八拍","skill_desc":"全体回复20%+驱散所有负面+攻击+20%×2回合",
     "skill_aoe":True,"skill_target":"all_ally","skill_heal_pct":0.2,"skill_special":["cleanse"],"skill_buffs":[{"stat":"atk","pct":0.2,"dur":2}],
-    "skill_upgrades":{3:"额外获得30%护盾",5:"攻击加成提升至35%"},
+    "skill_upgrades":{3:"额外获得30%护盾",5:"攻击加成提升至35%", 9:"#3护盾25%"},
     "basic_name":"抚琴","basic_desc":"轻拨琴弦，全体回复8%血量","basic_dmg_pct":0,"basic_energy_gain":50,
     "basic_aoe":True,"basic_target":"all_ally","basic_special":[{"type":"heal","pct":0.08}],
     "passive_name":"悲歌","passive_desc":"队友死亡时全体回复25%","passive_upgrades":{3:"回复40%",5:"触发时自身无敌2秒"}})
@@ -213,7 +213,7 @@ reg({"id":"ganning","name":"甘宁","class":"刺客","quality":"极品","color":
     "hp":900,"atk":400,"crit":40,"spd":145,"skill_cost":110,
     "skill_name":"锦帆夜袭","skill_desc":"突袭敌方后排全体，造成180%伤害，暴击时击晕",
     "skill_aoe":True,"skill_target":"back_row","skill_special":["stun_on_crit"],
-    "skill_upgrades":{3:"伤害250%，击杀后额外行动",5:"必定暴击，伤害350%"},
+    "skill_upgrades":{3:"伤害250%，击杀后额外行动",5:"必定暴击，伤害350%", 9:"#6攻击+25%"},
     "basic_name":"铃铛斩","basic_desc":"铃响刀至，造成120%伤害","basic_dmg_pct":1.2,"basic_energy_gain":50,
     "basic_aoe":False,"basic_target":"single","basic_special":[],
     "passive_name":"铃铛","passive_desc":"战斗开始降低敌方全体10%攻击","passive_upgrades":{3:"降低20%",5:"额外降低5%暴击"}})
@@ -221,7 +221,7 @@ reg({"id":"dianwei","name":"典韦","class":"肉盾","quality":"极品","color":
     "hp":4000,"atk":200,"crit":8,"spd":88,"skill_cost":100,
     "skill_name":"古之恶来","skill_desc":"狂暴:攻击+60%+吸血40%+反弹50%×3回合",
     "skill_aoe":False,"skill_target":"self","skill_special":["lifesteal","reflect"],"skill_buffs":[{"stat":"atk","pct":0.6,"dur":3}],
-    "skill_upgrades":{3:"狂暴期间免疫控制",5:"结束时对全体造成200%伤害"},
+    "skill_upgrades":{3:"狂暴期间免疫控制",5:"结束时对全体造成200%伤害", 9:"#2血量+40%"},
     "basic_name":"巨力挥击","basic_desc":"铁戟横扫，造成120%伤害，回复自身5%血量","basic_dmg_pct":1.2,"basic_energy_gain":40,
     "basic_aoe":False,"basic_target":"single","basic_special":[{"type":"self_heal","pct":0.05}],
     "passive_name":"死战","passive_desc":"血量低于20%时攻击翻倍","passive_upgrades":{3:"触发阈值30%",5:"血量低于20%无敌2秒"}})
@@ -231,7 +231,7 @@ reg({"id":"yangyouji","name":"养由基","class":"射手","quality":"绝品","co
     "hp":1800,"atk":520,"crit":30,"spd":110,"skill_cost":110,
     "skill_name":"穿云箭","skill_desc":"穿透全体敌人造成200%伤害，无视护盾，暴击伤害翻倍",
     "skill_aoe":True,"skill_target":"all_enemy","skill_special":["ignore_shield"],
-    "skill_upgrades":{3:"穿透后暴击率+30%",5:"暴击时4倍伤害",7:"一箭双雕:攻击两次"},
+    "skill_upgrades":{3:"穿透后暴击率+30%",5:"暴击时4倍伤害",7:"一箭双雕:攻击两次", 9:"#4攻击+30%+首击必暴"},
     "basic_name":"精准射击","basic_desc":"百步穿杨，造成150%伤害","basic_dmg_pct":1.5,"basic_energy_gain":50,
     "basic_aoe":False,"basic_target":"single","basic_special":[],
     "passive_name":"百发百中","passive_desc":"无视闪避，暴击率+15%","passive_upgrades":{3:"暴击率+25%",5:"爆伤+50%",7:"每暴击一次攻击+5%"}})
@@ -239,7 +239,7 @@ reg({"id":"luobu","name":"吕布","class":"战士","quality":"绝品","color":"#
     "hp":3500,"atk":480,"crit":18,"spd":130,"skill_cost":130,
     "skill_name":"方天画戟","skill_desc":"横扫前排全体造成180%伤害，降低目标攻击20%×2回合",
     "skill_aoe":True,"skill_target":"front_row","skill_debuffs":[{"stat":"atk","pct":-0.2,"dur":2}],
-    "skill_upgrades":{3:"击退附带眩晕1回合",5:"只命中一个敌人时伤害翻倍",7:"技能范围扩大至全体"},
+    "skill_upgrades":{3:"击退附带眩晕1回合",5:"只命中一个敌人时伤害翻倍",7:"技能范围扩大至全体", 9:"#1攻击+40%"},
     "basic_name":"横戟","basic_desc":"方天画戟横扫，对前排全体造成80%伤害","basic_dmg_pct":0.8,"basic_energy_gain":40,
     "basic_aoe":True,"basic_target":"front_row","basic_special":[],
     "passive_name":"无双","passive_desc":"每击败一个敌人攻击+20%(最多3层)","passive_upgrades":{3:"每层+25%最多4层",5:"每层额外+10%暴击",7:"满层技能无冷却"}})
@@ -247,7 +247,7 @@ reg({"id":"zhugeliang","name":"诸葛亮","class":"法师","quality":"绝品","c
     "hp":2200,"atk":420,"crit":20,"spd":140,"skill_cost":130,
     "skill_name":"借东风","skill_desc":"召唤暴风攻击全体敌人，造成150%伤害+降低攻击20%×3回合",
     "skill_aoe":True,"skill_target":"all_enemy","skill_debuffs":[{"stat":"atk","pct":-0.2,"dur":3}],
-    "skill_upgrades":{3:"暴风附带闪电:额外50%伤害",5:"降低攻击30%+减速",7:"暴风持续3回合叠加"},
+    "skill_upgrades":{3:"暴风附带闪电:额外50%伤害",5:"降低攻击30%+减速",7:"暴风持续3回合叠加", 9:"#5能量+60+技能增伤"},
     "basic_name":"羽扇纶巾","basic_desc":"轻摇羽扇，造成100%伤害","basic_dmg_pct":1.0,"basic_energy_gain":50,
     "basic_aoe":False,"basic_target":"single","basic_special":[],
     "passive_name":"空城计","passive_desc":"血量低于30%时隐身2秒","passive_upgrades":{3:"隐身每秒回血5%",5:"隐身结束全队回血10%",7:"隐身技能加速2倍"}})
@@ -255,7 +255,7 @@ reg({"id":"pangtong","name":"庞统","class":"法师","quality":"绝品","color"
     "hp":1800,"atk":460,"crit":22,"spd":125,"skill_cost":120,
     "skill_name":"连环计","skill_desc":"对全体敌人施加锁链造成120%伤害+灼烧(每回合15%×2回合)",
     "skill_aoe":True,"skill_target":"all_enemy","skill_special":["burn"],
-    "skill_upgrades":{3:"灼烧期间无法治疗",5:"锁链爆炸额外150%伤害",7:"灼烧传播至新敌人"},
+    "skill_upgrades":{3:"灼烧期间无法治疗",5:"锁链爆炸额外150%伤害",7:"灼烧传播至新敌人", 9:"#5锁链全体易伤"},
     "basic_name":"锁链击","basic_desc":"铁索横空，造成100%伤害并5%灼烧×2回合","basic_dmg_pct":1.0,"basic_energy_gain":40,
     "basic_aoe":False,"basic_target":"single","basic_special":[{"type":"burn","pct":0.05,"dur":2}],
     "passive_name":"铁索连舟","passive_desc":"战斗开始锁住全体敌人2秒","passive_upgrades":{3:"锁住3秒",5:"锁住期间受伤+30%",7:"解锁时造成200%伤害"}})
@@ -265,7 +265,7 @@ reg({"id":"lihai","name":"李白","class":"战士","quality":"传说","color":"#
     "hp":2800,"atk":580,"crit":25,"spd":160,"skill_cost":140,
     "skill_name":"青莲剑诀","skill_desc":"掷出佩剑化为漫天剑光，攻击全体敌人3次，每剑80%伤害",
     "skill_aoe":True,"skill_target":"all_enemy","skill_special":["multi_hit"],
-    "skill_upgrades":{3:"第四剑追击+暴击率+20%",5:"剑气纵横:每剑120%",7:"剑开天门:9999真实伤害必定暴击"},
+    "skill_upgrades":{3:"第四剑追击+暴击率+20%",5:"剑气纵横:每剑120%",7:"剑开天门:9999真实伤害必定暴击", 9:"#6攻击+50%+15%吸血"},
     "basic_name":"月下独酌","basic_desc":"剑光如月，攻击2次每次80%伤害","basic_dmg_pct":0.8,"basic_energy_gain":45,
     "basic_aoe":False,"basic_target":"single","basic_special":[{"type":"multi_hit","count":2}],
     "passive_name":"斗酒诗百篇","passive_desc":"每击败一个敌人攻击+12%(最多5层)","passive_upgrades":{3:"上限8层",5:"每层+20%",7:"满层技能必定暴击"}})
@@ -273,7 +273,7 @@ reg({"id":"zhangfei","name":"张飞","class":"肉盾","quality":"传说","color"
     "hp":4800,"atk":320,"crit":10,"spd":80,"skill_cost":140,
     "skill_name":"当阳怒吼","skill_desc":"全屏嘲讽全体敌人3回合，全体队友获得护盾(吸收25%最大血量)",
     "skill_aoe":True,"skill_target":"all_enemy","skill_special":["taunt","shield_ally"],
-    "skill_upgrades":{3:"怒吼降低敌人攻击25%",5:"护盾破碎爆炸",7:"全体队友无敌1回合"},
+    "skill_upgrades":{3:"怒吼降低敌人攻击25%",5:"护盾破碎爆炸",7:"全体队友无敌1回合", 9:"#2血量+50%+护盾30%"},
     "basic_name":"蛇矛突刺","basic_desc":"丈八蛇矛突刺，造成120%伤害，自身减伤5%×1回合","basic_dmg_pct":1.2,"basic_energy_gain":40,
     "basic_aoe":False,"basic_target":"single","basic_special":[{"type":"self_buff","stat":"dmg_reduce","pct":0.05,"dur":1}],
     "passive_name":"万人敌","passive_desc":"每受一次攻击+5%攻击(最多10层)","passive_upgrades":{3:"上限15层",5:"每层额外+5%减伤",7:"满层反击100%"}})
@@ -281,7 +281,7 @@ reg({"id":"diaochan","name":"貂蝉","class":"刺客","quality":"传说","color"
     "hp":1800,"atk":650,"crit":45,"spd":200,"skill_cost":130,
     "skill_name":"闭月之舞","skill_desc":"闪避攻击后瞬移至后排连刺，对全体敌人造成150%伤害，必定暴击",
     "skill_aoe":True,"skill_target":"all_enemy","skill_special":["guaranteed_crit"],
-    "skill_upgrades":{3:"击杀后刷新闪避",5:"刺击附加灼烧每回合15%×2",7:"溅射周围50%伤害"},
+    "skill_upgrades":{3:"击杀后刷新闪避",5:"刺击附加灼烧每回合15%×2",7:"溅射周围50%伤害", 9:"#6暴击+15+闪避"},
     "basic_name":"轻舞","basic_desc":"翩若惊鸿，造成80%伤害，闪避下次攻击","basic_dmg_pct":0.8,"basic_energy_gain":50,
     "basic_aoe":False,"basic_target":"single","basic_special":[{"type":"dodge","dur":1}],
     "passive_name":"离间","passive_desc":"战斗开始魅惑一个敌人3秒","passive_upgrades":{3:"被魅惑敌人受伤+30%",5:"魅惑结束眩晕2秒",7:"魅惑两个敌人"}})
@@ -289,7 +289,7 @@ reg({"id":"huatuo","name":"华佗","class":"奶妈","quality":"传说","color":"
     "hp":2200,"atk":220,"crit":8,"spd":110,"skill_cost":140,
     "skill_name":"麻沸散","skill_desc":"全体回复30%+免疫伤害2回合+攻击+30%×2回合",
     "skill_aoe":True,"skill_target":"all_ally","skill_heal_pct":0.3,"skill_special":["immunity"],"skill_buffs":[{"stat":"atk","pct":0.3,"dur":2}],
-    "skill_upgrades":{3:"免疫期间暴击率+20%",5:"回复40%+附加护盾",7:"免疫结束重置所有冷却"},
+    "skill_upgrades":{3:"免疫期间暴击率+20%",5:"回复40%+附加护盾",7:"免疫结束重置所有冷却", 9:"#3护盾30%+回血15%"},
     "basic_name":"望闻问切","basic_desc":"施以针术，回复最低血量队友20%","basic_dmg_pct":0,"basic_energy_gain":50,
     "basic_aoe":False,"basic_target":"lowest_hp_ally","basic_special":[{"type":"heal","pct":0.2}],
     "passive_name":"妙手回春","passive_desc":"队友低于30%自动回复15%(每场2次)","passive_upgrades":{3:"触发次数+1",5:"回复30%",7:"触发时全队驱散"}})
@@ -297,7 +297,7 @@ reg({"id":"zhaoyun","name":"赵云","class":"战士","quality":"传说","color":
     "hp":3200,"atk":420,"crit":22,"spd":150,"skill_cost":130,
     "skill_name":"七进七出","skill_desc":"冲入敌阵连续冲锋7次，每次对全体敌人造成30%伤害+10%吸血",
     "skill_aoe":True,"skill_target":"all_enemy","skill_special":["multi_hit","lifesteal"],
-    "skill_upgrades":{3:"冲锋吸血20%",5:"优先攻击后排",7:"终结一击:全体500%伤害"},
+    "skill_upgrades":{3:"冲锋吸血20%",5:"优先攻击后排",7:"终结一击:全体500%伤害", 9:"#1开局满能量"},
     "basic_name":"龙胆亮银","basic_desc":"亮银枪出如龙，攻击2次每次100%伤害","basic_dmg_pct":1.0,"basic_energy_gain":40,
     "basic_aoe":False,"basic_target":"single","basic_special":[{"type":"multi_hit","count":2}],
     "passive_name":"一身是胆","passive_desc":"每损失10%血量攻击+8%","passive_upgrades":{3:"每损失10%额外+5%暴击",5:"低于30%无敌1秒",7:"损失血量加成翻倍"}})
@@ -305,7 +305,7 @@ reg({"id":"guanyu","name":"关羽","class":"战士","quality":"传说","color":"
     "hp":3500,"atk":500,"crit":28,"spd":155,"skill_cost":120,
     "skill_name":"青龙偃月","skill_desc":"蓄力后挥出惊世一刀，对全体敌人造成300%伤害",
     "skill_aoe":True,"skill_target":"all_enemy","skill_special":["execute"],
-    "skill_upgrades":{3:"蓄力期间免疫控制",5:"刀气留痕每秒20%×3回合",7:"血量低于50%的敌人直接斩杀"},
+    "skill_upgrades":{3:"蓄力期间免疫控制",5:"刀气留痕每秒20%×3回合",7:"血量低于50%的敌人直接斩杀", 9:"#1攻击+30%+武圣"},
     "basic_name":"拖刀斩","basic_desc":"拖刀蓄力势如破竹，造成100%伤害","basic_dmg_pct":1.0,"basic_energy_gain":40,
     "basic_aoe":False,"basic_target":"single","basic_special":[],
     "passive_name":"武圣","passive_desc":"开局第一刀必定暴击伤害+50%","passive_upgrades":{3:"第一刀伤害翻倍",5:"前三刀必定暴击",7:"武圣降临:第一次技能真实伤害"}})
@@ -357,15 +357,18 @@ ECS=["战士","肉盾","刺客","法师","射手","奶妈"]
 def gen_stage_name(si):
     return f"{random.choice(ENEMY_NAMES)}·{random.choice(LOCATIONS)}·{random.choice(TITLES)}"
 
-def gen_stage(power, si):
-    dm = 0.45 + si * 0.015; dm = min(dm, 2.0)
-    ep = max(50, int(power * dm))
+def gen_stage(si):
+    """根据关卡进度固定生成关卡，不依赖玩家战力"""
+    boss = si > 0 and si % 10 == 0  # 每10关一个BOSS(不含第0关)
+    ep = 1200 + si * 300  # 更高血量，更有挑战
     if si < 3: pl=["wood_sword","cloth_armor","straw_sandal"]; jb=5; ec=0.2
     elif si < 8: pl=["iron_sword","chain_armor","bronze_mirror"]; jb=10; ec=0.3
     elif si < 15: pl=["longquan_sword","mingguang_armor","jade_pendant"]; jb=18; ec=0.4
     elif si < 25: pl=["halberd","qilin_armor","pojun_bow","bagua_mirror"]; jb=30; ec=0.5
     else: pl=["qinglian_sword","zhangba_spear","qinglong_blade","chitu","heshi_bi"]; jb=45; ec=0.55
-    return {"id":f"s{si}","name":gen_stage_name(si),"_index":si,"power":ep,"drops":{"jade":jb,"equip_chance":min(ec+si*0.005,0.7),"equip_pool":pl}}
+    if boss: jb = int(jb * 1.5)
+    return {"id":f"s{si}","name":gen_stage_name(si),"boss":boss,"_index":si,"power":ep,
+            "drops":{"jade":jb,"equip_chance":min(ec+si*0.005,0.7),"equip_pool":pl}}
 
 # ═══ 游戏状态 ═══
 def new_game_inner():
@@ -492,13 +495,25 @@ ENEMY_SKILLS = [
     {"name":"回春","aoe":True,"desc":"回复全体血量","debuffs":[],"buffs":[],"heal":0.15},
 ]
 
-def gen_enemy(name, ps):
+def gen_enemy(name, ps, boss=False):
     c=random.choice(ECS)
-    hp=int(ps*random.uniform(2.0, 3.5)); atk=int(ps*random.uniform(0.08,0.15))
-    q=random.choices(["凡品","良品","极品","绝品","传说"],weights=[30,30,25,12,3])[0]
     skill=random.choice(ENEMY_SKILLS)
+    if boss:
+        hp=int(ps*random.uniform(4.0, 7.0))
+        atk=int(ps*random.uniform(0.05, 0.10))
+        q=random.choices(["极品","绝品","传说"],weights=[50,35,15])[0]
+        crit=random.randint(15,40)
+        spd=random.randint(100,160)
+        name="【BOSS】"+name
+    else:
+        # 血多攻少，让战斗有回合感
+        hp=int(ps*random.uniform(2.5, 4.0))
+        atk=int(ps*random.uniform(0.025, 0.045))
+        q=random.choices(["凡品","良品","极品","绝品","传说"],weights=[30,30,25,12,3])[0]
+        crit=random.randint(5,30)
+        spd=random.randint(80,180)
     return {"name":name,"class":c,"quality":q,"color":RARITY_COLORS.get(q,"#888"),
-            "hp":hp,"max_hp":hp,"atk":atk,"crit":random.randint(5,30),"spd":random.randint(80,180),
+            "hp":hp,"max_hp":hp,"atk":atk,"crit":crit,"spd":spd,
             "alive":True,"shield":0,"buffs":[],"debuffs":[],"stunned":False,"frozen":False,"reflect":False,
             "skill_name":skill["name"],"skill_aoe":skill["aoe"],"skill_debuffs":skill.get("debuffs",[]),
             "skill_buffs":skill.get("buffs",[]),"skill_heal":skill.get("heal",0),
@@ -685,6 +700,11 @@ def run_speed_battle(my_heroes, enemies, stage):
         u["action_bar"] = u.get("action_bar", random.randint(0, 400))
         u["energy"] = 0
         u.setdefault("side","ally") if u in my_heroes else u.setdefault("side","enemy")
+    # 位置系统
+    for i, h in enumerate(my_heroes):
+        h["position"] = i + 1
+    for i, e in enumerate(enemies):
+        e["position"] = 7 + i
 
     # 卡牌系统
     deck = init_deck()
@@ -729,10 +749,36 @@ def run_speed_battle(my_heroes, enemies, stage):
                     all_actions.append({"side":"enemy","type":"passive","attacker_name":"貂蝉",
                         "skill":"离间","aoe":False,"target_name":target["name"],"msg":"魅惑!"})
 
-    max_ticks = 250
+    # Lv9位置天赋（all_actions清零后，但initial_state快照前）
+    lv9_msgs=apply_lv9_bonuses(my_heroes, enemies)
+    for b in lv9_msgs:
+        all_actions.append({"side":"ally","type":"passive","attacker_name":"天赋","skill":b["desc"],"aoe":False,"target_name":"","msg":b["desc"]})
+    _lv9_buffs = lv9_msgs
+
+    # 初始状态快照（被动+天赋后）
+    initial_state = {
+        "lv9_buffs": _lv9_buffs,
+        "my_heroes": [{"name":f["name"],"class":f["class"],"quality":f["quality"],"color":f["color"],
+            "max_hp":f["max_hp"],"atk":f["atk"],"crit":f["crit"],
+            "eff_atk":cstat(f,"atk",f["atk"]),"eff_crit":cstat(f,"crit",f["crit"]),
+            "hp_pct":max(0,f["hp"]/max(1,f["max_hp"])),"alive":f.get("alive",True),
+            "energy":f.get("energy",0),"spd":f.get("spd",100),"position":f.get("position",0),
+            "buffs":[b["stat"] for b in f.get("buffs",[])],
+            "debuffs":[d["stat"] for d in f.get("debuffs",[])]} for f in my_heroes],
+        "enemies": [{"name":e["name"],"class":e["class"],"quality":e["quality"],"color":e["color"],
+            "max_hp":e["max_hp"],"atk":e["atk"],
+            "eff_atk":cstat(e,"atk",e["atk"]),"eff_crit":cstat(e,"crit",e["crit"]),
+            "hp_pct":max(0,e["hp"]/max(1,e["max_hp"])),"alive":e.get("alive",True),
+            "energy":e.get("energy",0),
+            "buffs":[b["stat"] for b in e.get("buffs",[])],
+            "debuffs":[d["stat"] for d in e.get("debuffs",[])]} for e in enemies]
+    }
+
     tick_no = 0
     actions_since_draw = 0
     all_actions = []
+
+    max_ticks = 250
 
     while tick_no < max_ticks:
         tick_no += 1
@@ -905,13 +951,13 @@ def run_speed_battle(my_heroes, enemies, stage):
     win = len(alive_h) > 0 and len(alive_e) == 0
 
     # 构建战斗结果
-    r = {"win": win, "rounds": tick_no, "actions": all_actions}
+    r = {"win": win, "rounds": tick_no, "initial_state": initial_state, "actions": all_actions}
     r["my_heroes"]=[{"name":f["name"],"class":f["class"],"quality":f["quality"],"color":f["color"],
         "max_hp":f["max_hp"],"atk":f["atk"],"crit":f["crit"],
         "eff_atk":cstat(f,"atk",f["atk"]),"eff_crit":cstat(f,"crit",f["crit"]),
         "hp_pct":max(0,f["hp"]/max(1,f["max_hp"])),"alive":f.get("alive",True),
         "shield_pct":f.get("shield",0)/max(1,f["max_hp"]),
-        "energy":f.get("energy",0),"spd":f.get("spd",100),
+        "energy":f.get("energy",0),"spd":f.get("spd",100),"position":f.get("position",0),
         "buffs":[b["stat"] for b in f.get("buffs",[])],
         "debuffs":[d["stat"] for d in f.get("debuffs",[])]} for f in my_heroes]
     r["enemies"]=[{"name":e["name"],"class":e["class"],"quality":e["quality"],"color":e["color"],
@@ -960,9 +1006,20 @@ class BattleSession:
         self._last_sent = 0
         self.auto_mode = False
         self.passive_ctx = {"all_actions": self.all_actions, "passive_counters": {}, "triggered": set()}
+        # 位置系统: 英雄按上阵顺序获得1-6号位
+        for i, h in enumerate(my_heroes):
+            h["position"] = i + 1
+        for i, e in enumerate(enemies):
+            e["position"] = 7 + i
         for u in self.all_u:
             u["action_bar"] = u.get("action_bar", random.randint(0, 400))
         self._init_passives()
+        # 保存初始状态（用于前端第一帧渲染）
+        self._initial_state = {
+            "my_heroes": self._get_heroes_state(),
+            "enemies": self._get_enemies_state(),
+            "lv9_buffs": getattr(self, '_lv9_buffs', [])
+        }
 
     def _init_passives(self):
         for u in self.my_heroes:
@@ -989,6 +1046,11 @@ class BattleSession:
                     target["debuffs"].append({"stat":"charm","pct":1.0,"dur":3})
                     self.all_actions.append({"side":"enemy","type":"passive","attacker_name":"貂蝉",
                         "skill":"离间","aoe":False,"target_name":target["name"],"msg":"魅惑!"})
+
+        # Lv9位置天赋
+        self._lv9_buffs=apply_lv9_bonuses(self.my_heroes, self.enemies)
+        for b in self._lv9_buffs:
+            self.all_actions.append({"side":"ally","type":"passive","attacker_name":"天赋","skill":b["desc"],"aoe":False,"target_name":"","msg":b["desc"]})
 
     def _inject_action_hp(self, a):
         """注入实时HP/idx到action"""
@@ -1137,6 +1199,7 @@ class BattleSession:
     def _make_card_state(self):
         return {
             "phase":"card",
+            "initial_state":self._initial_state,
             "hand":[{"id":c["id"],"name":c["name"],"desc":c["desc"],"cost":c["cost"],"rarity":c["rarity"]} for c in self.hand],
             "card_energy":self.card_energy,
             "my_heroes":self._get_heroes_state(),
@@ -1149,7 +1212,7 @@ class BattleSession:
             "max_hp":f["max_hp"],"atk":f["atk"],"crit":f["crit"],
             "eff_atk":cstat(f,"atk",f["atk"]),"eff_crit":cstat(f,"crit",f["crit"]),
             "hp_pct":max(0,f["hp"]/max(1,f["max_hp"])),"alive":f.get("alive",True),
-            "energy":f.get("energy",0),"spd":f.get("spd",100),
+            "energy":f.get("energy",0),"spd":f.get("spd",100),"position":f.get("position",0),
             "buffs":[b["stat"] for b in f.get("buffs",[])],
             "debuffs":[d["stat"] for d in f.get("debuffs",[])]} for f in self.my_heroes]
 
@@ -1163,7 +1226,8 @@ class BattleSession:
 
     def _make_result(self):
         win=len([u for u in self.my_heroes if u.get("alive",True)])>0 and len([u for u in self.enemies if u.get("alive",True)])==0
-        r={"win":win,"rounds":self.tick_no,"actions":self._get_new_actions(),
+        r={"win":win,"rounds":self.tick_no,"phase":"done","initial_state":self._initial_state,
+           "actions":self._get_new_actions(),
            "my_heroes":self._get_heroes_state(),"enemies":self._get_enemies_state()}
         if win:
             dr=self.stage["drops"]; jr=dr["jade"]+random.randint(-3,8); jr=max(3,jr)
@@ -1251,8 +1315,7 @@ class BattleSession:
 
 def init_battle_session(g):
     """从游戏状态创建战斗会话"""
-    power=calc_pow(HERO_DATA,g["lineup"],g["inventory"],g["equip_bag"])
-    stage=gen_stage(power,g["stage_index"])
+    stage=gen_stage(g["stage_index"])
     my_heroes=[]
     for hid in g["lineup"]:
         inv=next((i for i in g["inventory"] if i["hero_id"]==hid),None)
@@ -1547,6 +1610,103 @@ def apply_skill_upgrades(unit, hd, sk_lv, allies, enemies, sk_context):
         if hid=="huatuo":
             pass  # 华佗Lv7: 免疫结束重置冷却
     return extra
+
+# ═══ Lv9 位置天赋系统 ═══
+HERO_LV9_EFFECTS = {
+    "lisi":         {"pos":1,"desc":"开局给1号位+15%攻击","type":"stat","stat":"atk","pct":0.15},
+    "wangdazhuang": {"pos":2,"desc":"开局给2号位+20%血量","type":"stat","stat":"hp","pct":0.20},
+    "xiaocui":      {"pos":3,"desc":"开局给3号位+15%治疗量","type":"buff","buff":"heal_buff","dur":-1},
+    "zhangtiezhu":  {"pos":4,"desc":"开局给4号位+8%暴击","type":"stat","stat":"crit","val":8},
+    "huangzhong":   {"pos":4,"desc":"开局给4号位+20%攻击","type":"stat","stat":"atk","pct":0.20},
+    "guojia":       {"pos":5,"desc":"开局给5号位+40能量","type":"energy","val":40},
+    "yanshisan":    {"pos":6,"desc":"开局给6号位+15%暴击","type":"stat","stat":"crit","val":15},
+    "xiahoudun":    {"pos":1,"desc":"开局给1号位+30%血量+反弹","type":"combo","hp_pct":0.3,"buff":"reflect"},
+    "caiwenji":     {"pos":3,"desc":"开局给3号位25%护盾","type":"shield","pct":0.25},
+    "ganning":      {"pos":6,"desc":"开局给6号位+25%攻击","type":"stat","stat":"atk","pct":0.25},
+    "dianwei":      {"pos":2,"desc":"开局给2号位+40%血量","type":"stat","stat":"hp","pct":0.40},
+    "huatuo":       {"pos":3,"desc":"开局给3号位30%护盾+回血15%","type":"combo","shield_pct":0.3,"heal_pct":0.15},
+    "yangyouji":    {"pos":4,"desc":"开局给4号位+30%攻击+首击必暴","type":"combo","atk_pct":0.30,"buff":"guaranteed_crit"},
+    "luobu":        {"pos":1,"desc":"开局给1号位+40%攻击","type":"stat","stat":"atk","pct":0.40},
+    "zhugeliang":   {"pos":5,"desc":"开局给5号位+60能量+技能增伤","type":"combo","energy":60,"buff":"skill_dmg"},
+    "pangtong":     {"pos":5,"desc":"开局给5号位锁链(全体易伤)","type":"debuff_aura"},
+    "lihai":        {"pos":6,"desc":"开局给6号位+50%攻击+15%吸血","type":"combo","atk_pct":0.50,"buff":"lifesteal"},
+    "zhangfei":     {"pos":2,"desc":"开局给2号位+50%血量+30%护盾","type":"combo","hp_pct":0.50,"shield_pct":0.30},
+    "diaochan":     {"pos":6,"desc":"开局给6号位+15暴击+魅惑闪避","type":"combo","crit_val":15,"buff":"dodge"},
+    "zhaoyun":      {"pos":1,"desc":"开局给1号位满能量","type":"full_energy"},
+    "guanyu":       {"pos":1,"desc":"开局给1号位+30%攻击+武圣降临","type":"combo","atk_pct":0.30,"buff":"guaranteed_crit"},
+}
+
+def apply_lv9_bonuses(my_heroes, enemies):
+    """根据阵中Lv9英雄，给对应位置施加开局增益"""
+    applied = []
+    for u in my_heroes:
+        hd = u.get("_hd")
+        if not hd: continue
+        sk_lv = u.get("_skill_lv", 1)
+        if sk_lv < 9: continue
+        hid = hd["id"]
+        ef = HERO_LV9_EFFECTS.get(hid)
+        if not ef: continue
+        target_pos = ef["pos"]
+        target = next((x for x in my_heroes if x.get("position") == target_pos), None)
+        if not target: continue
+        etype = ef["type"]
+
+        if etype == "stat":
+            if ef["stat"] == "atk":
+                target["atk"] = int(target["atk"] * (1 + ef["pct"]))
+            elif ef["stat"] == "hp":
+                target["max_hp"] = int(target["max_hp"] * (1 + ef["pct"]))
+                target["hp"] = int(target["hp"] * (1 + ef["pct"]))
+            elif ef["stat"] == "crit":
+                target["crit"] += ef.get("val", 0)
+            applied.append({"pos":target_pos,"desc":ef["desc"]})
+
+        elif etype == "energy":
+            target["energy"] = min(200, target["energy"] + ef.get("val", 0))
+            applied.append({"pos":target_pos,"desc":ef["desc"]})
+
+        elif etype == "shield":
+            target["shield"] = int(target["max_hp"] * ef["pct"])
+            applied.append({"pos":target_pos,"desc":ef["desc"]})
+
+        elif etype == "full_energy":
+            target["energy"] = 200
+            applied.append({"pos":target_pos,"desc":"开局满能量!"})
+
+        elif etype == "buff":
+            if ef.get("buff") == "heal_buff":
+                target["buffs"].append({"stat":"atk","pct":0.15,"dur":-1})
+            applied.append({"pos":target_pos,"desc":ef["desc"]})
+
+        elif etype == "combo":
+            if ef.get("atk_pct"):
+                target["atk"] = int(target["atk"] * (1 + ef["atk_pct"]))
+            if ef.get("hp_pct"):
+                target["max_hp"] = int(target["max_hp"] * (1 + ef["hp_pct"]))
+                target["hp"] = int(target["hp"] * (1 + ef["hp_pct"]))
+            if ef.get("crit_val"):
+                target["crit"] += ef["crit_val"]
+            if ef.get("energy"):
+                target["energy"] = min(200, target["energy"] + ef["energy"])
+            if ef.get("shield_pct"):
+                target["shield"] = int(target["max_hp"] * ef["shield_pct"])
+            if ef.get("heal_pct"):
+                target["hp"] = min(target["max_hp"], target["hp"] + int(target["max_hp"] * ef["heal_pct"]))
+            b = ef.get("buff")
+            if b == "reflect": target["buffs"].append({"stat":"reflect","pct":1.0,"dur":-1})
+            elif b == "guaranteed_crit": target["buffs"].append({"stat":"guaranteed_crit","pct":1.0,"dur":-1})
+            elif b == "lifesteal": target["buffs"].append({"stat":"lifesteal","pct":0.15,"dur":-1})
+            elif b == "dodge": target["buffs"].append({"stat":"dodge","pct":1.0,"dur":-1})
+            elif b == "skill_dmg": target["buffs"].append({"stat":"atk_mult","pct":0.25,"dur":-1})
+            applied.append({"pos":target_pos,"desc":ef["desc"]})
+
+        elif etype == "debuff_aura":
+            for e in enemies:
+                if e.get("alive", True):
+                    e["debuffs"].append({"stat":"dmg_reduce","pct":-0.25,"dur":-1})
+            applied.append({"pos":0,"desc":"全体敌人易伤25%"})
+    return applied
 
 def check_passives(unit, hd, sk_lv, allies, enemies, event, context):
     """检查并触发被动。event: 'on_ally_low_hp','on_kill','on_start','on_hit'"""
@@ -1952,8 +2112,7 @@ def api_speed_battle():
     g = load_game()
     if not g: return jsonify({"error":"未找到存档"})
     if not g["lineup"]: return jsonify({"error":"请先上阵英雄"})
-    power = calc_pow(HERO_DATA, g["lineup"], g["inventory"], g["equip_bag"])
-    stage = gen_stage(power, g["stage_index"])
+    stage = gen_stage(g["stage_index"])
 
     my_heroes = []
     for hid in g["lineup"]:
@@ -2036,8 +2195,7 @@ def api_sweep():
     if not g["lineup"]: return jsonify({"error":"请先上阵英雄",**to_client(g)})
     tj=0; te=[]
     for _ in range(3):
-        power=calc_pow(HERO_DATA,g["lineup"],g["inventory"],g["equip_bag"])
-        stage=gen_stage(power,g["stage_index"])
+        stage=gen_stage(g["stage_index"])
         my_heroes = []
         for hid in g["lineup"]:
             inv=next((i for i in g["inventory"] if i["hero_id"]==hid),None)
@@ -2074,7 +2232,7 @@ def api_pull():
     if QUALITY_ORDER.get(card["quality"],0)>=2: g["pity_counter"]=0
     else: g["pity_counter"]+=1
     ex=next((i for i in g["inventory"] if i["hero_id"]==card["hero_id"]),None)
-    if ex: ex["skill_lv"]=min(7,ex["skill_lv"]+1); g["msg"]=f"🎴 抽到{card['quality']}{HERO_DATA[card['hero_id']]['name']}！技能升级至Lv.{ex['skill_lv']}"
+    if ex: ex["skill_lv"]=min(9,ex["skill_lv"]+1); g["msg"]=f"🎴 抽到{card['quality']}{HERO_DATA[card['hero_id']]['name']}！技能升级至Lv.{ex['skill_lv']}"
     else: g["inventory"].append(card); g["msg"]=f"🎴 抽到{card['quality']}{HERO_DATA[card['hero_id']]['name']}！"
     save_game(g)
     r=to_client(g); r["pull"]={"hero_id":card["hero_id"],"quality":card["quality"],"hero_name":HERO_DATA[card["hero_id"]]["name"],"hero_class":HERO_DATA[card["hero_id"]]["class"]}
@@ -2093,7 +2251,7 @@ def api_pull10():
         else: g["pity_counter"]+=1
         if QUALITY_ORDER.get(card["quality"],0)>QUALITY_ORDER.get(bq,0): bq=card["quality"]
         ex=next((i for i in g["inventory"] if i["hero_id"]==card["hero_id"]),None)
-        if ex: ex["skill_lv"]=min(7,ex["skill_lv"]+1)
+        if ex: ex["skill_lv"]=min(9,ex["skill_lv"]+1)
         else: g["inventory"].append(card)
         cards.append(card)
     g["msg"]=f"🎴 十连最高{bq}"; save_game(g)
@@ -2116,7 +2274,7 @@ def api_pull100():
         qcounts[card["quality"]]=qcounts.get(card["quality"],0)+1
         if QUALITY_ORDER.get(card["quality"],0)>QUALITY_ORDER.get(bq,0): bq=card["quality"]
         ex=next((i for i in g["inventory"] if i["hero_id"]==card["hero_id"]),None)
-        if ex: ex["skill_lv"]=min(7,ex["skill_lv"]+1)
+        if ex: ex["skill_lv"]=min(9,ex["skill_lv"]+1)
         else: g["inventory"].append(card)
         pulls.append(card)
     g["msg"]=f"🎴 百抽最高{bq}! {qcounts['传说']}传说 {qcounts['绝品']}绝品 {qcounts['极品']}极品"
@@ -2237,7 +2395,7 @@ def api_tuji():
 
 def to_client(g):
     power=calc_pow(HERO_DATA,g["lineup"],g["inventory"],g["equip_bag"])
-    sp=int(power*(0.45+g["stage_index"]*0.015)); sp=max(50,min(sp,99999))
+    sp=1200+g["stage_index"]*300; sp=max(50,min(sp,99999))
     sn=g.get("stage_name") or gen_stage_name(g["stage_index"])
     pi={"count":g["pity_counter"],"next_guaranteed":10-g["pity_counter"]}
     bl=[{"name":b["name"],"desc":b["desc"]} for b in get_bonds(g["lineup"])]

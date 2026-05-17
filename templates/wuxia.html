@@ -74,6 +74,10 @@ body{font-family:-apple-system,"PingFang SC","Noto Serif SC",serif;background:#0
 /* ── Battle ── */
 .battle-overlay{position:fixed;inset:0;background:rgba(5,5,10,.96);display:none;flex-direction:column;align-items:center;z-index:250;padding:8px;overflow-y:auto}
 .battle-title{font-size:14px;font-weight:700;color:#ffd700;margin:4px 0;text-align:center}
+/* Speed control */
+.speed-control{display:flex;gap:6px;margin:2px 0 4px}
+.speed-btn{padding:2px 12px;border-radius:4px;border:1px solid #2a2218;background:#0d0b09;color:#6a5a4a;font-size:11px;cursor:pointer;font-family:inherit}
+.speed-btn.active{background:rgba(255,215,0,.15);border-color:#ffd700;color:#ffd700}
 .battle-field{display:flex;gap:10px;justify-content:center;align-items:flex-start;width:100%;max-width:600px;flex-wrap:wrap}
 .battle-side{flex:1;min-width:140px;max-width:280px}
 .battle-side-label{font-size:10px;color:#6a5a4a;margin-bottom:3px;text-align:center}
@@ -82,6 +86,8 @@ body{font-family:-apple-system,"PingFang SC","Noto Serif SC",serif;background:#0
 .bc-card.bc-attack{animation:bcAttack .4s ease;border-color:#ffd700!important;box-shadow:0 0 10px rgba(255,215,0,.4)!important}
 .bc-card.bc-hit{animation:bcHit .3s ease}.bc-card.bc-heal{animation:bcHeal .35s ease}
 .bc-card.bc-dead{opacity:.2}
+.bc-pos{display:inline-block;background:rgba(255,215,0,.15);color:#ffd700;font-size:8px;font-weight:700;padding:0 4px;border-radius:3px;margin-right:2px}
+.bc-lv9{display:inline-block;background:#b84aff;color:#fff;font-size:7px;font-weight:800;padding:0 5px;border-radius:2px;margin-right:3px;letter-spacing:1px;cursor:help}
 @keyframes bcAttack{0%{transform:scale(1)}35%{transform:scale(1.06);border-color:#ffd700}100%{transform:scale(1)}}
 @keyframes bcHit{0%{border-color:#e85a5a;background:rgba(232,90,90,.15)}100%{border-color:#2a2218;background:#0d0b09}}
 @keyframes bcHeal{0%{border-color:#5adb7a;background:rgba(90,219,122,.12);box-shadow:0 0 8px rgba(90,219,122,.3)}100%{border-color:#2a2218;background:#0d0b09}}
@@ -209,6 +215,26 @@ body{font-family:-apple-system,"PingFang SC","Noto Serif SC",serif;background:#0
 @keyframes koAnim{0%{opacity:1;transform:translate(-50%,-50%) scale(0) rotate(-20deg)}30%{opacity:1;transform:translate(-50%,-50%) scale(1.5) rotate(0)}60%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-60%) scale(1.2)}}
 .ko-popup .ko-text{font-size:48px;font-weight:900;color:#ffd700;text-shadow:0 0 30px rgba(255,215,0,.6),0 0 60px rgba(255,215,0,.3)}
 
+/* ── Hero Skill Spotlight ── */
+.hero-spotlight{position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;pointer-events:none;animation:hsFadeIn .25s ease}
+@keyframes hsFadeIn{0%{opacity:0}100%{opacity:1}}
+.hero-spotlight.hs-fadeout{animation:hsFadeOut .3s ease forwards}
+@keyframes hsFadeOut{0%{opacity:1}100%{opacity:0}}
+.hs-card{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 40px;border-radius:16px;border:3px solid #ffd700;background:linear-gradient(180deg,rgba(10,8,6,.98) 0%,rgba(20,15,10,.98) 100%);box-shadow:0 0 60px rgba(255,215,0,.25),inset 0 0 40px rgba(255,215,0,.05);animation:hsCardIn .4s cubic-bezier(.34,1.56,.64,1) forwards;min-width:200px;position:relative}
+@keyframes hsCardIn{0%{transform:scale(.2);opacity:0}100%{transform:scale(1);opacity:1}}
+.hs-card:before{content:'';position:absolute;inset:-3px;border-radius:16px;padding:3px;background:linear-gradient(135deg,transparent 30%,rgba(255,215,0,.3),transparent 70%);-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;animation:hsBorderGlow 1.5s ease infinite}
+@keyframes hsBorderGlow{0%,100%{opacity:.5}50%{opacity:1}}
+.hs-icon{font-size:56px;margin-bottom:4px;filter:drop-shadow(0 0 12px rgba(255,215,0,.4))}
+.hs-name{font-size:22px;font-weight:800;letter-spacing:2px;text-shadow:0 0 20px currentColor}
+.hs-class{font-size:11px;color:#8a7a5a;margin-top:2px}
+.hs-quality{font-size:10px;margin-top:1px;letter-spacing:3px}
+.hs-skill-name{font-size:28px;font-weight:900;color:#ffd700;margin:8px 0 4px;text-shadow:0 0 30px rgba(255,215,0,.5),0 0 60px rgba(255,215,0,.2);animation:hsSkillPulse .6s ease infinite alternate}
+@keyframes hsSkillPulse{0%{transform:scale(1)}100%{transform:scale(1.05)}}
+.hs-dmg{font-size:52px;font-weight:900;text-shadow:0 0 30px rgba(255,100,100,.5);animation:hsDmgPop .3s cubic-bezier(.34,1.56,.64,1) .4s both}
+.hs-dmg.hs-crit{color:#ffd700;text-shadow:0 0 40px rgba(255,215,0,.6);font-size:60px}
+.hs-dmg.hs-heal{color:#5adb7a;text-shadow:0 0 30px rgba(90,219,122,.4)}
+@keyframes hsDmgPop{0%{transform:scale(0);opacity:0}100%{transform:scale(1);opacity:1}}
+
 /* Round transition */
 .round-popup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:260;pointer-events:none;text-align:center;animation:rPop .8s ease forwards}
 @keyframes rPop{0%{opacity:0;transform:translate(-50%,-50%) scale(0)}20%{opacity:1;transform:translate(-50%,-50%) scale(1.1)}50%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-80%) scale(.8)}}
@@ -275,6 +301,10 @@ body{font-family:-apple-system,"PingFang SC","Noto Serif SC",serif;background:#0
 </div>
 <div class="battle-overlay" id="battleOverlay">
   <div class="battle-title" id="battleStageName">⚔️ 战斗</div>
+  <div class="speed-control" id="speedControl">
+    <button class="speed-btn active" onclick="setBattleSpeed(1)" id="speed1x">1×</button>
+    <button class="speed-btn" onclick="setBattleSpeed(2)" id="speed2x">2×</button>
+  </div>
   <div class="action-queue" id="actionQueue"></div>
   <div class="card-hand" id="cardHand"></div>
   <div class="card-energy-bar" id="cardEnergyBar"></div>
@@ -322,6 +352,8 @@ body{font-family:-apple-system,"PingFang SC","Noto Serif SC",serif;background:#0
 </div>
 <script>
 let game=null;
+let battleSpeed=1; // 1=正常, 2=二倍速
+function setBattleSpeed(s){battleSpeed=s;document.querySelectorAll(".speed-btn").forEach(b=>b.classList.remove("active"));document.getElementById("speed"+s+"x").classList.add("active")}
 const QO={"凡品":0,"良品":1,"极品":2,"绝品":3,"传说":4},QC={"凡品":"#888","良品":"#5adb7a","极品":"#4a8eff","绝品":"#b84aff","传说":"#ffd700"},CI={"战士":"🗡️","肉盾":"🛡️","刺客":"💀","法师":"🔥","射手":"🎯","奶妈":"💚"};
 const SI={"atk":"⚔️攻","crit":"💥暴","dmg_reduce":"🛡️减","crit_dmg":"🎯爆","immune":"🛡️免疫"};
 function qs(q){return "★".repeat(QO[q]+1)}
@@ -335,7 +367,7 @@ function render(g){
   _("invTotalCount")&&(_("invTotalCount").textContent=g.inventory_count||0);
   _("powerDisplay")&&(_("powerDisplay").textContent=(g.power||0).toLocaleString());
   _("stageDisplay")&&(_("stageDisplay").textContent=g.stage?.name||"-");
-  if(_("stageIndexDisplay"))_("stageIndexDisplay").textContent=g.stage?.index!==undefined?`第${g.stage.index}关`:"0";
+  if(_("stageIndexDisplay"))_("stageIndexDisplay").textContent=g.stage?.index!==undefined?`第${g.stage.index}关${g.stage.boss?' 👑':''}`:"0";
   _("lineupCount")&&(_("lineupCount").textContent=g.lineup_count+"/6");
   _("msgBox")&&(_("msgBox").innerHTML=g.msg||"");
   if(g.username&&_("userDisplay"))_("userDisplay").textContent=`👤 ${g.username}`;
@@ -373,12 +405,25 @@ async function startBattle(){
   try{
     const d=await apiFetch("/api/battle/start",{method:"POST"});
     if(d.error){showError(d.error);document.getElementById("loading").style.display="none";return}
-    if(d.phase==="done"){showBattleResult(d);document.getElementById("loading").style.display="none";return}
-    // phase === "card" — 开始自动行动
+    // 即使战斗已结束，也要播放动作动画再看结算
     showBattleBoard(d);
-    battleHand=d.hand||[];battleEnergy=d.card_energy||0;battlePhase="auto";
-    battleAuto=d.auto||false;
-    playActionsBatch(d.actions,()=>showCardHand());
+    const actions = (d.actions||[]).concat(d.remaining_actions||[]);
+    if(actions.length > 0){
+      playActionsBatch(actions,()=>{
+        if(d.phase==="done"){showBattleResult(d)}
+        else{
+          battleHand=d.hand||[];battleEnergy=d.card_energy||0;battlePhase="auto";
+          battleAuto=d.auto||false;
+          showCardHand();
+        }
+      });
+    }else{
+      if(d.phase==="done"){showBattleResult(d);document.getElementById("loading").style.display="none";return}
+      showBattleBoard(d);
+      battleHand=d.hand||[];battleEnergy=d.card_energy||0;battlePhase="auto";
+      battleAuto=d.auto||false;
+      playActionsBatch(d.actions,()=>showCardHand());
+    }
   }catch(e){showError(e.message)}
   document.getElementById("loading").style.display="none";
 }
@@ -389,13 +434,17 @@ async function startAutoBattle(){
   try{
     const d=await apiFetch("/api/battle/start",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({auto:true})});
     if(d.error){showError(d.error);document.getElementById("loading").style.display="none";return}
+    // 即使战斗已结束，也要播放动作动画再看结算
     showBattleBoard(d);
     battleAuto=true;
-    if(d.phase==="done"){
-      // 托管模式直接打完，跳过行动动画，显示结果
-      document.getElementById("loading").style.display="none";
-      showBattleResult(d);
+    const actions = (d.actions||[]).concat(d.remaining_actions||[]);
+    if(actions.length > 0){
+      playActionsBatch(actions,()=>{
+        if(d.phase==="done"){showBattleResult(d)}
+        else{showCardHand()}
+      });
     }else{
+      if(d.phase==="done"){showBattleResult(d);document.getElementById("loading").style.display="none";return}
       battleHand=d.hand||[];battleEnergy=d.card_energy||0;battlePhase="auto";
       playActionsBatch(d.actions,()=>showCardHand());
     }
@@ -414,25 +463,29 @@ function playActionsBatch(acts,callback){
     updateCardEnergy(act);
     updateCardStats(act);
     if(act.type==="passive"){
-      handlePassiveAction(act);idx++;setTimeout(playNext,600);return;
+      handlePassiveAction(act);idx++;setTimeout(playNext,Math.round(600/Math.max(1,battleSpeed)));return;
     }
     if(act.type==="card_play"){
-      handleCardPlayAction(act);idx++;setTimeout(playNext,400);return;
+      handleCardPlayAction(act);idx++;setTimeout(playNext,Math.round(400/Math.max(1,battleSpeed)));return;
     }
     if(act.type==="basic"||act.type==="skill"){
       const isSkill=act.type==="skill";
       const icon=isSkill?"⚡":"🗡️";
+      const hitTag=act.total_hits>1?`【${act.hit_no}/${act.total_hits}】`:"";
       let lt="";
       if(act.side==="heal"){
-        if(act.aoe&&act.targets)lt=`💚 ${act.attacker_name}${act.skill}(群奶)❤️${act.targets.reduce((s,t)=>s+(t.heal||0),0)}`;
-        else lt=`💚 ${act.attacker_name}${act.skill}→❤️+${act.heal}`;
-      }else if(act.aoe&&act.targets)lt=`${act.side==="ally"?icon:"💀"}${act.attacker_name}${act.skill}(群攻)`;
-      else lt=`${act.side==="ally"?icon:"💀"}${act.attacker_name}${act.skill}→${act.target_name}💥${act.damage}${act.crit?"⭐":""}`;
+        if(act.aoe&&act.targets)lt=`${hitTag}💚 ${act.attacker_name}${act.skill}(群奶)❤️${act.targets.reduce((s,t)=>s+(t.heal||0),0)}`;
+        else lt=`${hitTag}💚 ${act.attacker_name}${act.skill}→❤️+${act.heal}`;
+      }else if(act.aoe&&act.targets){
+        const totalAoe=act.targets.map(t=>`${t.name}-${t.damage||0}${t.crit?"⭐":""}`).join(" ");
+        lt=`${hitTag}${act.side==="ally"?icon:"💀"}${act.attacker_name}${act.skill} ${totalAoe}`;
+      }
+      else lt=`${hitTag}${act.side==="ally"?icon:"💀"}${act.attacker_name}${act.skill}→${act.target_name}💥${act.damage}${act.crit?"⭐":""}`;
       const ld=document.createElement("div");ld.className="bl-line";ld.textContent=lt;
       document.getElementById("battleLogT").appendChild(ld);
       document.getElementById("battleLogT").scrollTop=document.getElementById("battleLogT").scrollHeight;
       document.getElementById("roundIndicator").textContent=act.side==="ally"?icon+" 我方":act.side==="heal"?"💚 治疗":"💀 敌方";
-      animateAct(act,()=>{idx++;setTimeout(playNext,50)});
+      animateAct(act,()=>{idx++;setTimeout(playNext,Math.round(50/Math.max(1,battleSpeed)))});
       return;
     }
     idx++;playNext();
@@ -508,8 +561,9 @@ function handleCardPlayAction(act){
 
 function showBattleBoard(d){
   window._lastBr=d;
-  renderBF(d.my_heroes,d.enemies,false);
-  document.getElementById("battleStageName").textContent=`⚔️ 第${game.stage.index}关·${game.stage.name}`;
+  const init = d.initial_state || d;
+  renderBF(init.my_heroes, init.enemies, false, init.lv9_buffs);
+  document.getElementById("battleStageName").textContent=`⚔️ 第${game.stage.index}关·${game.stage.name}${game.stage.boss?' 👑BOSS':''}`;
   document.getElementById("battleOverlay").style.display="flex";
   document.getElementById("battleResult").style.display="none";
   document.getElementById("vsText").style.display="flex";
@@ -607,7 +661,7 @@ async function skipCard(){
     if(d.phase==="done"){showBattleResult(d);return}
     battleHand=d.hand||[];
     battleEnergy=d.card_energy||0;
-    renderBF(d.my_heroes,d.enemies,false);
+    renderBF(d.my_heroes,d.enemies,false,d.initial_state?.lv9_buffs);
     window._lastBr=d;
     playActionsBatch(d.actions,()=>showCardHand());
   }catch(e){showError(e.message)}
@@ -820,7 +874,7 @@ function updateCardEnergy(act){
   }
 }
 
-function renderBF(myH,enemies,isFinal){
+function renderBF(myH,enemies,isFinal,lv9Buffs){
   const RS=(units,side)=>{
     return `<div class="battle-side"><div class="battle-side-label">${side==="my"?"🛡️ 我方":"💀 敌方"}</div><div class="bc" id="bc-${side}">${
       units.map((u,i)=>{
@@ -869,8 +923,11 @@ function renderBF(myH,enemies,isFinal){
         const critChanged=effCrit!==(u.crit||0);
         const atkShow=atkChanged?`<span style="color:#5adb7a;font-weight:700">⚔️${effAtk}</span><span style="font-size:7px;color:#5a4a3a">(${u.atk||0})</span>`:`<span>⚔️${effAtk}</span>`;
         const critShow=critChanged?`<span style="color:#5adb7a;font-weight:700">⚡${effCrit}%</span><span style="font-size:7px;color:#5a4a3a">(${u.crit||0}%)</span>`:`<span>⚡${effCrit}%</span>`;
+        const posNum=side==="my"&&u.position?`<span class="bc-pos">#${u.position}</span>`:"";
+        const lv9Desc=lv9Buffs?lv9Buffs.find(b=>b.pos===u.position)?.desc:"";
+        const lv9Tag=lv9Desc?`<span class="bc-lv9" title="${lv9Desc}">Lv9</span>`:"";
         return `<div class="bc-card ${alive?'':'bc-dead'}" id="bc-${side}-${i}" style="border-color:${u.color};${glow}"><span class="bc-icon">${ci}</span>
-          <div class="bc-info"><div class="bc-name">${u.name}${shieldIcon}</div><div class="bc-class">${u.class}</div>
+          <div class="bc-info"><div class="bc-name">${posNum}${lv9Tag}${u.name}${shieldIcon}</div><div class="bc-class">${u.class}</div>
           <div style="display:flex;gap:3px;font-size:8px;color:#6a5a4a;flex-wrap:wrap">${hpShow} <span class="bc-energy-num${energyReady}">⚡${energy}</span> ${atkShow} ${critShow}</div>
           <div class="bc-hp-strip"><div class="bc-hp-fill" id="bchp-${side}-${i}" style="width:${hpPct}%;background:${hpCol}"></div></div>
           <div class="bc-energy-strip${energyReady}"><div class="bc-energy-fill" id="bcene-${side}-${i}" style="width:${energyPct}%"></div></div>${buffRow}</div></div>`;
@@ -899,6 +956,55 @@ function healBurst(amount){
 function koPopup(){
   const el=document.createElement("div");el.className="ko-popup";
   el.innerHTML=`<div class="ko-text">💀 KO!</div>`;document.body.appendChild(el);setTimeout(()=>el.remove(),900);
+}
+
+/* ── Hero Skill Spotlight: card zooms center, big damage ── */
+function heroSkillSpotlight(act, onDone){
+  const CI={"战士":"⚔️","肉盾":"🛡️","刺客":"🗡️","射手":"🏹","法师":"🔮","奶妈":"💚"};
+  const QLTY_COLORS={"凡品":"#888","良品":"#5adb7a","极品":"#4a8eff","绝品":"#b84aff","传说":"#ffd700"};
+  const clr=act.attacker_color||"#888";
+  const icon=CI[act.attacker_class]||"❓";
+  const qlty=act.attacker_quality||"";
+  
+  // 计算总伤害/治疗（AOE求和，多段则乘以段数）
+  let totalDmg=0,totalHeal=0,isHeal=act.side==="heal";
+  const mc=act.total_hits||1;
+  if(act.aoe&&act.targets){
+    act.targets.forEach(t=>{if(t.damage)totalDmg+=t.damage;if(t.heal)totalHeal+=t.heal});
+    if(mc>1)totalDmg*=mc;  // 多段AOE: 总伤害=单次×段数
+  }else{
+    totalDmg=(act.damage||0)*mc;  // 多段ST
+    totalHeal=act.heal||0;
+  }
+  const dmgVal=isHeal?totalHeal:totalDmg;
+  
+  // 构建特写层
+  const overlay=document.createElement("div");overlay.className="hero-spotlight";overlay.id="heroSpotlight";
+  const critCls=act.crit?" hs-crit":"";
+  const healCls=isHeal?" hs-heal":"";
+  const dmgPrefix=isHeal?"+":"-";
+  const dmgEmoji=isHeal?"❤️":"💥";
+  const qltyStars={"凡品":"★","良品":"★★","极品":"★★★","绝品":"★★★★","传说":"★★★★★"};
+  const stars=qltyStars[qlty]||"";
+  
+  overlay.innerHTML=`
+    <div class="hs-card" style="border-color:${clr}">
+      <div class="hs-icon" style="color:${clr}">${icon}</div>
+      <div class="hs-name" style="color:${clr}">${act.attacker_name||""}</div>
+      <div class="hs-class">${act.attacker_class||""}</div>
+      <div class="hs-quality" style="color:${QLTY_COLORS[qlty]||clr}">${stars}</div>
+      <div class="hs-skill-name">⚡ ${act.skill||""} ⚡</div>
+      <div class="hs-dmg${critCls}${healCls}">${dmgEmoji} ${dmgPrefix}${dmgVal}${act.crit?" ⭐":""}</div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  
+  // 播放后移除并回调
+  const SPOTLIGHT_DURATION=Math.round(1000/Math.max(1,battleSpeed));
+  setTimeout(()=>{
+    overlay.classList.add("hs-fadeout");
+    setTimeout(()=>{overlay.remove();if(onDone)onDone()},Math.round(300/Math.max(1,battleSpeed)));
+  },SPOTLIGHT_DURATION);
 }
 
 function renderStatsPanel(st){
@@ -958,26 +1064,70 @@ function animateAct(act,cb){
   const ac=document.querySelectorAll(`#bc-${as} .bc-card`);
   const acard=ac[Math.min(ai,ac.length-1)];
 
-  // 技能延迟(base) vs 普攻延迟
-  const skillDelay=isSkill?280:100;
-  const hitDelay=isSkill?200:80;
+  // ═══ HERO SKILL SPOTLIGHT（我方技能才有特写，多段只有第一次显示）═══
+  if(isSkill && (isAlly || act.side==="heal") && (!act.total_hits || act.hit_no===1)){
+    heroSkillSpotlight(act, ()=>{
+      // 特写结束后，执行目标受击效果（HP条、小伤害数字）
+      var _spd=1/Math.max(1,battleSpeed);
+      if(act.aoe){
+        if(!act.targets||act.targets.length===0){if(cb)setTimeout(cb,10);return}
+        act.targets.forEach(tg=>{
+          const tc=document.querySelectorAll(`#bc-${ts} .bc-card`);
+          const tcard=tc[Math.min(tg.idx||0,tc.length-1)];
+          if(!tcard)return;
+          if(tg.heal){tcard.classList.add("bc-heal");setTimeout(()=>tcard.classList.remove("bc-heal"),300*_spd)}
+          else{tcard.classList.add("bc-hit");tcard.style.transform="translateX(6px)";setTimeout(()=>{tcard.style.transform="";tcard.classList.remove("bc-hit")},250*_spd)}
+          const np=Math.max(0,(tg.hp_pct||0)*100);
+          const hpEl=document.getElementById(`bchp-${ts}-${tg.idx}`);
+          if(hpEl){hpEl.style.width=np+"%";hpEl.style.background=np>50?'#5adb7a':np>25?'#e8b84a':'#e85a5a'}
+          if(tg.killed){tcard.classList.add("bc-dead");koPopup();sfx("gold")}
+        });
+        if(cb)setTimeout(cb,200*_spd);
+      }else{
+        const ti=act.target_idx||0;
+        const tc=document.querySelectorAll(`#bc-${ts} .bc-card`);
+        const tcard=tc[Math.min(ti,tc.length-1)];
+        if(tcard){
+          if(act.side==="heal"){tcard.classList.add("bc-heal");setTimeout(()=>tcard.classList.remove("bc-heal"),300*_spd)}
+          else{tcard.classList.add("bc-hit");tcard.style.transform="translateX(6px)";setTimeout(()=>{tcard.style.transform="";tcard.classList.remove("bc-hit")},250*_spd)}
+        }
+        const hpEl=document.getElementById(`bchp-${ts}-${ti}`);
+        if(hpEl&&act.target_hp_pct!==undefined){
+          const np=Math.max(0,act.target_hp_pct*100);
+          hpEl.style.width=np+"%";hpEl.style.background=np>50?'#5adb7a':np>25?'#e8b84a':'#e85a5a';
+        }
+        const hpTx=document.getElementById(`bchptxt-${ts}-${ti}`);
+        if(hpTx&&act.target_max_hp&&act.target_hp_pct!==undefined){
+          hpTx.textContent=`❤️${Math.round(act.target_hp_pct*act.target_max_hp)}`;
+        }
+        if(act.killed&&tcard){tcard.classList.add("bc-dead");koPopup();sfx("gold")}
+        if(cb)setTimeout(cb,150*_spd);
+      }
+    });
+    return;
+  }
+
+  // ═══ 非英雄技能（普攻/敌人技能），保持原样 ═══
+  var spd=1/Math.max(1,battleSpeed);
+  const skillDelay=(isSkill?280:100)*spd;
+  const hitDelay=(isSkill?200:80)*spd;
 
   // ── AOE ──
   if(act.aoe){
     if(!act.targets||act.targets.length===0){
-      if(cb)setTimeout(cb,isSkill?120:50);return;
+      if(cb)setTimeout(cb,(isSkill?120:50)*spd);return;
     }
     const isHeal=act.side==="heal";
     // 攻击者闪光
     if(acard&&!acard.classList.contains("bc-dead")){
       acard.classList.add("bc-attack");
-      setTimeout(()=>{if(acard)acard.classList.remove("bc-attack");},isSkill?300:150);
+      setTimeout(()=>{if(acard)acard.classList.remove("bc-attack");},(isSkill?300:150)*spd);
     }
     // skill popup (大号技能版本)
     skillPopup(act.skill,act.side,act.attacker_color||"#ffd700",isSkill);
     // 特效 (技能用增强版)
     if(isHeal){sfxSkill("green");if(isSkill)healBurst(Math.max(...act.targets.map(t=>t.heal||0).filter(v=>v>0),0))}
-    else if(isSkill){sfxSkill(act.crit?"gold":"red");document.body.style.animation="shake .3s ease";setTimeout(()=>{document.body.style.animation=""},350)}
+    else if(isSkill){sfxSkill(act.crit?"gold":"red");document.body.style.animation="shake .3s ease";setTimeout(()=>{document.body.style.animation=""},350*spd)}
     else if(act.crit)sfx("gold");else sfx("red");
     // 目标闪（技能延迟更久）
     setTimeout(()=>{
@@ -985,26 +1135,26 @@ function animateAct(act,cb){
         const tc=document.querySelectorAll(`#bc-${ts} .bc-card`);
         const tcard=tc[Math.min(tg.idx||0,tc.length-1)];
         if(!tcard)return;
-        if(tg.heal||isHeal){tcard.classList.add("bc-heal");setTimeout(()=>tcard.classList.remove("bc-heal"),isSkill?600:300)}
+        if(tg.heal||isHeal){tcard.classList.add("bc-heal");setTimeout(()=>tcard.classList.remove("bc-heal"),(isSkill?600:300)*spd)}
         else{
           tcard.classList.add("bc-hit");
           tcard.style.transform=isSkill?"translateX(8px)":"translateX(4px)";
-          setTimeout(()=>{tcard.style.transform="";tcard.classList.remove("bc-hit")},isSkill?400:250);
+          setTimeout(()=>{tcard.style.transform="";tcard.classList.remove("bc-hit")},(isSkill?400:250)*spd);
         }
         if(tg.heal||isHeal){
           const d=document.createElement("div");d.className="bc-dmg-num heal-c";
-          d.textContent=`+${tg.heal||0}❤️`;tcard.appendChild(d);setTimeout(()=>d.remove(),isSkill?1400:900);
+          d.textContent=`+${tg.heal||0}❤️`;tcard.appendChild(d);setTimeout(()=>d.remove(),(isSkill?1400:900)*spd);
         }else if(tg.damage>0){
           const d=document.createElement("div");d.className="bc-dmg-num";
           if(tg.crit)d.classList.add("crit-c");else if(isAlly)d.classList.add("ally-c");else d.classList.add("enemy-c");
-          d.textContent=`-${tg.damage}${tg.crit?"⭐":""}`;tcard.appendChild(d);setTimeout(()=>d.remove(),isSkill?1400:900);
+          d.textContent=`-${tg.damage}${tg.crit?"⭐":""}`;tcard.appendChild(d);setTimeout(()=>d.remove(),(isSkill?1400:900)*spd);
         }
         const np=Math.max(0,(tg.hp_pct||0)*100);
         const hpEl=document.getElementById(`bchp-${ts}-${tg.idx}`);
-        if(hpEl){hpEl.style.width=np+"%";hpEl.style.background=np>50?'#5adb7a':np>25?'#e8b84a':'#e85a5a';setTimeout(()=>{hpEl.style.transition="width .35s ease"},50)}
+        if(hpEl){hpEl.style.width=np+"%";hpEl.style.background=np>50?'#5adb7a':np>25?'#e8b84a':'#e85a5a';setTimeout(()=>{hpEl.style.transition="width .35s ease"},50*spd)}
         if(tg.killed){tcard.classList.add("bc-dead");koPopup();sfx("gold")}
       });
-      if(cb)setTimeout(cb,isSkill?400:200);
+      if(cb)setTimeout(cb,(isSkill?400:200)*spd);
     },skillDelay);
     return;
   }
@@ -1017,21 +1167,21 @@ function animateAct(act,cb){
   // 攻击者闪光
   if(acard&&!acard.classList.contains("bc-dead")){
     acard.classList.add("bc-attack");
-    setTimeout(()=>{if(acard)acard.classList.remove("bc-attack")},isSkill?300:100);
+    setTimeout(()=>{if(acard)acard.classList.remove("bc-attack")},(isSkill?300:100)*spd);
   }
   skillPopup(act.skill,act.side,act.attacker_color||"#ffd700",isSkill);
   if(isHeal){sfxSkill("green");if(isSkill)healBurst(act.heal||0)}
-  else if(isSkill){sfxSkill(act.crit?"gold":"red");document.body.style.animation="shake .3s ease";setTimeout(()=>{document.body.style.animation=""},350)}
+  else if(isSkill){sfxSkill(act.crit?"gold":"red");document.body.style.animation="shake .3s ease";setTimeout(()=>{document.body.style.animation=""},350*spd)}
   else if(act.crit)sfx("gold");else sfx("red");
   // 目标闪
   setTimeout(()=>{
     if(tcard){
       if(isHeal){
-        tcard.classList.add("bc-heal");setTimeout(()=>tcard.classList.remove("bc-heal"),isSkill?600:300);
+        tcard.classList.add("bc-heal");setTimeout(()=>tcard.classList.remove("bc-heal"),(isSkill?600:300)*spd);
       }else{
         tcard.classList.add("bc-hit");
         tcard.style.transform=isSkill?"translateX(8px)":"translateX(6px)";
-        setTimeout(()=>{tcard.style.transform="";tcard.classList.remove("bc-hit")},isSkill?400:250);
+        setTimeout(()=>{tcard.style.transform="";tcard.classList.remove("bc-hit")},(isSkill?400:250)*spd);
       }
     }
     const hpEl=document.getElementById(`bchp-${ts}-${ti}`);
@@ -1047,10 +1197,10 @@ function animateAct(act,cb){
       const d=document.createElement("div");d.className="bc-dmg-num";
       if(act.crit)d.classList.add("crit-c");else if(isHeal)d.classList.add("heal-c");else if(isAlly)d.classList.add("ally-c");else d.classList.add("enemy-c");
       d.textContent=isHeal?`+${act.heal||0}❤️`:`-${act.damage||0}${act.crit?"⭐":""}`;
-      tcard.appendChild(d);setTimeout(()=>d.remove(),isSkill?1400:900);
+      tcard.appendChild(d);setTimeout(()=>d.remove(),(isSkill?1400:900)*spd);
     }
     if(act.killed&&tcard){tcard.classList.add("bc-dead");koPopup();sfx("gold")}
-    if(cb)setTimeout(cb,isSkill?350:150);
+    if(cb)setTimeout(cb,(isSkill?350:150)*spd);
   },hitDelay);
 }
 
