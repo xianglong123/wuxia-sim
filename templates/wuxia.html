@@ -32,7 +32,10 @@ body{font-family:-apple-system,"PingFang SC","Noto Serif SC",serif;background:#0
 .action-btn{padding:10px;border-radius:8px;border:1px solid #2a2218;background:linear-gradient(180deg,#12100e,#0d0b09);color:#d4c9a8;font-size:12px;cursor:pointer;font-family:inherit;transition:all .2s;text-align:center}
 .action-btn:hover{border-color:#5a4a3a;background:#1a1612;transform:translateY(-1px)}
 .action-btn.gacha{background:linear-gradient(135deg,#3a2a10,#5a3a10);border-color:#8a6a20;color:#ffd700;font-weight:700}
-.action-btn.battle{background:linear-gradient(135deg,#2a1020,#4a1a30);border-color:#8a3a5a;color:#ff8ad8}
+.action-btn.battle{background:linear-gradient(135deg,#b84aff,#8a2be2);border-color:#b84aff;color:#fff}
+.action-btn.battle:hover{box-shadow:0 0 20px rgba(184,74,255,.4)}
+.action-btn.auto-battle{background:linear-gradient(135deg,#4a8eff,#1a6aff);border-color:#4a8eff;color:#fff}
+.action-btn.auto-battle:hover{box-shadow:0 0 20px rgba(74,142,255,.4)}
 .action-btn .ab-icon{font-size:18px;display:block}
 .action-btn .ab-label{font-size:10px;opacity:.7}
 .inv-section{margin-top:8px}
@@ -146,6 +149,10 @@ body{font-family:-apple-system,"PingFang SC","Noto Serif SC",serif;background:#0
 .card-energy-bar .ce-dot.filled{background:#4a8eff;border-color:#6ab0ff}
 .card-skip-btn{font-size:10px;padding:4px 12px;border-radius:6px;border:1px solid #2a2218;background:#0d0b09;color:#6a5a4a;cursor:pointer;font-family:inherit;flex-shrink:0}
 .card-skip-btn:hover{border-color:#5a4a3a;color:#d4c9a8}
+.card-auto-btn{font-size:10px;padding:4px 12px;border-radius:6px;border:1px solid #4a8eff;background:#0d1520;color:#4a8eff;cursor:pointer;font-family:inherit;flex-shrink:0;transition:all .2s}
+.card-auto-btn:hover{border-color:#6ab0ff;color:#8ac8ff;background:#0a1a30}
+.card-auto-btn.auto-on{background:#4a8eff;color:#fff;border-color:#6ab0ff;box-shadow:0 0 8px rgba(74,142,255,.4)}
+.card-auto-btn.auto-on:hover{background:#1a6aff;color:#fff}
 /* Card popup animation (played card preview) */
 .card-popup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:200;animation:cpIn .2s ease,cpOut .3s ease 1.1s forwards}
 .card-popup .cp-border{border:2px solid;border-radius:12px;padding:16px 24px;background:linear-gradient(135deg,#1a1610 0%,#0d0b09 100%);min-width:140px;text-align:center;position:relative;box-shadow:0 0 30px rgba(0,0,0,.6),0 0 60px rgba(255,215,0,.15)}
@@ -296,6 +303,7 @@ body{font-family:-apple-system,"PingFang SC","Noto Serif SC",serif;background:#0
     <button class="action-btn gacha" onclick="singlePull()"><span class="ab-icon">🎴</span><span class="ab-label">单抽 3💎</span></button>
     <button class="action-btn gacha" onclick="tenPull()"><span class="ab-icon">🎴</span><span class="ab-label">十连 25💎</span></button>
     <button class="action-btn battle" onclick="startBattle()"><span class="ab-icon">⚔️</span><span class="ab-label">挑战</span></button>
+    <button class="action-btn auto-battle" onclick="startAutoBattle()"><span class="ab-icon">⚡</span><span class="ab-label">托管</span></button>
     <button class="action-btn" onclick="doSweep()"><span class="ab-icon">⚡</span><span class="ab-label">一键收菜</span></button>
   </div>
   <div class="inv-section">
@@ -346,6 +354,7 @@ function render(g){
 let battleHand=null;
 let battleEnergy=0;
 let battlePhase=null;
+let battleAuto=false;
 
 async function startBattle(){
   if(!game||!game.lineup||!game.lineup.length){showError("请先上阵英雄");return}
@@ -356,10 +365,29 @@ async function startBattle(){
     if(d.phase==="done"){showBattleResult(d);document.getElementById("loading").style.display="none";return}
     // phase === "card" — 开始自动行动
     showBattleBoard(d);
-    battleHand=d.hand||[];
-    battleEnergy=d.card_energy||0;
-    battlePhase="auto";
+    battleHand=d.hand||[];battleEnergy=d.card_energy||0;battlePhase="auto";
+    battleAuto=d.auto||false;
     playActionsBatch(d.actions,()=>showCardHand());
+  }catch(e){showError(e.message)}
+  document.getElementById("loading").style.display="none";
+}
+
+async function startAutoBattle(){
+  if(!game||!game.lineup||!game.lineup.length){showError("请先上阵英雄");return}
+  document.getElementById("loading").style.display="flex";
+  try{
+    const d=await apiFetch("/api/battle/start",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({auto:true})});
+    if(d.error){showError(d.error);document.getElementById("loading").style.display="none";return}
+    showBattleBoard(d);
+    battleAuto=true;
+    if(d.phase==="done"){
+      // 托管模式直接打完，跳过行动动画，显示结果
+      document.getElementById("loading").style.display="none";
+      showBattleResult(d);
+    }else{
+      battleHand=d.hand||[];battleEnergy=d.card_energy||0;battlePhase="auto";
+      playActionsBatch(d.actions,()=>showCardHand());
+    }
   }catch(e){showError(e.message)}
   document.getElementById("loading").style.display="none";
 }
@@ -507,6 +535,10 @@ function showCardHand(){
     </div>`;
   }
   h+=`<button class="card-skip-btn" onclick="skipCard()">跳过</button>`;
+  // 托管切换按钮
+  const autoLabel=battleAuto?"✋ 手动":"⚡ 托管";
+  const autoCls=battleAuto?" auto-on":"";
+  h+=`<button class="card-auto-btn${autoCls}" onclick="toggleAuto()">${autoLabel}</button>`;
   handEl.innerHTML=h;
 }
 
@@ -524,6 +556,36 @@ async function playCard(cardId){
     // 播放下一个批次的action
     playActionsBatch(d.actions,()=>showCardHand());
   }catch(e){showError(e.message)}
+}
+
+async function toggleAuto(){
+  if(!battlePhase)return;
+  try{
+    const d=await apiFetch("/api/battle/toggle-auto",{method:"POST"});
+    if(d.error){showError(d.error);return}
+    if(d.phase==="done"){
+      battleAuto=false;
+      // 播放剩余行动
+      playActionsBatch(d.actions,()=>showBattleResult(d));
+      return;
+    }
+    battleAuto=!!d.auto;
+    // 如果切回手动，刷新手牌
+    if(!battleAuto)showCardHand();
+    else{
+      // 切到自动后后端跑完了，但还有actions要播
+      if(d.actions&&d.actions.length){
+        playActionsBatch(d.actions,()=>showCardHand());
+      }
+    }
+  }catch(e){showError(e.message)}
+}
+
+function autoContinue(){
+  // 托管模式自动继续（前端透明，后端直接打完）
+  battleAuto=false; // 避免循环
+  // 后端已经自动打完，前端只需显示结果
+  // 这个函数实际上由toggleAuto触发
 }
 
 async function skipCard(){
@@ -1008,7 +1070,7 @@ function closeBattle(){
   document.getElementById("battleOverlay").style.display="none";
   document.getElementById("cardHand").innerHTML="";
   document.getElementById("cardEnergyBar").innerHTML="";
-  battleHand=null;battleEnergy=0;battlePhase=null;
+  battleHand=null;battleEnergy=0;battlePhase=null;battleAuto=false;
   // Reset stats
   Object.keys(liveStats).forEach(k=>{
     if(typeof liveStats[k]==="object")liveStats[k]={};

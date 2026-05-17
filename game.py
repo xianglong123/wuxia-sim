@@ -873,6 +873,7 @@ class BattleSession:
         self.done = False
         self.result_cache = None
         self._last_sent = 0
+        self.auto_mode = False
         self.passive_ctx = {"all_actions": self.all_actions, "passive_counters": {}, "triggered": set()}
         for u in self.all_u:
             u["action_bar"] = u.get("action_bar", random.randint(0, 400))
@@ -1017,8 +1018,12 @@ class BattleSession:
                         self.deck=init_deck()
                         self.hand.append(self.deck.pop(0))
                 tick_buffs(self.all_u)
-                # 有新牌和有能量 → 返回打牌阶段
+                # 有新牌和有能量 → 打牌阶段
                 if self.hand and self.card_energy>0:
+                    if self.auto_mode:
+                        # 托管模式：自动选牌出牌
+                        self.auto_play_card()
+                        continue
                     return self._make_card_state()
                 continue
             elif self.tick_no%3==0:
@@ -1097,6 +1102,56 @@ class BattleSession:
         """跳过打牌，继续自动行动"""
         return self.step_until_card()
 
+    def auto_play_card(self):
+        """托管模式自动选牌出牌"""
+        if not self.hand or self.card_energy<=0:
+            return
+        affordable=[c for c in self.hand if c["cost"]<=self.card_energy]
+        if not affordable:
+            return
+        # 选牌策略
+        # 1. 有敌方低血量→暗算
+        alive_e=[e for e in self.enemies if e.get("alive",True)]
+        if alive_e:
+            lowest_e=min(alive_e, key=lambda x: x["hp"])
+            if lowest_e["hp"]/max(1,lowest_e["max_hp"])<0.3:
+                assassinate=next((c for c in affordable if c["id"]=="assassinate"),None)
+                if assassinate:
+                    self._do_auto_play(assassinate)
+                    return
+        # 2. 我方低血量→急救
+        alive_a=[a for a in self.my_heroes if a.get("alive",True)]
+        if alive_a:
+            lowest_a=min(alive_a, key=lambda x: x["hp"]/max(1,x["max_hp"]))
+            if lowest_a["hp"]/max(1,lowest_a["max_hp"])<0.35:
+                heal=next((c for c in affordable if c["id"]=="first_aid"),None)
+                if heal:
+                    self._do_auto_play(heal)
+                    return
+        # 3. 选稀有度最高的可支付卡
+        rarity_order={"凡品":0,"良品":1,"极品":2,"绝品":3,"传说":4}
+        affordable.sort(key=lambda c: -rarity_order.get(c["rarity"],0))
+        self._do_auto_play(affordable[0])
+
+    def _do_auto_play(self, card):
+        """内部执行出牌"""
+        self.hand.remove(card)
+        self.card_energy-=card["cost"]
+        current_hero=next((u for u in self.my_heroes if u.get("alive",True)),None)
+        card_result=apply_card_effect(card,self.my_heroes,self.enemies,current_hero)
+        card_result.update({"card":card,"type":"card_play","attacker_name":current_hero["name"] if current_hero else ""})
+        self.all_actions.append(card_result)
+        self._inject_action_hp(card_result)
+
+    def _get_current_phase(self):
+        if self.done:
+            return "done"
+        alive_h=[u for u in self.my_heroes if u.get("alive",True)]
+        alive_e=[u for u in self.enemies if u.get("alive",True)]
+        if not alive_h or not alive_e:
+            return "done"
+        return "card"
+
 def init_battle_session(g):
     """从游戏状态创建战斗会话"""
     power=calc_pow(HERO_DATA,g["lineup"],g["inventory"],g["equip_bag"])
@@ -1126,8 +1181,38 @@ def api_battle_start():
     sess=init_battle_session(g)
     uid=session.get("user_id")
     BATTLE_SESSIONS[uid]=sess
-    # 第一步: 运行初始被动, 然后直到card点
+    data=request.get_json()
+    if data and data.get("auto"):
+        sess.auto_mode=True
+    # 第一步: 运行初始被动, 然后直到card点(托管模式直接打完)
     result=sess.step_until_card()
+    result["auto"]=sess.auto_mode
+    return jsonify(result)
+
+@app.route("/api/battle/toggle-auto", methods=["POST"])
+@login_required
+def api_battle_toggle_auto():
+    uid=session.get("user_id")
+    sess=BATTLE_SESSIONS.get(uid)
+    if not sess: return jsonify({"error":"没有活跃战斗"})
+    sess.auto_mode=not sess.auto_mode
+    # 如果切到自动，立即继续战斗
+    if sess.auto_mode:
+        result=sess.step_until_card()
+        result["auto"]=True
+        # 战斗结束处理
+        if result.get("phase")=="done":
+            del BATTLE_SESSIONS[uid]
+            g=load_game()
+            if g:
+                if result["win"]:
+                    jr=result.get("jade_reward",3)
+                    g["jade"]+=jr; g["stage_index"]+=1
+                else:
+                    g["jade"]+=result.get("jade_reward",2)
+                g["ticks"]+=1; save_game(g)
+    else:
+        result={"ok":True,"auto":False,"phase":sess._get_current_phase()}
     return jsonify(result)
 
 @app.route("/api/battle/card", methods=["POST"])
