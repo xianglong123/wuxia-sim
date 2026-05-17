@@ -641,17 +641,19 @@ def run_speed_battle(my_heroes, enemies, stage):
                     act = enemy_basic_attack(unit, my_heroes, enemies)
                 all_actions.append(act)
                 # 注入当时HP状态（非最终态）
-                a=act;u2=my_heroes+enemies
+                a=act
                 if a.get("type")!="card_play":
-                    a["attacker_idx"]=next((i for i,uu in enumerate(u2) if uu.get("name")==a.get("attacker_name")),0)
+                    a["attacker_idx"]=next((i for i,uu in enumerate(enemies if a.get("side")=="enemy" else my_heroes) if uu.get("name")==a.get("attacker_name")),0)
                     if a.get("aoe") and a.get("targets"):
                         for tg in a["targets"]:
-                            uu=next((uu2 for uu2 in u2 if uu2.get("name")==tg.get("name")),None)
-                            if uu: tg["hp_pct"]=max(0,uu["hp"]/max(1,uu["max_hp"])); tg["max_hp"]=uu["max_hp"]
+                            tlist=enemies if a.get("side")=="ally" else my_heroes
+                            uu=next((uu2 for uu2 in tlist if uu2.get("name")==tg.get("name")),None)
+                            if uu: tg["hp_pct"]=max(0,uu["hp"]/max(1,uu["max_hp"])); tg["max_hp"]=uu["max_hp"]; tg["idx"]=next((i for i,uu2 in enumerate(tlist) if uu2.get("name")==tg.get("name")),0)
                             if tg.get("killed") and uu: tg["hp_pct"]=0
                     elif a.get("target_name"):
-                        uu=next((uu2 for uu2 in u2 if uu2.get("name")==a["target_name"]),None)
-                        if uu: a["target_hp_pct"]=max(0,uu["hp"]/max(1,uu["max_hp"])); a["target_max_hp"]=uu["max_hp"]
+                        tlist=enemies if a.get("side")=="ally" else my_heroes
+                        uu=next((uu2 for uu2 in tlist if uu2.get("name")==a["target_name"]),None)
+                        if uu: a["target_hp_pct"]=max(0,uu["hp"]/max(1,uu["max_hp"])); a["target_max_hp"]=uu["max_hp"]; a["target_idx"]=next((i for i,uu2 in enumerate(tlist) if uu2.get("name")==a["target_name"]),0)
                         if a.get("killed") and uu: a["target_hp_pct"]=0
 
             # ===== 我方行动 =====
@@ -670,18 +672,20 @@ def run_speed_battle(my_heroes, enemies, stage):
                     act = hero_basic_attack(unit, my_heroes, enemies)
                 act["energy_after"] = unit["energy"]
                 all_actions.append(act)
-                # 注入当时HP状态
-                a2=act;u3=my_heroes+enemies
+                # 注入当时HP状态(分敌我列表计算idx)
+                a2=act
                 if a2.get("type")!="card_play":
-                    a2["attacker_idx"]=next((i for i,uu in enumerate(u3) if uu.get("name")==a2.get("attacker_name")),0)
+                    a2["attacker_idx"]=next((i for i,uu in enumerate(my_heroes) if uu.get("name")==a2.get("attacker_name")),0)
                     if a2.get("aoe") and a2.get("targets"):
+                        tlist=enemies if a2.get("side")=="ally" else my_heroes
                         for tg in a2["targets"]:
-                            uu=next((uu2 for uu2 in u3 if uu2.get("name")==tg.get("name")),None)
-                            if uu: tg["hp_pct"]=max(0,uu["hp"]/max(1,uu["max_hp"])); tg["max_hp"]=uu["max_hp"]
+                            uu=next((uu2 for uu2 in tlist if uu2.get("name")==tg.get("name")),None)
+                            if uu: tg["hp_pct"]=max(0,uu["hp"]/max(1,uu["max_hp"])); tg["max_hp"]=uu["max_hp"]; tg["idx"]=next((i for i,uu2 in enumerate(tlist) if uu2.get("name")==tg.get("name")),0)
                             if tg.get("killed") and uu: tg["hp_pct"]=0
                     elif a2.get("target_name"):
-                        uu=next((uu2 for uu2 in u3 if uu2.get("name")==a2["target_name"]),None)
-                        if uu: a2["target_hp_pct"]=max(0,uu["hp"]/max(1,uu["max_hp"])); a2["target_max_hp"]=uu["max_hp"]
+                        tlist=enemies if a2.get("side")=="ally" else my_heroes
+                        uu=next((uu2 for uu2 in tlist if uu2.get("name")==a2["target_name"]),None)
+                        if uu: a2["target_hp_pct"]=max(0,uu["hp"]/max(1,uu["max_hp"])); a2["target_max_hp"]=uu["max_hp"]; a2["target_idx"]=next((i for i,uu2 in enumerate(tlist) if uu2.get("name")==a2["target_name"]),0)
                         if a2.get("killed") and uu: a2["target_hp_pct"]=0
 
                 # ===== 打牌阶段 (AI自动选牌) =====
