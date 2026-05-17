@@ -858,11 +858,21 @@ def run_speed_battle(my_heroes, enemies, stage):
                     if unit["energy"] > 200: unit["energy"] = 200
                     act = hero_basic_attack(unit, my_heroes, enemies)
                 act["energy_after"] = unit["energy"]
+                # 先注入idx/max_hp到原始动作（expand需要它们）
+                for tg in act.get("targets", []):
+                    tlist = enemies if act.get("side") == "ally" else my_heroes
+                    uu = next((uu2 for uu2 in tlist if uu2.get("name") == tg.get("name")), None)
+                    if uu:
+                        tg["idx"] = next((i for i, uu2 in enumerate(tlist) if uu2.get("name") == tg.get("name")), 0)
+                        tg["max_hp"] = uu["max_hp"]
                 # 多段拆分
                 mhc=act.get("multi_hit_count",1)
                 sub_acts=expand_multi_hit_action(act,mhc) if mhc>1 else [act]
                 for sa in sub_acts:
                     all_actions.append(sa)
+                    # 多段AOE子动作跳过HP覆盖（expand已计算渐进HP）
+                    if sa.get("total_hits") and sa.get("aoe"):
+                        continue
                     # 注入当时HP状态
                     a2=sa
                     if a2.get("type")!="card_play":
@@ -873,6 +883,9 @@ def run_speed_battle(my_heroes, enemies, stage):
                         a2["hero_base_crit"]=unit["crit"]
                         a2["hero_buffs"]=[b["stat"] for b in unit.get("buffs",[])]
                         a2["hero_debuffs"]=[d["stat"] for d in unit.get("debuffs",[])]
+                        a2["attacker_color"]=unit.get("color","#888")
+                        a2["attacker_class"]=unit.get("class","")
+                        a2["attacker_quality"]=unit.get("quality","")
                         if a2.get("aoe") and a2.get("targets"):
                             tlist=enemies if a2.get("side")=="ally" else my_heroes
                             for tg in a2["targets"]:
@@ -883,9 +896,6 @@ def run_speed_battle(my_heroes, enemies, stage):
                             tlist=enemies if a2.get("side")=="ally" else my_heroes
                             uu=next((uu2 for uu2 in tlist if uu2.get("name")==a2["target_name"]),None)
                             if uu: a2["target_hp_pct"]=max(0,uu["hp"]/max(1,uu["max_hp"])); a2["target_max_hp"]=uu["max_hp"]; a2["target_idx"]=next((i for i,uu2 in enumerate(tlist) if uu2.get("name")==a2["target_name"]),0)
-                            if a2.get("killed") and uu: a2["target_hp_pct"]=0
-
-                # ===== 打牌阶段 (AI自动选牌) =====
                 if hand and card_energy > 0:
                     played = pick_best_card(hand, my_heroes, enemies, unit)
                     if played and played["cost"] <= card_energy:
@@ -1058,6 +1068,8 @@ class BattleSession:
     def _inject_action_hp(self, a):
         """注入实时HP/idx到action"""
         if a.get("type")=="card_play": return
+        # 多段AOE子动作跳过HP覆盖（expand已计算渐进HP）
+        if a.get("total_hits") and a.get("aoe"): return
         u2=self.my_heroes+self.enemies
         a["attacker_idx"]=next((i for i,uu in enumerate(self.enemies if a.get("side")=="enemy" else self.my_heroes) if uu.get("name")==a.get("attacker_name")),0)
         if a.get("side")=="ally" or a.get("side")=="heal":
@@ -1935,24 +1947,18 @@ def hero_use_skill(unit, allies, enemies):
             ls_pct=0.3
             if up and up.get("lifesteal_pct"): ls_pct=up["lifesteal_pct"]
             unit["hp"]=min(unit["max_hp"],unit["hp"]+int(r["damage"]*ls_pct))
-        return {"name":t["name"],"damage":r["damage"],"crit":cr,"killed":killed,"immune":r.get("immune",False)}
+        return {"name":t["name"],"damage":r["damage"],"crit":cr,"killed":killed,"immune":r.get("immune",False),"max_hp":t["max_hp"],"hp_pct":max(0,t["hp"]/max(1,t["max_hp"]))}
 
     # 收集总伤害结果
     all_targets_data=[]
     total_dmg=0
     
     if is_aoe:
-        # AOE: 真实命中multi_hit次, 每次对全体存活敌人造成伤害
-        remaining_hits = multi_hit_count
-        while remaining_hits > 0:
-            alive_tars = [t for t in tars if t.get("alive", True)]
-            if not alive_tars: break
-            for t in alive_tars:
-                td = _process_dmg_target(t, True)
-                if td: all_targets_data.append(td); total_dmg += td["damage"]
-            remaining_hits -= 1
-        # 内部已拆开每击伤害, 不让expand再次拆分
-        multi_hit_count = 1
+        # AOE: 打一次, expand内部按段数拆分
+        for t in tars:
+            if not t.get("alive",True): continue
+            td=_process_dmg_target(t,True)
+            if td: all_targets_data.append(td); total_dmg+=td["damage"]
     else:
         # ST: 打multi_hit次（可能多个目标不同）
         remaining_hits=multi_hit_count
@@ -2014,51 +2020,69 @@ def expand_multi_hit_action(act, multi_hit_count):
     if not all_hits:
         return [act]
     new_acts = []
-    # 对所有目标按段数均分伤害
-    per_enemy = {}
-    for t in all_hits:
-        name = t.get("name","")
-        dmg = t.get("damage", 0)
-        crit = t.get("crit", False)
-        max_hp = t.get("max_hp", 0)
-        idx = t.get("idx", 0)
-        if name not in per_enemy:
-            per_enemy[name] = {"dmg":0,"crit":False,"max_hp":max_hp,"idx":idx}
-        if is_aoe:
-            # AOE多段: 每hit均分总伤害
-            hit_dmg = int(dmg / multi_hit_count)
-            if multi_hit_count * int(dmg / multi_hit_count) < dmg:
-                hit_dmg = int(dmg / multi_hit_count)
-            per_enemy[name]["dmg"] = per_enemy[name].get("dmg", 0) + hit_dmg
-        per_enemy[name]["crit"] = per_enemy[name]["crit"] or crit
+    if is_aoe and len(all_hits) > 0:
+        # AOE多段: 每次对全体敌人造成完全相同伤害, HP逐击递减
+        # 计算每个敌人的每击伤害 = total_damage / multi_hit_count
+        enemy_data = {}  # name -> {max_hp, hit_dmg, start_hp}
+        for t in all_hits:
+            name = t.get("name","")
+            max_hp = t.get("max_hp", 0)
+            total_dmg = t.get("damage", 0)
+            per_hit = max(1, int(total_dmg / multi_hit_count))
+            enemy_data[name] = {"max_hp": max_hp, "hit_dmg": per_hit, "idx": t.get("idx", 0)}
 
-    for hi in range(multi_hit_count):
-        if is_aoe:
+        for hi in range(multi_hit_count):
             hit_targets = []
-            for name, info in per_enemy.items():
-                d = int(info["dmg"] / multi_hit_count)
-                if hi == multi_hit_count - 1:
-                    leftover = info["dmg"] - (multi_hit_count-1) * int(info["dmg"] / multi_hit_count)
-                    if leftover > 0: d = leftover
-                hit_targets.append({"name":name,"damage":d,"crit":info["crit"],
-                    "idx":info.get("idx",0),"max_hp":info.get("max_hp",0),"hp_pct":info.get("hp_pct",0)})
+            for name, info in enemy_data.items():
+                remaining = max(0, info["max_hp"] - hi * info["hit_dmg"])
+                dmg_this_hit = min(info["hit_dmg"], remaining)
+                hp_after = max(0, remaining - dmg_this_hit)
+                hp_pct = hp_after / max(1, info["max_hp"])
+                killed = hp_after <= 0
+                hit_targets.append({
+                    "name": name,
+                    "damage": dmg_this_hit,
+                    "crit": False,
+                    "killed": killed,
+                    "idx": info["idx"],
+                    "max_hp": info["max_hp"],
+                    "hp_pct": hp_pct
+                })
             new_act = dict(act)
             new_act["targets"] = hit_targets
             new_act["hit_no"] = hi + 1
             new_act["total_hits"] = multi_hit_count
             new_acts.append(new_act)
-        else:
-            for hi2 in range(multi_hit_count):
-                if hi2 < len(all_hits):
-                    hit = all_hits[hi]
-                    new_act = dict(act)
-                    new_act["target_name"] = hit.get("name","")
-                    new_act["damage"] = hit.get("damage", 0)
-                    new_act["crit"] = hit.get("crit", False)
-                    new_act["killed"] = hit.get("killed", False)
-                    new_act["hit_no"] = hi2 + 1
-                    new_act["total_hits"] = multi_hit_count
-                    new_acts.append(new_act)
+    else:
+        # ST多段: 按顺序分组
+        per_hit_size = len(all_hits) // multi_hit_count
+        if per_hit_size == 0:
+            return [act]
+        for hi in range(multi_hit_count):
+            start = hi * per_hit_size
+            end = start + per_hit_size if hi < multi_hit_count - 1 else len(all_hits)
+            hit_targets = []
+            for j in range(start, end):
+                if j < len(all_hits):
+                    t = all_hits[j]
+                    hit_targets.append({
+                        "name": t.get("name",""),
+                        "damage": t.get("damage", 0),
+                        "crit": t.get("crit", False),
+                        "killed": t.get("killed", False),
+                        "idx": t.get("idx", 0),
+                        "max_hp": t.get("max_hp", 0),
+                        "hp_pct": t.get("hp_pct", 0)
+                    })
+            new_act = dict(act)
+            if hit_targets:
+                new_act["target_name"] = hit_targets[0]["name"]
+                new_act["damage"] = hit_targets[0]["damage"]
+                new_act["crit"] = hit_targets[0]["crit"]
+                new_act["killed"] = hit_targets[0]["killed"]
+            new_act["hit_no"] = hi + 1
+            new_act["total_hits"] = multi_hit_count
+            new_acts.append(new_act)
     return new_acts
 
 def enemy_basic_attack(unit, allies, enemies):
@@ -2281,7 +2305,10 @@ def api_sweep():
         result=run_speed_battle(my_heroes, enemies, stage)
         g["ticks"]+=1; tj+=result.get("jade_reward",0)
         if result.get("equip_reward"): te.append(result["equip_reward"])
-        if not result.get("win",False): break
+        if result.get("win",False):
+            g["stage_index"] += 1
+        else:
+            break
     save_game(g)
     r=to_client(g); r["sweep_result"]={"total_jade":tj,"total_equips":te,"count":len(te)}
     return jsonify(r)
