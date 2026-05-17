@@ -658,10 +658,18 @@ def run_speed_battle(my_heroes, enemies, stage):
                     unit["energy"] += min(40, unit.get("energy_gain", 25))
                     act = enemy_basic_attack(unit, my_heroes, enemies)
                 all_actions.append(act)
-                # 注入当时HP状态（非最终态）
+                # 注入当时HP状态（非最终态）+ 实时有效攻暴
                 a=act
                 if a.get("type")!="card_play":
                     a["attacker_idx"]=next((i for i,uu in enumerate(enemies if a.get("side")=="enemy" else my_heroes) if uu.get("name")==a.get("attacker_name")),0)
+                    # 注入攻击者当时的有效攻暴（让前端能实时感知buff变化）
+                    if a.get("side")=="ally" or a.get("side")=="heal":
+                        a["hero_eff_atk"]=cstat(unit,"atk",unit["atk"])
+                        a["hero_eff_crit"]=cstat(unit,"crit",unit["crit"])
+                        a["hero_base_atk"]=unit["atk"]
+                        a["hero_base_crit"]=unit["crit"]
+                        a["hero_buffs"]=[b["stat"] for b in unit.get("buffs",[])]
+                        a["hero_debuffs"]=[d["stat"] for d in unit.get("debuffs",[])]
                     if a.get("aoe") and a.get("targets"):
                         for tg in a["targets"]:
                             tlist=enemies if a.get("side")=="ally" else my_heroes
@@ -694,6 +702,13 @@ def run_speed_battle(my_heroes, enemies, stage):
                 a2=act
                 if a2.get("type")!="card_play":
                     a2["attacker_idx"]=next((i for i,uu in enumerate(my_heroes) if uu.get("name")==a2.get("attacker_name")),0)
+                    # 注入攻击者当时的有效攻暴
+                    a2["hero_eff_atk"]=cstat(unit,"atk",unit["atk"])
+                    a2["hero_eff_crit"]=cstat(unit,"crit",unit["crit"])
+                    a2["hero_base_atk"]=unit["atk"]
+                    a2["hero_base_crit"]=unit["crit"]
+                    a2["hero_buffs"]=[b["stat"] for b in unit.get("buffs",[])]
+                    a2["hero_debuffs"]=[d["stat"] for d in unit.get("debuffs",[])]
                     if a2.get("aoe") and a2.get("targets"):
                         tlist=enemies if a2.get("side")=="ally" else my_heroes
                         for tg in a2["targets"]:

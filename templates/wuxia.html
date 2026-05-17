@@ -347,10 +347,11 @@ function showBattle(br){
       setTimeout(()=>showBR(br),500);return;
     }
     const act=aa[ti];
-    // 更新行动队列+能量（不重建卡片，避免血条蹦迪）
+    // 更新行动队列+能量+攻暴（不重建卡片，避免血条蹦迪）
     updateActionQueue(aa,ti);
     updateStats(act);
     updateCardEnergy(act);
+    updateCardStats(act);
     // Buff通知(技能buff/debuff)
     if(act.buff_effects&&act.buff_effects.length>0){
       const be=act.buff_effects;
@@ -478,6 +479,59 @@ function buffNotify(text,clr){
   const el=document.createElement("div");el.className="skill-popup skill-big";
   el.innerHTML=`<span class="s-icon" style="color:${clr||"#5adb7a"}">✨</span><div class="s-name" style="color:${clr||"#5adb7a"}">${text}</div>`;
   document.body.appendChild(el);setTimeout(()=>el.remove(),1400);
+}
+
+// ═══ 实时更新卡片攻暴+状态(每步都调用) ═══
+function updateCardStats(act){
+  if(act.type==="card_play")return;
+  if(act.hero_eff_atk===undefined)return;
+  const side=act.side==="heal"||act.side==="ally"?"my":"";
+  const allCards=document.querySelectorAll(`#bc-${side||"my"} .bc-card`);
+  for(let c of allCards){
+    const nm=c.querySelector(".bc-name");
+    if(!nm||!nm.textContent.startsWith(act.attacker_name))continue;
+    // 更新攻暴数字
+    const info=c.querySelector(".bc-info>div:not(.bc-name):not(.bc-class)");
+    if(info){
+      const baseAtk=act.hero_base_atk||act.hero_eff_atk;
+      const baseCrit=act.hero_base_crit||act.hero_eff_crit;
+      const atkDiff=act.hero_eff_atk!==baseAtk;
+      const critDiff=act.hero_eff_crit!==baseCrit;
+      let html=info.innerHTML;
+      html=html.replace(/⚔️\d+(<span[^>]*>\(\d+\)<\/span>)?/g,
+        atkDiff?`⚔️${act.hero_eff_atk}<span style="font-size:7px;color:#5a4a3a">(${baseAtk})</span>`:`⚔️${act.hero_eff_atk}`);
+      html=html.replace(/⚡\d+%(<span[^>]*>\(\d+%\)<\/span>)?/g,
+        critDiff?`⚡${act.hero_eff_crit}%<span style="font-size:7px;color:#5a4a3a">(${baseCrit}%)</span>`:`⚡${act.hero_eff_crit}%`);
+      info.innerHTML=html;
+    }
+    // 更新buff标签
+    let bf=c.querySelector(".bc-buffs");
+    if(bf){
+      const tags=[];
+      for(let b of act.hero_buffs||[]){
+        if(b==="immune")tags.push('<span class="bc-buff ultimate">🛡️免疫</span>');
+        else if(b==="atk")tags.push('<span class="bc-buff positive">⚔️+攻</span>');
+        else if(b==="dmg_reduce")tags.push('<span class="bc-buff positive">🛡️减伤</span>');
+        else if(b==="lifesteal")tags.push('<span class="bc-buff positive">💉吸血</span>');
+        else if(b==="reflect")tags.push('<span class="bc-buff positive">🔄反伤</span>');
+        else if(b==="spd")tags.push('<span class="bc-buff positive">👟加速</span>');
+        else tags.push(`<span class="bc-buff positive">${b}</span>`);
+      }
+      for(let d of act.hero_debuffs||[]){
+        if(d==="burn")tags.push('<span class="bc-buff negative">🔥灼烧</span>');
+        else if(d==="stun"||d==="freeze")tags.push('<span class="bc-buff negative">💀眩晕</span>');
+        else if(d==="heal_block")tags.push('<span class="bc-buff negative">🚫禁疗</span>');
+        else if(d==="atk")tags.push('<span class="bc-buff negative">⬇️攻-</span>');
+        else tags.push(`<span class="bc-buff negative">${d}</span>`);
+      }
+      bf.innerHTML=tags.slice(0,6).join("");
+    }
+    // 更新🛡️图标
+    if(act.hero_buffs&&act.hero_buffs.includes("immune")){
+      if(!nm.innerHTML.includes("🛡️"))nm.innerHTML+=' <span class="bc-shield-icon">🛡️</span>';
+    }
+    break;
+  }
 }
 function updateCardEnergy(act){
   if(act.type==="card_play")return;
