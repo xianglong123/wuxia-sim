@@ -82,6 +82,22 @@ body{font-family:-apple-system,"PingFang SC","Noto Serif SC",serif;background:#0
 @keyframes dmgFloat{0%{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}100%{opacity:0;transform:translateX(-50%) translateY(-30px) scale(1.3)}}
 .bc-dmg-num.ally-c{color:#ff8a4a}.bc-dmg-num.enemy-c{color:#e85a5a}.bc-dmg-num.crit-c{color:#ffd700;font-size:20px}.bc-dmg-num.heal-c{color:#5adb7a}
 
+/* ── Energy bar with pulse ── */
+.bc-energy-strip{height:4px;background:#1a1a24;border-radius:2px;margin-top:1px;overflow:hidden;position:relative}
+.bc-energy-fill{height:100%;background:linear-gradient(90deg,#4a8eff,#6ab0ff);border-radius:2px;transition:width .25s ease}
+.bc-energy-ready .bc-energy-fill{background:linear-gradient(90deg,#ffd700,#ff8a4a);animation:energyPulse .8s ease infinite}
+@keyframes energyPulse{0%,100%{opacity:.7}50%{opacity:1;box-shadow:0 0 6px rgba(255,215,0,.5)}}
+.bc-energy-num{font-size:9px;font-weight:600;color:#4a8eff;margin-left:2px}
+.bc-energy-ready .bc-energy-num{color:#ffd700}
+
+/* ── Action Queue ── */
+.action-queue{width:100%;max-width:600px;background:rgba(0,0,0,.4);border-radius:6px;padding:4px 8px;margin:2px 0 4px;display:flex;gap:3px;align-items:center;overflow-x:auto;flex-shrink:0;min-height:26px}
+.aq-label{font-size:8px;color:#4a4a5a;white-space:nowrap;margin-right:4px;flex-shrink:0}
+.aq-item{font-size:9px;padding:2px 6px;border-radius:4px;white-space:nowrap;border:1px solid #2a2a3a;background:#0d0b09;flex-shrink:0;display:flex;align-items:center;gap:2px;opacity:.6}
+.aq-item.aq-next{border-color:#8a6a20;background:#1a1410;opacity:1;box-shadow:0 0 4px rgba(138,106,32,.3)}
+.aq-item.aq-ally{color:#ff8a4a}.aq-item.aq-enemy{color:#e85a5a}.aq-item.aq-heal{color:#5adb7a}
+.aq-item.aq-card{color:#ffd700;border-color:#5a4a20}
+
 /* Battle stats panel */
 .battle-stats-panel{width:100%;max-width:600px;display:flex;gap:8px;margin:4px 0;flex-wrap:wrap}
 .stats-col{flex:1;min-width:100px;background:rgba(0,0,0,.3);border-radius:6px;padding:6px 8px;border:1px solid #1a1a24}
@@ -181,6 +197,7 @@ body{font-family:-apple-system,"PingFang SC","Noto Serif SC",serif;background:#0
 </div>
 <div class="battle-overlay" id="battleOverlay">
   <div class="battle-title" id="battleStageName">⚔️ 战斗</div>
+  <div class="action-queue" id="actionQueue"></div>
   <div class="battle-field" id="battleField"></div>
   <div class="battle-stats-panel" id="battleStatsPanel"></div>
   <div class="vs-text" id="vsText">⚡ VS ⚡</div>
@@ -274,7 +291,7 @@ function showBattle(br){
   document.getElementById("battleResult").style.display="none";document.getElementById("roundIndicator").textContent="";
   document.getElementById("vsText").style.display="flex";document.getElementById("battleLogT").innerHTML="";
   document.getElementById("battleStats").style.display="none";
-  renderBF(br.my_heroes,br.enemies,false);
+  renderBF(br.my_heroes,br.enemies,false,br.actions,0);
   let ti=0;const aa=br.actions,total=aa.length;
   const liveStats={dmg:{},heal:{},taken:{},bestHit:{name:"",val:0},crits:0};
   function updateStats(act){
@@ -302,6 +319,8 @@ function showBattle(br){
       setTimeout(()=>showBR(br),500);return;
     }
     const act=aa[ti];
+    // 更新行动队列和能量条
+    renderBF(br.my_heroes,br.enemies,false,aa,ti);
     updateStats(act);
     // 卡牌动作: 只显示文字
     if(act.type==="card_play"){
@@ -312,7 +331,7 @@ function showBattle(br){
       document.getElementById("battleLogT").scrollTop=document.getElementById("battleLogT").scrollHeight;
       document.getElementById("roundIndicator").textContent="🎴 战术卡";
       skillPopup(act.card?.name||"战术", "ally", "#5adb7a");
-      ti++;setTimeout(nxt,300);return;
+      ti++;setTimeout(nxt,150);return;
     }
     // 战斗动作为技能/基础攻击
     const isSkill=act.type==="skill";
@@ -334,12 +353,35 @@ function showBattle(br){
     document.getElementById("battleLogT").appendChild(ld);
     document.getElementById("battleLogT").scrollTop=document.getElementById("battleLogT").scrollHeight;
     document.getElementById("roundIndicator").textContent=`${act.side==="ally"?icon:act.side==="heal"?"💚":"💀"} ${act.side==="ally"?"我方":act.side==="heal"?"治疗":"敌方"} ${isSkill?"技能":"普攻"}`;
-    animateAct(act,()=>{ti++;setTimeout(nxt,200+(act.killed?150:0)+(act.crit?100:0))});
+    animateAct(act,()=>{ti++;setTimeout(nxt,100+(act.killed?120:0)+(act.crit?80:0))});
   }
   setTimeout(nxt,600);
 }
 
-function renderBF(myH,enemies,isFinal){
+function renderBF(myH,enemies,isFinal,aa,ti){
+  // 渲染行动队列
+  const aq=document.getElementById("actionQueue");
+  if(aa&&aa.length>0&&ti!==undefined){
+    const totalActionTypes=["ally","ally","ally","ally","ally","ally","enemy","enemy","enemy","enemy","enemy","enemy",
+      "heal","heal","card","card","card"];
+    let h=`<span class="aq-label">⏱️牌轴</span>`;
+    const endIdx=Math.min(ti+5,aa.length);
+    const showFrom=Math.max(0,endIdx-5);
+    for(let j=showFrom;j<endIdx;j++){
+      const a=aa[j];
+      const nm=a.attacker_name||"";
+      const isNext=j===ti?" aq-next":"";
+      let cls="aq-item";
+      if(a.type==="card_play")cls+=" aq-card";
+      else if(a.side==="ally")cls+=" aq-ally";
+      else if(a.side==="enemy")cls+=" aq-enemy";
+      else if(a.side==="heal")cls+=" aq-heal";
+      const icon=a.type==="card_play"?"🎴":a.type==="skill"?"⚡":"🗡️";
+      h+=`<div class="${cls}${isNext}">${icon}${nm.slice(0,4)}</div>`;
+    }
+    aq.innerHTML=h;
+  }else{aq.innerHTML=""}
+
   const RS=(units,side)=>{
     return `<div class="battle-side"><div class="battle-side-label">${side==="my"?"🛡️ 我方":"💀 敌方"}</div><div class="bc" id="bc-${side}">${
       units.map((u,i)=>{
@@ -355,14 +397,15 @@ function renderBF(myH,enemies,isFinal){
         // 能量条
         const energy=u.energy||0;
         const spd=u.spd||100;
+        const skillCost=200; // approximate
         const energyPct=Math.min(100,(energy/200)*100);
+        const energyReady=energy>=150?" bc-energy-ready":"";
         const hpShow=isFinal?`<span>❤️${currentHp}</span>`:`<span id="bchptxt-${side}-${i}">❤️${currentHp}</span>`;
         return `<div class="bc-card ${alive?'':'bc-dead'}" id="bc-${side}-${i}" style="border-color:${u.color};${glow}"><span class="bc-icon">${ci}</span>
           <div class="bc-info"><div class="bc-name">${u.name}</div><div class="bc-class">${u.class}</div>
-          <div style="display:flex;gap:4px;font-size:9px;color:#6a5a4a">${hpShow} <span style="color:#4a8eff">⚡${energy}</span> <span>👟${spd}</span></div>
+          <div style="display:flex;gap:4px;font-size:9px;color:#6a5a4a">${hpShow} <span class="bc-energy-num${energyReady}">⚡${energy}</span></div>
           <div class="bc-hp-strip"><div class="bc-hp-fill" id="bchp-${side}-${i}" style="width:${hpPct}%;background:${hpCol}"></div></div>
-          <div style="height:3px;background:#1a1a24;border-radius:2px;margin-top:1px;overflow:hidden"><div style="width:${energyPct}%;height:100%;background:#4a8eff;border-radius:2px;transition:width .3s"></div></div>
-          </div></div>`;
+          <div class="bc-energy-strip${energyReady}"><div class="bc-energy-fill" id="bcene-${side}-${i}" style="width:${energyPct}%"></div></div></div></div>`;
       }).join("")}</div></div>`;
   };
   document.getElementById("battleField").innerHTML=RS(myH,"my")+RS(enemies,"enemy");
@@ -421,53 +464,69 @@ function screenFlash(type){
 function animateAct(act,cb){
   const isAlly=act.side==="ally";let ts=isAlly?"enemy":"my",as=isAlly?"my":"enemy";
   if(act.side==="heal"){ts="my";as="my"}
-  // 快速跳过：目标已全部死亡，不播放动画
+  // 快速跳过：目标已全部死亡
   if(act.aoe && act.targets && act.targets.length>0){
     const allDead=act.targets.every(tg=>{
       const tc=document.querySelectorAll(`#bc-${ts} .bc-card`);
       const tcard=tc[Math.min(tg.idx||0,tc.length-1)];
       return tcard&&tcard.classList.contains("bc-dead");
     });
-    if(allDead){if(cb)setTimeout(cb,30);return}
+    if(allDead){if(cb)setTimeout(cb,10);return}
   }else if(!act.aoe && (act.damage>0||act.killed)){
     const ti=act.target_idx||0;
     const tc=document.querySelectorAll(`#bc-${ts} .bc-card`);
     const tcard=tc[Math.min(ti,tc.length-1)];
-    if(tcard&&tcard.classList.contains("bc-dead")){if(cb)setTimeout(cb,30);return}
+    if(tcard&&tcard.classList.contains("bc-dead")){if(cb)setTimeout(cb,10);return}
   }
   const ai=act.attacker_idx||0;
   const ac=document.querySelectorAll(`#bc-${as} .bc-card`);
   const acard=ac[Math.min(ai,ac.length-1)];
-  if(acard&&!acard.classList.contains("bc-dead")){acard.classList.add("bc-attack")}
-  // Skill popup
-  skillPopup(act.skill,act.side,act.attacker_color||"#ffd700");
 
   // ── AOE ──
   if(act.aoe){
-    // 如果 targets 为空（敌人已全死），直接跳过动画
     if(!act.targets||act.targets.length===0){
-      if(cb)setTimeout(cb,150);
-      return;
+      if(cb)setTimeout(cb,80);return;
     }
-    const isHeal=act.heal>0;
-    if(isHeal)sfx("green");else{screenFlash(act.crit?"gold":"red");if(act.crit)sfx("gold")}
+    const isHeal=act.side==="heal";
+    // 攻击者闪光（立刻）
+    if(acard&&!acard.classList.contains("bc-dead")){
+      acard.classList.add("bc-attack");
+      // 闪一下立刻移除
+      if(isHeal)setTimeout(()=>{if(acard)acard.classList.remove("bc-attack");},150);
+      else setTimeout(()=>{if(acard)acard.classList.remove("bc-attack");},100);
+    }
+    // skill popup
+    skillPopup(act.skill,act.side,act.attacker_color||"#ffd700");
+    // 特效
+    if(isHeal)sfx("green");else screenFlash(act.crit?"gold":"red");
+    // 目标闪（略微延迟，感觉攻击出手）
     setTimeout(()=>{
-      if(acard)acard.classList.remove("bc-attack");
-      if(isHeal&&acard)acard.classList.add("bc-heal");
       act.targets.forEach(tg=>{
         const tc=document.querySelectorAll(`#bc-${ts} .bc-card`);
         const tcard=tc[Math.min(tg.idx||0,tc.length-1)];
-        if(tcard){
-          if(tg.heal)tcard.classList.add("bc-heal");else tcard.classList.add("bc-hit");
-          if(tg.heal){const d=document.createElement("div");d.className="bc-dmg-num heal-c";d.textContent=`+${tg.heal}❤️`;tcard.appendChild(d);setTimeout(()=>d.remove(),1000)}
-          else if(tg.damage>0){const d=document.createElement("div");d.className="bc-dmg-num";if(tg.crit)d.classList.add("crit-c");else if(isAlly)d.classList.add("ally-c");else d.classList.add("enemy-c");d.textContent=`-${tg.damage}${tg.crit?"⭐":""}`;tcard.appendChild(d);setTimeout(()=>d.remove(),1000)}
-          const np=Math.max(0,(tg.hp_pct||0)*100);const hpEl=document.getElementById(`bchp-${ts}-${tg.idx}`);
-          if(hpEl){hpEl.style.width=np+"%";hpEl.style.background=np>50?'#5adb7a':np>25?'#e8b84a':'#e85a5a'}
-          if(tg.killed){tcard.classList.add("bc-dead");koPopup();sfx("gold")}
+        if(!tcard)return;
+        if(tg.heal||isHeal){tcard.classList.add("bc-heal");setTimeout(()=>tcard.classList.remove("bc-heal"),300)}
+        else{
+          tcard.classList.add("bc-hit");
+          // 击退效果
+          tcard.style.transform="translateX(4px)";
+          setTimeout(()=>{tcard.style.transform="";tcard.classList.remove("bc-hit")},250);
         }
+        if(tg.heal||isHeal){
+          const d=document.createElement("div");d.className="bc-dmg-num heal-c";
+          d.textContent=`+${tg.heal||0}❤️`;tcard.appendChild(d);setTimeout(()=>d.remove(),900);
+        }else if(tg.damage>0){
+          const d=document.createElement("div");d.className="bc-dmg-num";
+          if(tg.crit)d.classList.add("crit-c");else if(isAlly)d.classList.add("ally-c");else d.classList.add("enemy-c");
+          d.textContent=`-${tg.damage}${tg.crit?"⭐":""}`;tcard.appendChild(d);setTimeout(()=>d.remove(),900);
+        }
+        const np=Math.max(0,(tg.hp_pct||0)*100);
+        const hpEl=document.getElementById(`bchp-${ts}-${tg.idx}`);
+        if(hpEl){hpEl.style.width=np+"%";hpEl.style.background=np>50?'#5adb7a':np>25?'#e8b84a':'#e85a5a';setTimeout(()=>{hpEl.style.transition="width .35s ease"},50)}
+        if(tg.killed){tcard.classList.add("bc-dead");koPopup();sfx("gold")}
       });
-      if(cb)setTimeout(cb,350);
-    },400);
+      if(cb)setTimeout(cb,250);
+    },150);
     return;
   }
 
@@ -475,24 +534,46 @@ function animateAct(act,cb){
   const ti=act.target_idx||0;
   const tc=document.querySelectorAll(`#bc-${ts} .bc-card`);
   const tcard=tc[Math.min(ti,tc.length-1)];
-  if(act.heal>0)sfx("green");else screenFlash(act.crit?"gold":"red");
+  const isHeal=act.side==="heal";
+  // 攻击者闪光（立刻）
+  if(acard&&!acard.classList.contains("bc-dead")){
+    acard.classList.add("bc-attack");
+    setTimeout(()=>{if(acard)acard.classList.remove("bc-attack")},100);
+  }
+  skillPopup(act.skill,act.side,act.attacker_color||"#ffd700");
+  if(isHeal)sfx("green");else screenFlash(act.crit?"gold":"red");
+  // 目标闪
   setTimeout(()=>{
-    if(acard)acard.classList.remove("bc-attack");
-    if(tcard){if(act.heal>0)tcard.classList.add("bc-heal");else tcard.classList.add("bc-hit")}
+    if(tcard){
+      if(isHeal){
+        tcard.classList.add("bc-heal");setTimeout(()=>tcard.classList.remove("bc-heal"),300);
+      }else{
+        tcard.classList.add("bc-hit");
+        tcard.style.transform="translateX(6px)";
+        setTimeout(()=>{tcard.style.transform="";tcard.classList.remove("bc-hit")},250);
+      }
+    }
+    // HP条更新
     const hpEl=document.getElementById(`bchp-${ts}-${ti}`);
-    if(hpEl){const np=Math.max(0,(act.target_hp_pct||0)*100);hpEl.style.width=np+"%";hpEl.style.background=np>50?'#5adb7a':np>25?'#e8b84a':'#e85a5a'}
-    // 实时更新血量文字
+    if(hpEl&&act.target_hp_pct!==undefined){
+      const np=Math.max(0,act.target_hp_pct*100);
+      hpEl.style.width=np+"%";hpEl.style.background=np>50?'#5adb7a':np>25?'#e8b84a':'#e85a5a';
+    }
+    // HP文字更新
     const hpTx=document.getElementById(`bchptxt-${ts}-${ti}`);
-    if(hpTx){hpTx.textContent=`❤️${Math.round((act.target_hp_pct||0)*(act.target_max_hp||100))}`}
+    if(hpTx&&act.target_max_hp&&act.target_hp_pct!==undefined){
+      hpTx.textContent=`❤️${Math.round(act.target_hp_pct*act.target_max_hp)}`;
+    }
+    // 伤害数字
     if((act.damage>0||act.heal>0)&&tcard){
       const d=document.createElement("div");d.className="bc-dmg-num";
-      if(act.crit)d.classList.add("crit-c");else if(act.heal>0)d.classList.add("heal-c");else if(isAlly)d.classList.add("ally-c");else d.classList.add("enemy-c");
-      d.textContent=act.heal>0?`+${act.heal}❤️`:`-${act.damage}${act.crit?"⭐":""}`;
-      tcard.appendChild(d);setTimeout(()=>d.remove(),1000);
+      if(act.crit)d.classList.add("crit-c");else if(isHeal)d.classList.add("heal-c");else if(isAlly)d.classList.add("ally-c");else d.classList.add("enemy-c");
+      d.textContent=isHeal?`+${act.heal||0}❤️`:`-${act.damage||0}${act.crit?"⭐":""}`;
+      tcard.appendChild(d);setTimeout(()=>d.remove(),900);
     }
     if(act.killed&&tcard){tcard.classList.add("bc-dead");koPopup();sfx("gold")}
-    if(cb)setTimeout(cb,300);
-  },400);
+    if(cb)setTimeout(cb,200);
+  },120);
 }
 
 function showStageStats(br,stats){

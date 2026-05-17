@@ -728,6 +728,18 @@ def run_speed_battle(my_heroes, enemies, stage):
         r["jade_reward"]=max(2,stage["drops"]["jade"]//4)
         r["failed"]=True
     r["cards_played"] = len([a for a in all_actions if a.get("type")=="card_play"])
+    # 补充target_hp_pct/target_max_hp到所有action
+    for a in all_actions:
+        if a.get("type")=="card_play": continue
+        if a.get("aoe") and a.get("targets"):
+            for tg in a["targets"]:
+                u=next((u2 for u2 in my_heroes+enemies if u2.get("name")==tg.get("name")),None)
+                if u: tg["hp_pct"]=max(0,u["hp"]/max(1,u["max_hp"])); tg["max_hp"]=u["max_hp"]
+        elif a.get("target_name"):
+            u=next((u2 for u2 in my_heroes+enemies if u2.get("name")==a["target_name"]),None)
+            if u: a["target_hp_pct"]=max(0,u["hp"]/max(1,u["max_hp"])); a["target_max_hp"]=u["max_hp"]
+        # attacker idx for front-end
+        a["attacker_idx"]=next((i for i,u2 in enumerate(my_heroes+enemies) if u2.get("name")==a.get("attacker_name")),0)
     return r
 
 def hero_basic_attack(unit, allies, enemies):
