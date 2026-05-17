@@ -124,6 +124,43 @@ body{font-family:-apple-system,"PingFang SC","Noto Serif SC",serif;background:#0
 .aq-item.aq-ally{color:#ff8a4a}.aq-item.aq-enemy{color:#e85a5a}.aq-item.aq-heal{color:#5adb7a}
 .aq-item.aq-card{color:#ffd700;border-color:#5a4a20}
 
+/* ── 手牌区 ── */
+.card-hand{width:100%;max-width:600px;display:flex;gap:4px;padding:4px 0;flex-wrap:wrap;justify-content:center;flex-shrink:0;min-height:60px}
+.card-slot{width:90px;border-radius:8px;border:1px solid #2a2218;background:linear-gradient(180deg,#1a1610,#12100e);padding:6px 4px;text-align:center;cursor:pointer;transition:all .15s;position:relative}
+.card-slot:hover{transform:translateY(-4px);border-color:#8a7a5a;box-shadow:0 4px 12px rgba(0,0,0,.4)}
+.card-slot .c-name{font-size:10px;font-weight:600;color:#d4c9a8}
+.card-slot .c-desc{font-size:8px;color:#6a5a4a;margin:2px 0}
+.card-slot .c-cost{position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:#4a8eff;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.card-slot .c-cost.legend{background:#ffd700;color:#000}
+.card-slot .c-rarity{font-size:7px;position:absolute;top:-4px;left:-4px;padding:1px 4px;border-radius:3px}
+.card-slot .c-rarity.fan{background:#555;color:#ddd}
+.card-slot .c-rarity.liang{background:#5adb7a;color:#000}
+.card-slot .c-rarity.jipin{background:#4a8eff;color:#fff}
+.card-slot .c-rarity.jue{background:#b84aff;color:#fff}
+.card-slot .c-rarity.chuan{background:#ffd700;color:#000}
+.card-slot.cant{opacity:.4;cursor:not-allowed}
+.card-slot.cant:hover{transform:none}
+.card-energy-bar{width:100%;max-width:600px;text-align:center;font-size:10px;color:#6a5a4a;padding:2px 0;flex-shrink:0}
+.card-energy-bar .ce-dots{display:inline-flex;gap:2px;padding:0 4px}
+.card-energy-bar .ce-dot{width:8px;height:8px;border-radius:50%;background:#2a2a3a;border:1px solid #3a3a4a}
+.card-energy-bar .ce-dot.filled{background:#4a8eff;border-color:#6ab0ff}
+.card-skip-btn{font-size:10px;padding:4px 12px;border-radius:6px;border:1px solid #2a2218;background:#0d0b09;color:#6a5a4a;cursor:pointer;font-family:inherit;flex-shrink:0}
+.card-skip-btn:hover{border-color:#5a4a3a;color:#d4c9a8}
+/* Card popup animation (played card preview) */
+.card-popup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:200;animation:cpIn .2s ease,cpOut .3s ease 1.1s forwards}
+.card-popup .cp-border{border:2px solid;border-radius:12px;padding:16px 24px;background:linear-gradient(135deg,#1a1610 0%,#0d0b09 100%);min-width:140px;text-align:center;position:relative;box-shadow:0 0 30px rgba(0,0,0,.6),0 0 60px rgba(255,215,0,.15)}
+.card-popup .cp-rarity{font-size:9px;padding:2px 8px;border-radius:4px;display:inline-block;margin-bottom:6px}
+.card-popup .cp-rarity.fan{background:#555;color:#ddd}
+.card-popup .cp-rarity.liang{background:#5adb7a;color:#000}
+.card-popup .cp-rarity.jipin{background:#4a8eff;color:#fff}
+.card-popup .cp-rarity.jue{background:#b84aff;color:#fff}
+.card-popup .cp-rarity.chuan{background:#ffd700;color:#000}
+.card-popup .cp-name{font-size:16px;font-weight:700;margin:4px 0}
+.card-popup .cp-desc{font-size:10px;color:#8a7a5a;margin:4px 0}
+.card-popup .cp-cost{position:absolute;top:-10px;right:-10px;width:24px;height:24px;border-radius:50%;background:#4a8eff;color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center}
+@keyframes cpIn{0%{opacity:0;transform:translate(-50%,-50%) scale(.6)}100%{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+@keyframes cpOut{0%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) scale(.8) translateY(20px)}}
+
 /* Battle stats panel */
 .battle-stats-panel{width:100%;max-width:600px;display:flex;gap:8px;margin:4px 0;flex-wrap:wrap}
 .stats-col{flex:1;min-width:100px;background:rgba(0,0,0,.3);border-radius:6px;padding:6px 8px;border:1px solid #1a1a24}
@@ -224,6 +261,8 @@ body{font-family:-apple-system,"PingFang SC","Noto Serif SC",serif;background:#0
 <div class="battle-overlay" id="battleOverlay">
   <div class="battle-title" id="battleStageName">⚔️ 战斗</div>
   <div class="action-queue" id="actionQueue"></div>
+  <div class="card-hand" id="cardHand"></div>
+  <div class="card-energy-bar" id="cardEnergyBar"></div>
   <div class="battle-field" id="battleField"></div>
   <div class="battle-stats-panel" id="battleStatsPanel"></div>
   <div class="vs-text" id="vsText">⚡ VS ⚡</div>
@@ -304,111 +343,246 @@ function render(g){
 }
 
 // ═══ Battle ═══
+let battleHand=null;
+let battleEnergy=0;
+let battlePhase=null;
+
 async function startBattle(){
   if(!game||!game.lineup||!game.lineup.length){showError("请先上阵英雄");return}
   document.getElementById("loading").style.display="flex";
-  try{const d=await apiFetch("/api/speed_battle",{method:"POST"});game=d;if(!d.battle_result){showError("异常");document.getElementById("loading").style.display="none";return}showBattle(d.battle_result)}catch(e){}
+  try{
+    const d=await apiFetch("/api/battle/start",{method:"POST"});
+    if(d.error){showError(d.error);document.getElementById("loading").style.display="none";return}
+    if(d.phase==="done"){showBattleResult(d);document.getElementById("loading").style.display="none";return}
+    // phase === "card" — 开始自动行动
+    showBattleBoard(d);
+    battleHand=d.hand||[];
+    battleEnergy=d.card_energy||0;
+    battlePhase="auto";
+    playActionsBatch(d.actions,()=>showCardHand());
+  }catch(e){showError(e.message)}
   document.getElementById("loading").style.display="none";
 }
 
-function showBattle(br){
-  const ov=document.getElementById("battleOverlay");ov.style.display="flex";
-  document.getElementById("battleStageName").textContent=`⚔️ 第${game.stage.index}关·${game.stage.name}`;
-  document.getElementById("battleResult").style.display="none";document.getElementById("roundIndicator").textContent="";
-  document.getElementById("vsText").style.display="flex";document.getElementById("battleLogT").innerHTML="";
-  document.getElementById("battleStats").style.display="none";
-  window._lastBr=br;
-  renderBF(br.my_heroes,br.enemies,false);
-  updateActionQueue(br.actions,0);
-  let ti=0;const aa=br.actions,total=aa.length;
-  const liveStats={dmg:{},heal:{},taken:{},bestHit:{name:"",val:0},crits:0};
-  function updateStats(act){
-    if(act.type==="card_play")return;
-    if(act.side==="ally"){
-      const dmg=act.aoe&&act.targets?act.targets.reduce((s,t)=>s+(t.damage||0),0):(act.damage||0);
-      if(dmg>0){liveStats.dmg[act.attacker_name]=(liveStats.dmg[act.attacker_name]||0)+dmg;
-        if(dmg>liveStats.bestHit.val)liveStats.bestHit={name:act.attacker_name,val:dmg};}
-      if(act.crit)liveStats.crits++;
-    }
-    if(act.side==="heal"){
-      const heal=act.aoe&&act.targets?act.targets.reduce((s,t)=>s+(t.heal||0),0):(act.heal||0);
-      if(heal>0)liveStats.heal[act.attacker_name]=(liveStats.heal[act.attacker_name]||0)+heal;
-    }
-    if(act.damage>0){
-      if(act.aoe&&act.targets){for(let tg of act.targets){if(tg.name)liveStats.taken[tg.name]=(liveStats.taken[tg.name]||0)+(tg.damage||0);}}
-      else if(act.target_name){liveStats.taken[act.target_name]=(liveStats.taken[act.target_name]||0)+act.damage;}
-    }
-    renderStatsPanel(liveStats);
-  }
-  function nxt(){
-    if(ti>=total){
-      document.getElementById("vsText").style.display="none";document.getElementById("roundIndicator").textContent="⚔️ 战斗结束";
-      renderBF(br.my_heroes,br.enemies,true);
-      setTimeout(()=>showBR(br),500);return;
-    }
-    const act=aa[ti];
-    // 更新行动队列+能量+攻暴（不重建卡片，避免血条蹦迪）
-    updateActionQueue(aa,ti);
+function playActionsBatch(acts,callback){
+  if(!acts||!acts.length){if(callback)callback();return}
+  let idx=0;
+  function playNext(){
+    if(idx>=acts.length){if(callback)callback();return}
+    const act=acts[idx];
+    updateActionQueue(acts,idx);
     updateStats(act);
     updateCardEnergy(act);
     updateCardStats(act);
-    // ═══ Buff通知(非basic都显示) ═══
-    if(act.buff_effects&&act.buff_effects.length>0){
-      const be=act.buff_effects;
-      const bLabels={"atk":"⚔️+攻","immune":"🛡️免疫","dmg_reduce":"🛡️减伤","lifesteal":"💉吸血","reflect":"🔄反伤","spd":"👟加速","crit":"⚡暴击"};
-      const label=be.map(b=>bLabels[b]||b).join(" ");
-      buffNotify(label,"#5adb7a");
-    }
-    // ═══ 被动触发 ═══
     if(act.type==="passive"){
-      const msg=act.msg||act.skill||"";
-      const el=document.getElementById("roundIndicator");el.textContent="✨ 被动触发";
-      skillPopup(act.skill||"被动",act.side||"ally","#5adb7a",true);
-      // 闪屏
-      sfx("green");
-      // 日志
-      const lt=`✨ ${act.attacker_name||""} ${act.skill}: ${msg}`;
-      const ld=document.createElement("div");ld.className="bl-line bl-heal";ld.textContent=lt;
-      document.getElementById("battleLogT").appendChild(ld);
-      document.getElementById("battleLogT").scrollTop=document.getElementById("battleLogT").scrollHeight;
-      ti++;setTimeout(nxt,600);return;
+      handlePassiveAction(act);idx++;setTimeout(playNext,600);return;
     }
-    // ═══ 卡牌动作 ═══
     if(act.type==="card_play"){
-      const msg=act.msg||act.card?.desc||"";
-      const lt=`🎴 ${act.attacker_name||""} 打出 ${act.card?.name||""}: ${msg}`;
-      const ld=document.createElement("div");ld.className="bl-line bl-heal";ld.textContent=lt;
+      handleCardPlayAction(act);idx++;setTimeout(playNext,400);return;
+    }
+    if(act.type==="basic"||act.type==="skill"){
+      const isSkill=act.type==="skill";
+      const icon=isSkill?"⚡":"🗡️";
+      let lt="";
+      if(act.side==="heal"){
+        if(act.aoe&&act.targets)lt=`💚 ${act.attacker_name}${act.skill}(群奶)❤️${act.targets.reduce((s,t)=>s+(t.heal||0),0)}`;
+        else lt=`💚 ${act.attacker_name}${act.skill}→❤️+${act.heal}`;
+      }else if(act.aoe&&act.targets)lt=`${act.side==="ally"?icon:"💀"}${act.attacker_name}${act.skill}(群攻)`;
+      else lt=`${act.side==="ally"?icon:"💀"}${act.attacker_name}${act.skill}→${act.target_name}💥${act.damage}${act.crit?"⭐":""}`;
+      const ld=document.createElement("div");ld.className="bl-line";ld.textContent=lt;
       document.getElementById("battleLogT").appendChild(ld);
       document.getElementById("battleLogT").scrollTop=document.getElementById("battleLogT").scrollHeight;
-      document.getElementById("roundIndicator").textContent="🎴 战术卡";
-      skillPopup(act.card?.name||"战术","ally","#ffd700",true);
-      // 卡牌有额外停顿感
-      document.body.style.animation="shake .15s ease";setTimeout(()=>{document.body.style.animation=""},200);
-      ti++;setTimeout(nxt,500);return;
+      document.getElementById("roundIndicator").textContent=act.side==="ally"?icon+" 我方":act.side==="heal"?"💚 治疗":"💀 敌方";
+      animateAct(act,()=>{idx++;setTimeout(playNext,50)});
+      return;
     }
-    // ═══ 战斗动作(技能/普攻) ═══
-    const isSkill=act.type==="skill";
-    const icon=isSkill?"⚡":"🗡️";
-    let lt="",lc="bl-line";
-    if(act.side==="heal"){
-      if(act.aoe&&act.targets){
-        lt=`💚 ${act.attacker_name}${act.skill}(群奶)❤️${act.targets.reduce((s,t)=>s+(t.heal||0),0)}`;
-      }else{lt=`💚 ${act.attacker_name}${act.skill}→❤️+${act.heal}`;}
-      lc+=" bl-heal";
-    }else if(act.aoe&&act.targets){
-      lt=`${act.side==="ally"?icon:"💀"}${act.attacker_name}${act.skill}(群攻)`;
-      lc+=act.side==="ally"?" bl-ally":" bl-enemy";
-    }else{
-      lt=`${act.side==="ally"?icon:"💀"}${act.attacker_name}${act.skill}→${act.target_name}💥${act.damage}${act.crit?"⭐":""}`;
-      lc+=act.side==="ally"?" bl-ally":" bl-enemy";
-    }
-    const ld=document.createElement("div");ld.className=lc;ld.textContent=lt;
-    document.getElementById("battleLogT").appendChild(ld);
-    document.getElementById("battleLogT").scrollTop=document.getElementById("battleLogT").scrollHeight;
-    document.getElementById("roundIndicator").textContent=`${act.side==="ally"?icon:act.side==="heal"?"💚":"💀"} ${act.side==="ally"?"我方":act.side==="heal"?"治疗":"敌方"} ${isSkill?"技能":"普攻"}`;
-    animateAct(act,()=>{ti++;setTimeout(nxt,50+(act.killed?250:0)+(act.crit?150:0));});
+    idx++;playNext();
   }
-  setTimeout(nxt,600);
+  playNext();
+}
+
+function handlePassiveAction(act){
+  const msg=act.msg||act.skill||"";
+  document.getElementById("roundIndicator").textContent="✨ 被动触发";
+  skillPopup(act.skill||"被动",act.side||"ally","#5adb7a",true);
+  sfx("green");
+  const lt=`✨ ${act.attacker_name||""} ${act.skill}: ${msg}`;
+  const ld=document.createElement("div");ld.className="bl-line bl-heal";ld.textContent=lt;
+  document.getElementById("battleLogT").appendChild(ld);
+  document.getElementById("battleLogT").scrollTop=document.getElementById("battleLogT").scrollHeight;
+  if(act.buff_effects&&act.buff_effects.length>0){
+    const bLabels={"atk":"⚔️+攻","immune":"🛡️免疫","dmg_reduce":"🛡️减伤","lifesteal":"💉吸血","reflect":"🔄反伤","spd":"👟加速","crit":"⚡暴击"};
+    buffNotify(act.buff_effects.map(b=>bLabels[b]||b).join(" "),"#5adb7a");
+  }
+}
+
+function handleCardPlayAction(act){
+  const card=act.card,ef=card?.effect;
+  const msg=act.msg||card?.desc||"";
+  const lt=`🎴 ${act.attacker_name||""} 打出 ${card?.name||""}: ${msg}`;
+  const ld=document.createElement("div");ld.className="bl-line bl-heal";ld.textContent=lt;
+  document.getElementById("battleLogT").appendChild(ld);
+  document.getElementById("battleLogT").scrollTop=document.getElementById("battleLogT").scrollHeight;
+  document.getElementById("roundIndicator").textContent="🎴 战术卡";
+  // 大号卡牌弹出
+  const popEl=document.createElement("div");popEl.className="card-popup";
+  const qColors={"凡品":"#888","良品":"#5adb7a","极品":"#4a8eff","绝品":"#b84aff","传说":"#ffd700"};
+  const qCls={"凡品":"fan","良品":"liang","极品":"jipin","绝品":"jue","传说":"chuan"};
+  const col=qColors[card?.rarity]||"#ffd700";
+  const rCls=qCls[card?.rarity]||"";
+  popEl.innerHTML=`<div class="cp-border" style="border-color:${col}"><div class="cp-rarity ${rCls}">${card?.rarity||""}</div><div class="cp-name" style="color:${col}">${card?.name||""}</div><div class="cp-desc">${card?.desc||""}</div><div class="cp-cost">⚡${card?.cost||0}</div></div>`;
+  document.getElementById("cardHand").appendChild(popEl);
+  setTimeout(()=>popEl.remove(),1400);
+  sfx("gold");
+  // 根据效果类型增加反馈
+  if(!ef)return;
+  const etype=ef.type;
+  if(etype==="buff_current"||etype==="buff_all_ally"||etype==="shield_all_ally"){
+    buffNotify(`${ef.desc||card?.desc||"增益"} [${card?.name}]`,"#ffd700");
+  }else if(etype==="debuff_all_enemy"){
+    buffNotify(`敌人${ef.desc||"被削弱"} [${card?.name}]`,"#e85a5a");
+    setTimeout(()=>sfx("red"),200);
+  }else if(etype==="heal"){
+    buffNotify(`回复 ${ef.desc||""} [${card?.name}]`,"#5adb7a");
+    sfxSkill("green");
+    // 治疗浮字
+    if(act.target_name&&act.heal){
+      const tIdx=window._lastBr?.my_heroes?.findIndex(h=>h.name===act.target_name);
+      if(tIdx>=0){const te=document.getElementById("bchptxt-my-"+tIdx);if(te){const d=document.createElement("div");d.className="bc-dmg-num heal-c";d.textContent=`+${act.heal}❤️`;te.parentElement.appendChild(d);setTimeout(()=>d.remove(),1100)}}
+    }
+  }else if(etype==="dmg"){
+    setTimeout(()=>sfx("red"),200);
+    document.body.style.animation="shake .25s ease";setTimeout(()=>{document.body.style.animation=""},300);
+    // 伤害浮字
+    if(act.target_name&&act.damage){
+      const tIdx=window._lastBr?.enemies?.findIndex(e=>e.name===act.target_name);
+      if(tIdx>=0){const te=document.getElementById("bchptxt-enemy-"+tIdx);if(te){const d=document.createElement("div");d.className="bc-dmg-num ally-c";d.textContent=`-${act.damage}${act.killed?"💀":""}`;te.parentElement.appendChild(d);setTimeout(()=>d.remove(),1100)}}
+    }
+  }else if(etype==="extra_action"){
+    buffNotify(`额外行动! [${card?.name}]`,"#b84aff");
+  }else if(etype==="taunt"){
+    buffNotify(`嘲讽敌人 [${card?.name}]`,"#ff8c00");
+  }else if(etype==="energy_all_ally"){
+    buffNotify(`全体充能 [${card?.name}]`,"#4a8eff");
+  }
+}
+
+function showBattleBoard(d){
+  window._lastBr=d;
+  renderBF(d.my_heroes,d.enemies,false);
+  document.getElementById("battleStageName").textContent=`⚔️ 第${game.stage.index}关·${game.stage.name}`;
+  document.getElementById("battleOverlay").style.display="flex";
+  document.getElementById("battleResult").style.display="none";
+  document.getElementById("vsText").style.display="flex";
+  document.getElementById("battleLogT").innerHTML="";
+  document.getElementById("battleStats").style.display="none";
+}
+
+const RARITY_CLS={"凡品":"fan","良品":"liang","极品":"jipin","绝品":"jue","传说":"chuan"};
+
+function showCardHand(){
+  battlePhase="card";
+  const handEl=document.getElementById("cardHand");
+  const energyEl=document.getElementById("cardEnergyBar");
+  // 能量条
+  let dots="";for(let i=0;i<3;i++)dots+=`<div class="ce-dot${i<battleEnergy?" filled":""}"></div>`;
+  energyEl.innerHTML=`<span style="color:#6a5a4a">⚡费用</span> ${dots}`;
+  // 手牌
+  if(!battleHand||!battleHand.length){
+    handEl.innerHTML=`<button class="card-skip-btn" onclick="skipCard()">⚡跳过(自动)</button>`;
+    return;
+  }
+  let h="";
+  const QC={"凡品":"#888","良品":"#5adb7a","极品":"#4a8eff","绝品":"#b84aff","传说":"#ffd700"};
+  for(let c of battleHand){
+    const col=QC[c.rarity]||"#888";
+    const cant=c.cost>battleEnergy?" cant":"";
+    const rcli=RARITY_CLS[c.rarity]||"fan";
+    const costCls=c.rarity==="传说"?" legend":"";
+    h+=`<div class="card-slot${cant}" onclick="${c.cost>battleEnergy?'':`playCard('${c.id}')`}" style="border-color:${col}">
+      <div class="c-rarity ${rcli}">${c.rarity}</div>
+      <div class="c-cost${costCls}">${c.cost}</div>
+      <div class="c-name" style="color:${col}">${c.name}</div>
+      <div class="c-desc">${c.desc}</div>
+    </div>`;
+  }
+  h+=`<button class="card-skip-btn" onclick="skipCard()">跳过</button>`;
+  handEl.innerHTML=h;
+}
+
+async function playCard(cardId){
+  battlePhase="busy";
+  document.getElementById("cardHand").innerHTML='<span style="font-size:9px;color:#6a5a4a">打出中...</span>';
+  try{
+    const d=await apiFetch("/api/battle/card",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({card_id:cardId})});
+    if(d.phase==="done"){showBattleResult(d);return}
+    battleHand=d.hand||[];
+    battleEnergy=d.card_energy||0;
+    // 更新棋盘
+    renderBF(d.my_heroes,d.enemies,false);
+    window._lastBr=d;
+    // 播放下一个批次的action
+    playActionsBatch(d.actions,()=>showCardHand());
+  }catch(e){showError(e.message)}
+}
+
+async function skipCard(){
+  battlePhase="busy";
+  document.getElementById("cardHand").innerHTML='<span style="font-size:9px;color:#6a5a4a">继续战斗中...</span>';
+  try{
+    const d=await apiFetch("/api/battle/skip",{method:"POST"});
+    if(d.phase==="done"){showBattleResult(d);return}
+    battleHand=d.hand||[];
+    battleEnergy=d.card_energy||0;
+    renderBF(d.my_heroes,d.enemies,false);
+    window._lastBr=d;
+    playActionsBatch(d.actions,()=>showCardHand());
+  }catch(e){showError(e.message)}
+}
+
+function showBattleResult(d){
+  const win=d.win||false;
+  const jr=d.jade_reward||0;
+  const eq=d.equip_reward;
+  document.getElementById("cardHand").innerHTML="";
+  document.getElementById("cardEnergyBar").innerHTML="";
+  document.getElementById("vsText").style.display="none";
+  document.getElementById("roundIndicator").textContent="⚔️ 战斗结束";
+  renderBF(d.my_heroes,d.enemies,true);
+
+  const rd=document.getElementById("battleResult");rd.style.display="block";
+  let lh=`💎+${jr}`;
+  if(eq)lh+=` <span style="color:#5adb7a">🗡️${eq}</span>`;
+  rd.innerHTML=`<div class="br-title ${win?'win':'lose'}">${win?'🏆胜利':'💀败北'}</div><div style="font-size:11px;color:#6a5a4a">${d.rounds||0}ticks</div><div style="margin:6px 0;font-size:12px">${lh}</div><button class="br-btn" onclick="closeBattle();render(game)">继续征战</button>`;
+
+  // Play back ALL remaining actions for the finale
+  // Actually the result already includes all actions, so we need to play those too
+  // But for simplicity, just show the final board state + render(game) to update
+            
+  // Update game state for rewards
+  if(game){game.jade=(game.jade||0)+jr;game.stage_index=(game.stage_index||0)+(win?1:0)}
+  render(game);
+}
+
+// ═══ Stats tracking ═══
+const liveStats={dmg:{},heal:{},taken:{},bestHit:{name:"",val:0},crits:0};
+function updateStats(act){
+  if(act.type==="card_play"||act.type==="passive")return;
+  if(act.side==="ally"){
+    const dmg=act.aoe&&act.targets?act.targets.reduce((s,t)=>s+(t.damage||0),0):(act.damage||0);
+    if(dmg>0){liveStats.dmg[act.attacker_name]=(liveStats.dmg[act.attacker_name]||0)+dmg;
+      if(dmg>liveStats.bestHit.val)liveStats.bestHit={name:act.attacker_name,val:dmg};}
+    if(act.crit)liveStats.crits++;
+  }
+  if(act.side==="heal"){
+    const heal=act.aoe&&act.targets?act.targets.reduce((s,t)=>s+(t.heal||0),0):(act.heal||0);
+    if(heal>0)liveStats.heal[act.attacker_name]=(liveStats.heal[act.attacker_name]||0)+heal;
+  }
+  if(act.damage>0){
+    if(act.aoe&&act.targets){for(let tg of act.targets){if(tg.name)liveStats.taken[tg.name]=(liveStats.taken[tg.name]||0)+(tg.damage||0);}}
+    else if(act.target_name){liveStats.taken[act.target_name]=(liveStats.taken[act.target_name]||0)+act.damage;}
+  }
+  renderStatsPanel(liveStats);
 }
 
 // ═══ Action Queue (不重建卡片) ═══
@@ -577,11 +751,11 @@ function renderBF(myH,enemies,isFinal){
     return `<div class="battle-side"><div class="battle-side-label">${side==="my"?"🛡️ 我方":"💀 敌方"}</div><div class="bc" id="bc-${side}">${
       units.map((u,i)=>{
         const ci=CI[u.class]||"❓";
-        const hpPct=isFinal?Math.max(0,(u.hp_pct||0)*100):100;
+        const hpPct=Math.max(0,(u.hp_pct||0)*100);
         const hpCol=hpPct>50?'#5adb7a':hpPct>25?'#e8b84a':'#e85a5a';
-        const alive=isFinal?(u.alive!==false):true;
-        const shieldPct=isFinal?(u.shield_pct||0)*100:0;
-        const currentHp=Math.round((u.max_hp||0)*(isFinal?Math.max(0,u.hp_pct||0):1));
+        const alive=(u.alive!==false);
+        const shieldPct=(u.shield_pct||0)*100;
+        const currentHp=Math.round((u.max_hp||0)*Math.max(0,u.hp_pct||0));
         const buffCount=(u.buffs||[]).filter(s=>s!=="immune").length;
         const debuffCount=(u.debuffs||[]).length;
         const glow=buffCount>0?`box-shadow:0 0 8px rgba(90,219,122,.3)`:(debuffCount>0?`box-shadow:0 0 8px rgba(232,90,90,.3)`:"");
@@ -610,11 +784,11 @@ function renderBF(myH,enemies,isFinal){
         }
         const buffRow=buffTags.length?`<div class="bc-buffs">${buffTags.slice(0,4).join("")}</div>`:"";
         const shieldIcon=hasImmune?'<span class="bc-shield-icon">🛡️</span>':'';
-        // 能量条(非最终状态从0开始)
-        const energy=isFinal?(u.energy||0):0;
+        // 能量条
+        const energy=(u.energy||0);
         const energyPct=Math.min(100,(energy/200)*100);
         const energyReady=energy>=150?" bc-energy-ready":"";
-        const hpShow=isFinal?`<span>❤️${currentHp}</span>`:`<span id="bchptxt-${side}-${i}">❤️${currentHp}</span>`;
+        const hpShow=`<span id="bchptxt-${side}-${i}">❤️${currentHp}</span>`;
         const effAtk=u.eff_atk||u.atk||0;
         const effCrit=u.eff_crit||u.crit||0;
         const atkChanged=effAtk!==(u.atk||0);
@@ -830,7 +1004,18 @@ function showBR(br){
   rd.innerHTML=`<div class="br-title ${win?'win':'lose'}">${win?'🏆胜利':'💀败北'}</div><div style="font-size:11px;color:#6a5a4a">${br.rounds||0}ticks</div><div style="margin:6px 0;font-size:12px">${lh}</div><button class="br-btn" onclick="closeBattle();render(game)">继续征战</button>`;
   render(game);
 }
-function closeBattle(){document.getElementById("battleOverlay").style.display="none"}
+function closeBattle(){
+  document.getElementById("battleOverlay").style.display="none";
+  document.getElementById("cardHand").innerHTML="";
+  document.getElementById("cardEnergyBar").innerHTML="";
+  battleHand=null;battleEnergy=0;battlePhase=null;
+  // Reset stats
+  Object.keys(liveStats).forEach(k=>{
+    if(typeof liveStats[k]==="object")liveStats[k]={};
+    else liveStats[k]=0;
+  });
+  document.getElementById("battleStatsPanel").innerHTML="";
+}
 
 // ═══ Hero Detail ═══
 async function showHeroDetail(hid){

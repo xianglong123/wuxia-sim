@@ -850,6 +850,340 @@ def run_speed_battle(my_heroes, enemies, stage):
     r["cards_played"] = len([a for a in all_actions if a.get("type")=="card_play"])
     return r
 
+# ═══ 交互式战斗会话（杀戮尖塔式手牌） ═══
+import copy as _copy
+BATTLE_SESSIONS = {}
+
+class BattleSession:
+    def __init__(self, my_heroes, enemies, stage):
+        self.my_heroes = my_heroes
+        self.enemies = enemies
+        self.stage = stage
+        self.all_u = my_heroes + enemies
+        self.deck = init_deck()
+        self.hand = []
+        for _ in range(min(3, len(self.deck))):
+            self.hand.append(self.deck.pop(0))
+        self.card_energy = 1
+        self.max_card_energy = 3
+        self.all_actions = []
+        self.tick_no = 0
+        self.actions_since_draw = 0
+        self.max_ticks = 250
+        self.done = False
+        self.result_cache = None
+        self._last_sent = 0
+        self.passive_ctx = {"all_actions": self.all_actions, "passive_counters": {}, "triggered": set()}
+        for u in self.all_u:
+            u["action_bar"] = u.get("action_bar", random.randint(0, 400))
+        self._init_passives()
+
+    def _init_passives(self):
+        for u in self.my_heroes:
+            hd=u.get("_hd")
+            if not hd: continue
+            sk_lv=u.get("_skill_lv",1)
+            if hd["id"]=="guojia":
+                heal_pct=0.15+(0.1 if sk_lv>=3 else 0)
+                for a in self.my_heroes:
+                    if a.get("alive",True):
+                        heal=int(a["max_hp"]*heal_pct)
+                        a["hp"]=min(a["max_hp"],a["hp"]+heal)
+                self.all_actions.append({"side":"heal","type":"passive","attacker_name":"郭奉孝",
+                    "skill":"奇谋","aoe":True,"targets":[{"name":a["name"],"heal":int(a["max_hp"]*heal_pct)} for a in self.my_heroes if a.get("alive",True)]})
+            if hd["id"]=="ganning":
+                atk_pct=-0.1-(0.1 if sk_lv>=3 else 0)
+                for e in self.enemies:
+                    if e.get("alive",True):
+                        e["debuffs"].append({"stat":"atk","pct":atk_pct,"dur":-1})
+            if hd["id"]=="diaochan":
+                alive_e=[e for e in self.enemies if e.get("alive",True)]
+                if alive_e:
+                    target=random.choice(alive_e)
+                    target["debuffs"].append({"stat":"charm","pct":1.0,"dur":3})
+                    self.all_actions.append({"side":"enemy","type":"passive","attacker_name":"貂蝉",
+                        "skill":"离间","aoe":False,"target_name":target["name"],"msg":"魅惑!"})
+
+    def _inject_action_hp(self, a):
+        """注入实时HP/idx到action"""
+        if a.get("type")=="card_play": return
+        u2=self.my_heroes+self.enemies
+        a["attacker_idx"]=next((i for i,uu in enumerate(self.enemies if a.get("side")=="enemy" else self.my_heroes) if uu.get("name")==a.get("attacker_name")),0)
+        if a.get("side")=="ally" or a.get("side")=="heal":
+            unit=next((u for u in self.my_heroes if u.get("name")==a.get("attacker_name")),None)
+            if unit:
+                a["hero_eff_atk"]=cstat(unit,"atk",unit["atk"])
+                a["hero_eff_crit"]=cstat(unit,"crit",unit["crit"])
+                a["hero_base_atk"]=unit["atk"]
+                a["hero_base_crit"]=unit["crit"]
+                a["hero_buffs"]=[b["stat"] for b in unit.get("buffs",[])]
+                a["hero_debuffs"]=[d["stat"] for d in unit.get("debuffs",[])]
+        if a.get("aoe") and a.get("targets"):
+            tlist=self.enemies if a.get("side")=="ally" else self.my_heroes
+            for tg in a["targets"]:
+                uu=next((uu2 for uu2 in tlist if uu2.get("name")==tg.get("name")),None)
+                if uu: tg["hp_pct"]=max(0,uu["hp"]/max(1,uu["max_hp"])); tg["max_hp"]=uu["max_hp"]; tg["idx"]=next((i for i,uu2 in enumerate(tlist) if uu2.get("name")==tg.get("name")),0)
+                if tg.get("killed") and uu: tg["hp_pct"]=0
+        elif a.get("target_name"):
+            tlist=self.enemies if a.get("side")=="ally" else self.my_heroes
+            uu=next((uu2 for uu2 in tlist if uu2.get("name")==a["target_name"]),None)
+            if uu: a["target_hp_pct"]=max(0,uu["hp"]/max(1,uu["max_hp"])); a["target_max_hp"]=uu["max_hp"]; a["target_idx"]=next((i for i,uu2 in enumerate(tlist) if uu2.get("name")==a["target_name"]),0)
+            if a.get("killed") and uu: a["target_hp_pct"]=0
+
+    def _run_one_unit(self, unit):
+        """执行一个单位的行动(速度轴)"""
+        u2=self.my_heroes+self.enemies
+        if unit.get("side")=="enemy":
+            can_skill=unit["energy"]>=unit.get("skill_cost",100)
+            if can_skill:
+                unit["energy"]-=unit.get("skill_cost",100)
+                act=enemy_use_skill(unit,self.my_heroes,self.enemies)
+            else:
+                unit["energy"]+=min(40,unit.get("energy_gain",25))
+                act=enemy_basic_attack(unit,self.my_heroes,self.enemies)
+            self.all_actions.append(act)
+            self._inject_action_hp(act)
+        else:
+            hd=unit.get("_hd")
+            sk_cost=unit.get("_skill_cost",100)
+            can_skill=unit["energy"]>=sk_cost
+            if can_skill:
+                unit["energy"]-=sk_cost
+                act=hero_use_skill(unit,self.my_heroes,self.enemies)
+            else:
+                eg=hd.get("basic_energy_gain",25) if hd else 25
+                unit["energy"]+=eg
+                if unit["energy"]>200: unit["energy"]=200
+                act=hero_basic_attack(unit,self.my_heroes,self.enemies)
+            act["energy_after"]=unit["energy"]
+            self.all_actions.append(act)
+            self._inject_action_hp(act)
+            # 被动触发检查
+            for pu in self.my_heroes:
+                phd=pu.get("_hd")
+                if not phd or not pu.get("alive",True): continue
+                psk_lv=pu.get("_skill_lv",1)
+                if unit.get("side")=="ally" and act.get("killed") and act.get("target_name"):
+                    check_passives(pu,phd,psk_lv,self.my_heroes,self.enemies,"on_kill",self.passive_ctx)
+                if phd["id"]=="huatuo":
+                    lowest=min([a for a in self.my_heroes if a.get("alive",True)],key=lambda x:x["hp"]/max(1,x["max_hp"]),default=None)
+                    if lowest and lowest["hp"]/max(1,lowest["max_hp"])<0.3 and lowest!=pu:
+                        check_passives(pu,phd,psk_lv,self.my_heroes,self.enemies,"on_ally_low_hp",self.passive_ctx)
+                if phd["id"]=="caiwenji" and act.get("killed") and any(u.get("name")==act.get("target_name") and u.get("alive")==False for u in self.my_heroes):
+                    check_passives(pu,phd,psk_lv,self.my_heroes,self.enemies,"on_ally_die",self.passive_ctx)
+
+    def step_until_card(self):
+        """运行自动行动直到需要打牌或战斗结束。返回 {'phase':'card'|'done'|'continue', hand, card_energy, ...}"""
+        while self.tick_no < self.max_ticks and not self.done:
+            self.tick_no += 1
+            alive_h=[u for u in self.my_heroes if u.get("alive",True)]
+            alive_e=[u for u in self.enemies if u.get("alive",True)]
+            if not alive_h or not alive_e: break
+
+            for u in self.all_u:
+                if u.get("alive",True):
+                    spd=cstat(u,"spd",u.get("spd",100))
+                    u["action_bar"]+=spd
+
+            ready=sorted(
+                [u for u in self.all_u if u.get("alive",True) and u["action_bar"]>=1000],
+                key=lambda x:-x["action_bar"]
+            )
+            if not ready: continue
+
+            for unit in ready:
+                if not unit.get("alive",True): continue
+                unit["action_bar"]-=1000
+                self.actions_since_draw+=1
+                self._run_one_unit(unit)
+
+                # 检查战斗结束
+                alive_h=[u for u in self.my_heroes if u.get("alive",True)]
+                alive_e=[u for u in self.enemies if u.get("alive",True)]
+                if not alive_h or not alive_e: break
+            if not alive_h or not alive_e: break
+
+            # 每轮结束后抽牌+恢复能量
+            total_alive=len([u for u in self.all_u if u.get("alive",True)])
+            if total_alive>0 and self.actions_since_draw>=total_alive:
+                self.actions_since_draw=0
+                # 恢复1点打牌能量
+                self.card_energy=min(self.card_energy+1,self.max_card_energy)
+                # 自动抽1张
+                if len(self.hand)<5:
+                    if self.deck:
+                        self.hand.append(self.deck.pop(0))
+                    else:
+                        self.deck=init_deck()
+                        self.hand.append(self.deck.pop(0))
+                tick_buffs(self.all_u)
+                # 有新牌和有能量 → 返回打牌阶段
+                if self.hand and self.card_energy>0:
+                    return self._make_card_state()
+                continue
+            elif self.tick_no%3==0:
+                tick_buffs(self.all_u)
+
+        # 战斗结束
+        self.done=True
+        return self._make_result()
+
+    def _get_new_actions(self):
+        acts = self.all_actions[self._last_sent:]
+        self._last_sent = len(self.all_actions)
+        return acts
+
+    def _make_card_state(self):
+        return {
+            "phase":"card",
+            "hand":[{"id":c["id"],"name":c["name"],"desc":c["desc"],"cost":c["cost"],"rarity":c["rarity"]} for c in self.hand],
+            "card_energy":self.card_energy,
+            "my_heroes":self._get_heroes_state(),
+            "enemies":self._get_enemies_state(),
+            "actions":self._get_new_actions()
+        }
+
+    def _get_heroes_state(self):
+        return [{"name":f["name"],"class":f["class"],"quality":f["quality"],"color":f["color"],
+            "max_hp":f["max_hp"],"atk":f["atk"],"crit":f["crit"],
+            "eff_atk":cstat(f,"atk",f["atk"]),"eff_crit":cstat(f,"crit",f["crit"]),
+            "hp_pct":max(0,f["hp"]/max(1,f["max_hp"])),"alive":f.get("alive",True),
+            "energy":f.get("energy",0),"spd":f.get("spd",100),
+            "buffs":[b["stat"] for b in f.get("buffs",[])],
+            "debuffs":[d["stat"] for d in f.get("debuffs",[])]} for f in self.my_heroes]
+
+    def _get_enemies_state(self):
+        return [{"name":e["name"],"class":e["class"],"quality":e["quality"],"color":e["color"],
+            "max_hp":e["max_hp"],"atk":e["atk"],
+            "hp_pct":max(0,e["hp"]/max(1,e["max_hp"])),"alive":e.get("alive",True),
+            "energy":e.get("energy",0), "spd":e.get("spd",100),
+            "buffs":[b["stat"] for b in e.get("buffs",[])],
+            "debuffs":[d["stat"] for d in e.get("debuffs",[])]} for e in self.enemies]
+
+    def _make_result(self):
+        win=len([u for u in self.my_heroes if u.get("alive",True)])>0 and len([u for u in self.enemies if u.get("alive",True)])==0
+        r={"win":win,"rounds":self.tick_no,"actions":self._get_new_actions(),
+           "my_heroes":self._get_heroes_state(),"enemies":self._get_enemies_state()}
+        if win:
+            dr=self.stage["drops"]; jr=dr["jade"]+random.randint(-3,8); jr=max(3,jr)
+            r["jade_reward"]=jr
+            if random.random()<dr["equip_chance"] and dr["equip_pool"]:
+                eid=random.choice(dr["equip_pool"])
+                r["equip_reward"]=EQUIP_DATA.get(eid,{}).get("name","?")
+        else:
+            r["jade_reward"]=max(2,self.stage["drops"]["jade"]//4)
+            r["failed"]=True
+        r["cards_played"]=len([a for a in self.all_actions if a.get("type")=="card_play"])
+        r["phase"]="done"
+        return r
+
+    def play_card(self, card_id):
+        """玩家打出一张牌，应用效果后继续自动行动"""
+        card=next((c for c in self.hand if c["id"]==card_id),None)
+        if not card: return {"error":"没有这张牌"}
+        if card["cost"]>self.card_energy: return {"error":"能量不足"}
+        self.hand.remove(card)
+        self.card_energy-=card["cost"]
+        # 找到当前行动的人
+        current_hero=next((u for u in self.my_heroes if u.get("alive",True)),None)
+        card_result=apply_card_effect(card,self.my_heroes,self.enemies,current_hero)
+        card_result.update({"card":card,"type":"card_play","attacker_name":current_hero["name"] if current_hero else ""})
+        self.all_actions.append(card_result)
+        self._inject_action_hp(card_result)
+        # 继续自动行动直到下次打牌或结束
+        return self.step_until_card()
+
+    def skip_card(self):
+        """跳过打牌，继续自动行动"""
+        return self.step_until_card()
+
+def init_battle_session(g):
+    """从游戏状态创建战斗会话"""
+    power=calc_pow(HERO_DATA,g["lineup"],g["inventory"],g["equip_bag"])
+    stage=gen_stage(power,g["stage_index"])
+    my_heroes=[]
+    for hid in g["lineup"]:
+        inv=next((i for i in g["inventory"] if i["hero_id"]==hid),None)
+        if not inv: continue
+        f=h2f(hid,inv)
+        if f: my_heroes.append(f)
+    enemies=[]
+    used_names=set()
+    for _ in range(6):
+        n=random.choice([x for x in ENEMY_NAMES if x not in used_names] or ENEMY_NAMES)
+        used_names.add(n)
+        pp=stage["power"]/6.0
+        enemies.append(gen_enemy(n,pp))
+    return BattleSession(my_heroes, enemies, stage)
+
+# ═══ 交互式战斗API ═══
+@app.route("/api/battle/start", methods=["POST"])
+@login_required
+def api_battle_start():
+    g=load_game()
+    if not g: return jsonify({"error":"未找到存档"})
+    if not g["lineup"]: return jsonify({"error":"请先上阵英雄"})
+    sess=init_battle_session(g)
+    uid=session.get("user_id")
+    BATTLE_SESSIONS[uid]=sess
+    # 第一步: 运行初始被动, 然后直到card点
+    result=sess.step_until_card()
+    return jsonify(result)
+
+@app.route("/api/battle/card", methods=["POST"])
+@login_required
+def api_battle_card():
+    uid=session.get("user_id")
+    sess=BATTLE_SESSIONS.get(uid)
+    if not sess: return jsonify({"error":"没有活跃战斗"})
+    data=request.get_json()
+    card_id=data.get("card_id","") if data else ""
+    if card_id:
+        result=sess.play_card(card_id)
+    else:
+        result=sess.skip_card()
+    # 如果战斗结束，清除会话+保存奖励
+    if result.get("phase")=="done":
+        del BATTLE_SESSIONS[uid]
+        g=load_game()
+        if g:
+            if result["win"]:
+                jr=result.get("jade_reward",3)
+                g["jade"]+=jr
+                g["stage_index"]+=1
+                if result.get("equip_reward"):
+                    ex=next((e for e in g["equip_bag"] if isinstance(e,dict) and e.get("id")==result["equip_reward"]),None)
+                    if ex: ex["count"]+=1
+                    else: g["equip_bag"].append({"id":result["equip_reward"],"count":1})
+            else:
+                g["jade"]+=result.get("jade_reward",2)
+            g["ticks"]+=1
+            save_game(g)
+        # 补充老接口兼容字段
+        r2=to_client(g) if g else {}
+        result["stage_name"]=r2.get("stage",{}).get("name","")
+        result["new_stage"]=r2.get("stage",{}).get("name","")
+    return jsonify(result)
+
+@app.route("/api/battle/skip", methods=["POST"])
+@login_required
+def api_battle_skip():
+    uid=session.get("user_id")
+    sess=BATTLE_SESSIONS.get(uid)
+    if not sess: return jsonify({"error":"没有活跃战斗"})
+    result=sess.skip_card()
+    if result.get("phase")=="done":
+        del BATTLE_SESSIONS[uid]
+        g=load_game()
+        if g:
+            if result["win"]:
+                jr=result.get("jade_reward",3)
+                g["jade"]+=jr; g["stage_index"]+=1
+            else:
+                g["jade"]+=result.get("jade_reward",2)
+            g["ticks"]+=1; save_game(g)
+    return jsonify(result)
+
 def hero_basic_attack(unit, allies, enemies):
     hd = unit.get("_hd")
     if not hd: return {"side":"ally","type":"basic","attacker_name":unit["name"],"damage":0}
@@ -1288,6 +1622,7 @@ def apply_card_effect(card, allies, enemies, current_hero):
             if t:
                 heal = int(t["max_hp"] * e["value"])
                 t["hp"] = min(t["max_hp"], t["hp"] + heal)
+                return {"msg":f"回复 {t['name']}+{heal}❤️", "target_name":t["name"], "heal":heal}
         return {"msg":f"回复{e.get('desc','')}"}
     elif etype == "energy_all_ally":
         for a in allies:
@@ -1306,7 +1641,9 @@ def apply_card_effect(card, allies, enemies, current_hero):
             if t:
                 d = int(t["atk"] * e["value"] * random.uniform(2, 3))
                 apply_dmg(t, d)
-                if t["hp"] <= 0: t["alive"] = False
+                killed = t["hp"] <= 0
+                if killed: t["alive"] = False
+                return {"msg":f"对 {t['name']} 造成 {d} 伤害", "target_name":t["name"], "damage":d, "killed":killed}
         return {"msg":f"{e.get('desc','')}"}
     elif etype == "shield_all_ally":
         for a in allies:
