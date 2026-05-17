@@ -824,6 +824,27 @@ def api_equip_bag():
     items.sort(key=lambda x:(EQ_QUALITY_ORDER.get(x["quality"],0),x["atk"]),reverse=True)
     return jsonify(items)
 
+# ═══ 图鉴 API ═══
+@app.route("/api/tuji")
+@login_required
+def api_tuji():
+    heroes=[]
+    for hid,hd in HERO_DATA.items():
+        heroes.append({"id":hid,"name":hd["name"],"class":hd["class"],"quality":hd["quality"],"color":hd["color"],
+            "hp":hd["hp"],"atk":hd["atk"],"crit":hd["crit"],
+            "skill_name":hd["skill_name"],"skill_desc":hd["skill_desc"],"skill_aoe":hd.get("skill_aoe",False),
+            "skill_upgrades":hd["skill_upgrades"],
+            "passive_name":hd["passive_name"],"passive_desc":hd["passive_desc"],
+            "passive_upgrades":hd["passive_upgrades"]})
+    equips=[]
+    for eid,ed in EQUIP_DATA.items():
+        equips.append({"id":eid,"name":ed["name"],"type":ed["type"],"quality":ed["quality"],"color":ed["color"],
+            "atk":ed.get("atk",0),"hp":ed.get("hp",0),"crit":ed.get("crit",0),
+            "desc":ed.get("desc",""),"special":ed.get("special",""),"exclusive":ed["exclusive"]})
+    bonds=[{"id":b["id"],"name":b["name"],"members":[HERO_DATA.get(m,{}).get("name",m) for m in b["members"]],
+        "desc":b["desc"],"effect":b["effect"]} for b in BONDS]
+    return jsonify({"heroes":heroes,"equips":equips,"bonds":bonds})
+
 def to_client(g):
     power=calc_pow(HERO_DATA,g["lineup"],g["inventory"],g["equip_bag"])
     sp=int(power*(0.45+g["stage_index"]*0.015)); sp=max(50,min(sp,99999))

@@ -143,6 +143,28 @@ body{font-family:-apple-system,"PingFang SC","Noto Serif SC",serif;background:#0
 @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
 .loading p{color:#8a7a5a;margin-top:10px;font-size:12px}
 #errorToast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#5a1a1a;border:1px solid #e85a5a;color:#e8a0a0;padding:10px 20px;border-radius:8px;font-size:13px;display:none;z-index:400}
+
+/* ── 图鉴 ── */
+.tuji-overlay{position:fixed;inset:0;background:rgba(5,5,10,.96);display:none;flex-direction:column;z-index:220;padding:8px;overflow-y:auto}
+.tuji-header{display:flex;align-items:center;justify-content:space-between;padding:8px 4px;border-bottom:1px solid #2a2218;margin-bottom:8px;flex-shrink:0}
+.tuji-title{font-size:16px;font-weight:700;color:#e8d5a3}
+.tuji-close{font-size:13px;color:#5a4a3a;cursor:pointer;padding:4px 12px;border:1px solid #2a2218;border-radius:6px}
+.tuji-tabs{display:flex;gap:4px;margin-bottom:8px;flex-shrink:0}
+.tuji-tab{padding:6px 16px;border-radius:6px;font-size:12px;cursor:pointer;border:1px solid #2a2218;background:#0d0b09;color:#6a5a4a;font-family:inherit;transition:all .15s}
+.tuji-tab.active{background:#1a1410;color:#e8d5a3;border-color:#5a4a3a;font-weight:600}
+.tuji-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:5px;padding:4px 0}
+.tuji-card{border-radius:8px;padding:10px;cursor:pointer;background:#12100e;border:1px solid #2a2218;transition:all .15s}
+.tuji-card:hover{transform:translateY(-2px);border-color:#5a4a3a}
+.tuji-card .tc-icon{font-size:9px;font-weight:700;display:block}
+.tuji-card .tc-name{font-size:13px;font-weight:600;margin:2px 0}
+.tuji-card .tc-sub{font-size:10px;opacity:.6}
+.tuji-section-title{font-size:13px;color:#8a7a5a;font-weight:600;margin:10px 0 4px;padding:4px 0;border-bottom:1px solid #1a1a24}
+.tuji-empty{text-align:center;padding:30px;color:#3a2a3a;font-size:13px}
+.tuji-eq-type{font-size:10px;color:#6a5a4a;margin:2px 0}
+.tuji-bond-card{border-radius:8px;padding:10px;border:1px solid #2a2218;margin-bottom:6px;background:#12100e}
+.tuji-bond-name{font-size:14px;font-weight:600}
+.tuji-bond-members{font-size:11px;color:#6a5a4a;margin:2px 0}
+.tuji-bond-effect{font-size:11px;color:#5adb7a;margin:2px 0}
 </style></head><body>
 <div class="loading" id="loading"><div class="spinner">🏯</div><p>江湖在召唤……</p></div>
 <div class="header">
@@ -152,6 +174,7 @@ body{font-family:-apple-system,"PingFang SC","Noto Serif SC",serif;background:#0
       <span>💎<span id="jadeDisplay">0</span> <span id="jadeRate" style="font-size:10px;color:#5adb7a"></span></span>
       <span class="pity-bar" id="pityBar"></span>
       <span style="font-size:10px">抽<span id="pullCount">0</span></span>
+      <span style="font-size:10px;color:#5adb7a;cursor:pointer;font-weight:600" onclick="openTuji()">📖 图鉴</span>
       <span style="font-size:10px;color:#5a4a3a;cursor:pointer" onclick="doLogout()">退出</span>
     </div>
   </div>
@@ -167,6 +190,15 @@ body{font-family:-apple-system,"PingFang SC","Noto Serif SC",serif;background:#0
   <div class="battle-result" id="battleResult" style="display:none"></div>
 </div>
 <div id="errorToast"></div><div id="modal" class="modal"></div><div id="pullModal" style="display:none"></div>
+<div class="tuji-overlay" id="tujiOverlay">
+  <div class="tuji-header"><div class="tuji-title">📖 图鉴</div><div class="tuji-close" onclick="closeTuji()">关闭 ✕</div></div>
+  <div class="tuji-tabs">
+    <button class="tuji-tab active" onclick="switchTujiTab('hero')" id="tujiTabHero">⚔️ 英雄</button>
+    <button class="tuji-tab" onclick="switchTujiTab('equip')" id="tujiTabEquip">🛡️ 装备</button>
+    <button class="tuji-tab" onclick="switchTujiTab('bond')" id="tujiTabBond">🔗 羁绊</button>
+  </div>
+  <div id="tujiContent"></div>
+</div>
 <div class="main">
   <div class="msg-box" id="msgBox">☯ 江湖经营</div>
   <div class="info-row">
@@ -574,7 +606,106 @@ async function toggleInv(){
 }
 
 // ═══ More Missing Functions ═══
+let tujiData=null;
 function closeModal(){document.getElementById("modal").style.display="none"}
+async function openTuji(){
+  document.getElementById("tujiOverlay").style.display="flex";
+  document.getElementById("tujiContent").innerHTML='<div style="text-align:center;padding:30px;color:#6a5a4a">📖 加载中...</div>';
+  try{
+    if(!tujiData)tujiData=await apiFetch("/api/tuji");
+    document.getElementById("tujiTabHero").click();
+  }catch(e){document.getElementById("tujiContent").innerHTML='<div class="tuji-empty">加载失败</div>'}
+}
+function closeTuji(){document.getElementById("tujiOverlay").style.display="none"}
+function renderTujiHeroes(){
+  if(!tujiData||!tujiData.heroes){document.getElementById("tujiContent").innerHTML='<div class="tuji-empty">暂无数据</div>';return}
+  const QO={"凡品":0,"良品":1,"极品":2,"绝品":3,"传说":4},QC={"凡品":"#888","良品":"#5adb7a","极品":"#4a8eff","绝品":"#b84aff","传说":"#ffd700"},CI={"战士":"🗡️","肉盾":"🛡️","刺客":"💀","法师":"🔥","射手":"🎯","奶妈":"💚"};
+  const grouped={};for(let h of tujiData.heroes){const q=h.quality;(grouped[q]=grouped[q]||[]).push(h)}
+  const order=Object.keys(QC).filter(q=>grouped[q]);
+  let h=`<div class="tuji-grid">`;
+  for(let q of order){
+    h+=`<div style="grid-column:1/-1"><div class="tuji-section-title" style="color:${QC[q]}">${"★".repeat(QO[q]+1)}${q}</div></div>`;
+    for(let hero of grouped[q]){
+      const ci=CI[hero.class]||"❓";
+      const skAoe=hero.skill_aoe?'<span style="color:#ffd700;font-size:9px">群攻</span>':'';
+      h+=`<div class="tuji-card" style="border-color:${QC[q]};border-left:3px solid ${QC[q]}" onclick="showTujiHero('${hero.id}')">
+        <div class="tc-icon" style="color:${QC[q]}">${ci} ${hero.class}${skAoe}</div>
+        <div class="tc-name" style="color:${QC[q]}">${hero.name}</div>
+        <div class="tc-sub">❤️${hero.hp} ⚔️${hero.atk} ⚡${hero.crit}%</div>
+      </div>`;
+    }
+  }
+  h+=`</div>`;
+  document.getElementById("tujiContent").innerHTML=h;
+}
+function showTujiHero(hid){
+  if(!tujiData)return;
+  const hero=tujiData.heroes.find(h=>h.id===hid);
+  if(!hero)return;
+  const QC={"凡品":"#888","良品":"#5adb7a","极品":"#4a8eff","绝品":"#b84aff","传说":"#ffd700"},CI={"战士":"🗡️","肉盾":"🛡️","刺客":"💀","法师":"🔥","射手":"🎯","奶妈":"💚"};
+  const col=QC[hero.quality]||"#888",ci=CI[hero.class]||"❓";
+  const skUp=Object.entries(hero.skill_upgrades||{}).map(([lv,desc])=>`<div class="hd-upgrade" style="color:#5adb7a">🔓Lv${lv}:${desc}</div>`).join("");
+  const paUp=Object.entries(hero.passive_upgrades||{}).map(([lv,desc])=>`<div class="hd-upgrade" style="color:#5adb7a">🔓Lv${lv}:${desc}</div>`).join("");
+  const aoeTag=hero.skill_aoe?'<span style="font-size:10px;padding:1px 6px;border-radius:3px;background:rgba(255,215,0,.15);color:#ffd700;font-weight:600;margin-left:6px">群攻</span>':'';
+  // 相关羁绊
+  const bonds=(tujiData.bonds||[]).filter(b=>b.members.some(m=>m===hero.name));
+  const bonH=bonds.length?`<div class="hd-section"><div class="hd-section-title">🔗 羁绊</div>${bonds.map(b=>`<div style="font-size:11px;color:#5adb7a;padding:2px 6px">${b.name}: ${b.desc}</div>`).join("")}</div>`:'';
+  // 专属装备
+  const exEq=(tujiData.equips||[]).filter(e=>e.exclusive===hid);
+  const exH=exEq.length?`<div class="hd-section"><div class="hd-section-title">🗡️ 专属装备</div>${exEq.map(e=>`<div style="font-size:11px;color:#ffd700;padding:2px 6px">${e.name}: ${e.special||''}</div>`).join("")}</div>`:'';
+  const modal=document.getElementById("modal");modal.style.display="flex";
+  modal.innerHTML=`<div class="modal-inner">
+    <div style="font-size:18px;font-weight:700;color:${col}">${hero.name} ${ci}${hero.class}</div>
+    <div style="font-size:12px;color:${col};margin-bottom:8px">${"★".repeat(Math.min(Object.keys(QC).indexOf(hero.quality)+1,5))}${hero.quality}</div>
+    <div class="hd-stats"><div class="hd-stat"><div>❤️血量</div><div class="sv">${hero.hp.toLocaleString()}</div></div><div class="hd-stat"><div>💥攻击</div><div class="sv">${hero.atk.toLocaleString()}</div></div><div class="hd-stat"><div>⚡暴击</div><div class="sv">${hero.crit}%</div></div><div class="hd-stat"><div>🏷️定位</div><div class="sv" style="font-size:15px">${ci}${hero.class}</div></div></div>
+    <div class="hd-section"><div class="hd-section-title">📜${hero.skill_name}${aoeTag}</div><div class="hd-skill">${hero.skill_desc}</div>${skUp}</div>
+    <div class="hd-section"><div class="hd-section-title">⭐${hero.passive_name}</div><div class="hd-skill" style="color:#6a5a4a">${hero.passive_desc}</div>${paUp}</div>
+    ${bonH}${exH}
+    <div style="text-align:center;margin-top:8px"><button class="pull-btn" onclick="closeModal()">关闭</button></div></div>`;
+}
+function renderTujiEquips(){
+  if(!tujiData||!tujiData.equips){document.getElementById("tujiContent").innerHTML='<div class="tuji-empty">暂无数据</div>';return}
+  const QC={"凡品":"#888","良品":"#5adb7a","极品":"#4a8eff","绝品":"#b84aff","传说":"#ffd700"},QO={"凡品":0,"良品":1,"极品":2,"绝品":3,"传说":4};
+  const types=["武器","防具","饰品"];const typeIcons={"武器":"🗡️","防具":"🛡️","饰品":"💍"};
+  const sorted=[...tujiData.equips].sort((a,b)=>(QO[b.quality]||0)-(QO[a.quality]||0)||(b.atk||0)-(a.atk||0));
+  let h=``;
+  for(let t of types){
+    const items=sorted.filter(e=>e.type===t);
+    if(!items.length)continue;
+    h+=`<div class="tuji-section-title">${typeIcons[t]||'📦'}${t}</div><div class="tuji-grid">`;
+    for(let eq of items){
+      const star="★".repeat((QO[eq.quality]||0)+1);
+      const exclTag=eq.exclusive?`<span style="color:#ffd700;font-size:8px">专</span>`:'';
+      h+=`<div class="tuji-card" style="border-color:${QC[eq.quality]};border-left:3px solid ${QC[eq.quality]}">
+        <div class="tc-icon" style="color:${QC[eq.quality]}">${star}${eq.quality}${exclTag}</div>
+        <div class="tc-name" style="color:${QC[eq.quality]}">${eq.name}</div>
+        <div class="tc-sub" style="font-size:9px">❤️+${eq.hp} ⚔️+${eq.atk} ${eq.crit?'⚡+'+eq.crit+'%':''}</div>
+        ${eq.special?`<div class="tc-sub" style="color:#5adb7a;font-size:9px">✨${eq.special}</div>`:''}
+        ${eq.desc?`<div style="font-size:8px;color:#3a2a3a">${eq.desc}</div>`:''}
+      </div>`;
+    }
+    h+=`</div>`;
+  }
+  document.getElementById("tujiContent").innerHTML=h||'<div class="tuji-empty">暂无装备</div>';
+}
+function renderTujiBonds(){
+  if(!tujiData||!tujiData.bonds||!tujiData.bonds.length){document.getElementById("tujiContent").innerHTML='<div class="tuji-empty">暂无羁绊</div>';return}
+  let h=``;
+  for(let b of tujiData.bonds){
+    h+=`<div class="tuji-bond-card">
+      <div class="tuji-bond-name">🔗 ${b.name}</div>
+      <div class="tuji-bond-members">👥 ${b.members.join(" + ")}</div>
+      <div class="tuji-bond-effect">✨ ${b.desc}</div>
+    </div>`;
+  }
+  document.getElementById("tujiContent").innerHTML=h;
+}
+function switchTujiTab(tab){
+  ["hero","equip","bond"].forEach(t=>document.getElementById("tujiTab"+t.charAt(0).toUpperCase()+t.slice(1)).classList.toggle("active",t===tab));
+  if(tab==="hero")renderTujiHeroes();
+  else if(tab==="equip")renderTujiEquips();
+  else if(tab==="bond")renderTujiBonds();
+}
 function doLogout(){
   closeModal();closePull();
   fetch("/api/logout").then(()=>{window.location.href="/login?nocache="+Date.now()}).catch(()=>{window.location.href="/login"});
