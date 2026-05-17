@@ -306,8 +306,6 @@ body{font-family:-apple-system,"PingFang SC","Noto Serif SC",serif;background:#0
     <button class="speed-btn" onclick="setBattleSpeed(2)" id="speed2x">2×</button>
   </div>
   <div class="action-queue" id="actionQueue"></div>
-  <div class="card-hand" id="cardHand"></div>
-  <div class="card-energy-bar" id="cardEnergyBar"></div>
   <div class="battle-field" id="battleField"></div>
   <div class="battle-stats-panel" id="battleStatsPanel"></div>
   <div class="vs-text" id="vsText">⚡ VS ⚡</div>
@@ -405,24 +403,13 @@ async function startBattle(){
   try{
     const d=await apiFetch("/api/battle/start",{method:"POST"});
     if(d.error){showError(d.error);document.getElementById("loading").style.display="none";return}
-    // 即使战斗已结束，也要播放动作动画再看结算
     showBattleBoard(d);
-    const actions = (d.actions||[]).concat(d.remaining_actions||[]);
+    const actions = d.actions||[];
     if(actions.length > 0){
-      playActionsBatch(actions,()=>{
-        if(d.phase==="done"){showBattleResult(d)}
-        else{
-          battleHand=d.hand||[];battleEnergy=d.card_energy||0;battlePhase="auto";
-          battleAuto=d.auto||false;
-          showCardHand();
-        }
-      });
+      playActionsBatch(actions,()=>showBattleResult(d));
     }else{
-      if(d.phase==="done"){showBattleResult(d);document.getElementById("loading").style.display="none";return}
-      showBattleBoard(d);
-      battleHand=d.hand||[];battleEnergy=d.card_energy||0;battlePhase="auto";
-      battleAuto=d.auto||false;
-      playActionsBatch(d.actions,()=>showCardHand());
+      showBattleResult(d);
+      document.getElementById("loading").style.display="none";
     }
   }catch(e){showError(e.message)}
   document.getElementById("loading").style.display="none";
@@ -432,21 +419,15 @@ async function startAutoBattle(){
   if(!game||!game.lineup||!game.lineup.length){showError("请先上阵英雄");return}
   document.getElementById("loading").style.display="flex";
   try{
-    const d=await apiFetch("/api/battle/start",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({auto:true})});
+    const d=await apiFetch("/api/battle/start",{method:"POST"});
     if(d.error){showError(d.error);document.getElementById("loading").style.display="none";return}
-    // 即使战斗已结束，也要播放动作动画再看结算
     showBattleBoard(d);
-    battleAuto=true;
-    const actions = (d.actions||[]).concat(d.remaining_actions||[]);
+    const actions = d.actions||[];
     if(actions.length > 0){
-      playActionsBatch(actions,()=>{
-        if(d.phase==="done"){showBattleResult(d)}
-        else{showCardHand()}
-      });
+      playActionsBatch(actions,()=>showBattleResult(d));
     }else{
-      if(d.phase==="done"){showBattleResult(d);document.getElementById("loading").style.display="none";return}
-      battleHand=d.hand||[];battleEnergy=d.card_energy||0;battlePhase="auto";
-      playActionsBatch(d.actions,()=>showCardHand());
+      showBattleResult(d);
+      document.getElementById("loading").style.display="none";
     }
   }catch(e){showError(e.message)}
   document.getElementById("loading").style.display="none";
@@ -464,9 +445,6 @@ function playActionsBatch(acts,callback){
     updateCardStats(act);
     if(act.type==="passive"){
       handlePassiveAction(act);idx++;setTimeout(playNext,Math.round(600/Math.max(1,battleSpeed)));return;
-    }
-    if(act.type==="card_play"){
-      handleCardPlayAction(act);idx++;setTimeout(playNext,Math.round(400/Math.max(1,battleSpeed)));return;
     }
     if(act.type==="basic"||act.type==="skill"){
       const isSkill=act.type==="skill";
@@ -508,13 +486,8 @@ function handlePassiveAction(act){
   }
 }
 
-function handleCardPlayAction(act){
-  const card=act.card,ef=card?.effect;
-  const msg=act.msg||card?.desc||"";
-  const lt=`🎴 ${act.attacker_name||""} 打出 ${card?.name||""}: ${msg}`;
-  const ld=document.createElement("div");ld.className="bl-line bl-heal";ld.textContent=lt;
-  document.getElementById("battleLogT").appendChild(ld);
-  document.getElementById("battleLogT").scrollTop=document.getElementById("battleLogT").scrollHeight;
+function handleCardPlayAction(act){} // removed
+function showCardHand(){} // removed
   document.getElementById("roundIndicator").textContent="🎴 战术卡";
   // 大号卡牌弹出
   const popEl=document.createElement("div");popEl.className="card-popup";
@@ -671,8 +644,6 @@ function showBattleResult(d){
   const win=d.win||false;
   const jr=d.jade_reward||0;
   const eq=d.equip_reward;
-  document.getElementById("cardHand").innerHTML="";
-  document.getElementById("cardEnergyBar").innerHTML="";
   document.getElementById("vsText").style.display="none";
   document.getElementById("roundIndicator").textContent="⚔️ 战斗结束";
   renderBF(d.my_heroes,d.enemies,true);

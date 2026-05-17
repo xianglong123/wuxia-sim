@@ -433,52 +433,6 @@ def pull_h(pity):
     return {"hero_id":hid,"quality":q,"skill_lv":1,"level":1,"exp":0,"equipped":{"武器":None,"防具":None,"饰品":None},"active":False}
 
 # ═══════════════════════════════════════════
-# 卡牌系统
-# ═══════════════════════════════════════════
-BATTLE_CARDS = {
-    "power_strike":{"id":"power_strike","name":"蓄力一击","desc":"下次攻击伤害×2","cost":1,"rarity":"凡品",
-        "effect":{"type":"buff_current","stat":"atk_mult","value":1.0,"dur":1}},
-    "iron_wall":{"id":"iron_wall","name":"铁壁","desc":"全体减伤30%×2回合","cost":1,"rarity":"良品",
-        "effect":{"type":"buff_all_ally","stat":"dmg_reduce","value":0.3,"dur":2}},
-    "first_aid":{"id":"first_aid","name":"急救","desc":"回复血量最低队友25%","cost":1,"rarity":"良品",
-        "effect":{"type":"heal","target":"lowest_hp","value":0.25}},
-    "energize":{"id":"energize","name":"充能","desc":"全体+40能量","cost":2,"rarity":"极品",
-        "effect":{"type":"energy_all_ally","value":40}},
-    "weaken":{"id":"weaken","name":"虚弱","desc":"全体敌人攻击-20%×2回合","cost":1,"rarity":"凡品",
-        "effect":{"type":"debuff_all_enemy","stat":"atk","value":-0.2,"dur":2}},
-    "inspire":{"id":"inspire","name":"鼓舞","desc":"全体速度+30×1回合","cost":2,"rarity":"良品",
-        "effect":{"type":"buff_all_ally","stat":"spd","value":30,"dur":1}},
-    "assassinate":{"id":"assassinate","name":"暗算","desc":"对血量最低敌人造成200%伤害","cost":2,"rarity":"极品",
-        "effect":{"type":"dmg","target":"lowest_hp","value":2.0}},
-    "group_shield":{"id":"group_shield","name":"群体护盾","desc":"全体获得20%护盾","cost":2,"rarity":"良品",
-        "effect":{"type":"shield_all_ally","value":0.2}},
-    "taunt_card":{"id":"taunt_card","name":"嘲讽","desc":"强制敌人攻击最肉英雄×1回合","cost":1,"rarity":"凡品",
-        "effect":{"type":"taunt","target":"tankiest","dur":1}},
-    "double_strike":{"id":"double_strike","name":"连击","desc":"当前英雄本回合额外行动一次","cost":2,"rarity":"绝品",
-        "effect":{"type":"extra_action"}},
-    "anti_heal":{"id":"anti_heal","name":"禁疗","desc":"全体敌人无法治疗×2回合","cost":2,"rarity":"绝品",
-        "effect":{"type":"debuff_all_enemy","stat":"heal_block","value":1,"dur":2}},
-    "ultimate":{"id":"ultimate","name":"终极爆发","desc":"全体英雄满能量","cost":3,"rarity":"传说",
-        "effect":{"type":"energy_all_ally","value":200}},
-    "speed_up":{"id":"speed_up","name":"疾行","desc":"全体速度+50×2回合","cost":2,"rarity":"绝品",
-        "effect":{"type":"buff_all_ally","stat":"spd","value":50,"dur":2}},
-    "counter":{"id":"counter","name":"以牙还牙","desc":"本回合受击反弹100%伤害","cost":1,"rarity":"良品",
-        "effect":{"type":"buff_all_ally","stat":"reflect","value":1.0,"dur":1}},
-    "blood_thirst":{"id":"blood_thirst","name":"血怒","desc":"全体吸血30%×1回合","cost":2,"rarity":"绝品",
-        "effect":{"type":"buff_all_ally","stat":"lifesteal","value":0.3,"dur":1}},
-}
-
-DECK_TEMPLATE = ["power_strike","power_strike","weaken","weaken","taunt_card","taunt_card",
-    "iron_wall","iron_wall","first_aid","first_aid","inspire","speed_up",
-    "energize","assassinate","group_shield","counter","counter","blood_thirst",
-    "double_strike","anti_heal","ultimate"]
-
-def init_deck():
-    d = [copy.deepcopy(BATTLE_CARDS[cid]) for cid in DECK_TEMPLATE]
-    random.shuffle(d)
-    return d
-
-# ═══════════════════════════════════════════
 # 速度轴战斗引擎
 # ═══════════════════════════════════════════
 
@@ -646,47 +600,7 @@ def tick_buffs(units):
             d["dur"]-=1
         u["stunned"]=False; u["frozen"]=False
 
-def pick_best_card(hand, my_heroes, enemies, current_hero=None):
-    """AI自动选牌：根据当前战况选最优卡"""
-    if not hand: return None
-    alive_h=[u for u in my_heroes if u.get("alive",True)]
-    alive_e=[u for u in enemies if u.get("alive",True)]
-    # 优先级: 急救(有人残血) > 冷疗(敌有奶) > 虚弱 > 鼓舞 > 充能 > 暗算 > 铁壁 > 群体护盾 > 蓄力
-    lowest_hp_ratio = min([u["hp"]/max(1,u["max_hp"]) for u in alive_h]) if alive_h else 1
-    # 有人血量 < 30% 且手上有急救
-    if lowest_hp_ratio < 0.3:
-        for c in hand:
-            if c["id"]=="first_aid": return c
-    # 有人残血且华佗/小翠有能量
-    if lowest_hp_ratio < 0.4:
-        for c in hand:
-            if c["id"]=="iron_wall": return c
-    # 己方有群奶就加强势
-    has_group_healer = any(h.get("_hd") and h["_hd"].get("skill_aoe") and h["_hd"].get("skill_heal_pct") for h in alive_h)
-    # 暗算打残血
-    if alive_e:
-        lowest_hp_enemy = min(alive_e, key=lambda x: x["hp"])
-        if lowest_hp_enemy["hp"] < lowest_hp_enemy["max_hp"] * 0.4:
-            for c in hand:
-                if c["id"]=="assassinate": return c
-    if len(alive_e) >= 4:
-        for c in hand:
-            if c["id"]=="energize": return c
-        for c in hand:
-            if c["id"]=="group_shield": return c
-    for c in hand:
-        if c["id"]=="energize": return c
-    for c in hand:
-        if c["id"]=="first_aid": return c
-    for c in hand:
-        if c["id"]=="iron_wall": return c
-    for c in hand:
-        if c["id"]=="power_strike" and current_hero and current_hero["energy"]>=current_hero.get("_skill_cost",100):
-            return c
-    for c in hand:
-        if c["rarity"] in ("传说","绝品"):
-            return c
-    return hand[0] if hand else None
+def _removed_pick_best_card(): return None
 
 def reset_dead_buffs(units):
     for u in units:
@@ -707,15 +621,7 @@ def run_speed_battle(my_heroes, enemies, stage):
         e["position"] = 7 + i
 
     # 卡牌系统
-    deck = init_deck()
-    hand = []
-    for _ in range(min(3, len(deck))):
-        hand.append(deck.pop(0))
-    card_energy = 1
-    max_card_energy = 3
-
     all_actions = []
-    logs = []  # 战斗记录
 
     # 被动系统上下文
     passive_ctx = {"all_actions": all_actions, "passive_counters": {}, "triggered":set()}
@@ -869,10 +775,21 @@ def run_speed_battle(my_heroes, enemies, stage):
                 mhc=act.get("multi_hit_count",1)
                 sub_acts=expand_multi_hit_action(act,mhc) if mhc>1 else [act]
                 for sa in sub_acts:
-                    all_actions.append(sa)
-                    # 多段AOE子动作跳过HP覆盖（expand已计算渐进HP）
+                    # 为子动作注入攻击者信息(但不覆盖HP)
                     if sa.get("total_hits") and sa.get("aoe"):
+                        sa["attacker_idx"]=next((i for i,uu in enumerate(enemies if sa.get("side")=="enemy" else my_heroes) if uu.get("name")==sa.get("attacker_name")),0)
+                        sa["hero_eff_atk"]=cstat(unit,"atk",unit["atk"])
+                        sa["hero_eff_crit"]=cstat(unit,"crit",unit["crit"])
+                        sa["hero_base_atk"]=unit["atk"]
+                        sa["hero_base_crit"]=unit["crit"]
+                        sa["hero_buffs"]=[b["stat"] for b in unit.get("buffs",[])]
+                        sa["hero_debuffs"]=[d["stat"] for d in unit.get("debuffs",[])]
+                        sa["attacker_color"]=unit.get("color","#888")
+                        sa["attacker_class"]=unit.get("class","")
+                        sa["attacker_quality"]=unit.get("quality","")
+                        all_actions.append(sa)
                         continue
+                    all_actions.append(sa)
                     # 注入当时HP状态
                     a2=sa
                     if a2.get("type")!="card_play":
@@ -896,19 +813,7 @@ def run_speed_battle(my_heroes, enemies, stage):
                             tlist=enemies if a2.get("side")=="ally" else my_heroes
                             uu=next((uu2 for uu2 in tlist if uu2.get("name")==a2["target_name"]),None)
                             if uu: a2["target_hp_pct"]=max(0,uu["hp"]/max(1,uu["max_hp"])); a2["target_max_hp"]=uu["max_hp"]; a2["target_idx"]=next((i for i,uu2 in enumerate(tlist) if uu2.get("name")==a2["target_name"]),0)
-                if hand and card_energy > 0:
-                    played = pick_best_card(hand, my_heroes, enemies, unit)
-                    if played and played["cost"] <= card_energy:
-                        hand.remove(played)
-                        card_energy -= played["cost"]
-                        card_result = apply_card_effect(played, my_heroes, enemies, unit)
-                        card_result.update({
-                            "card": played,
-                            "type": "card_play",
-                            "attacker_name": unit["name"]
-                        })
-                        all_actions.append(card_result)
-                        logs.append(f"🎴 {unit['name']} 使用 {played['name']}！{played['desc']}")
+                # (card system removed)
 
             # 被动触发检查(击杀/队友低血/队友死亡/受击)
             for passive_unit in my_heroes:
@@ -943,13 +848,6 @@ def run_speed_battle(my_heroes, enemies, stage):
         # 每轮(所有人行动完)抽牌+恢复打牌能量
         if actions_since_draw >= len([u for u in all_u if u.get("alive",True)]):
             actions_since_draw = 0
-            card_energy = min(card_energy + 1, max_card_energy)
-            if len(hand) < 5:
-                if deck:
-                    hand.append(deck.pop(0))
-                else:
-                    deck = init_deck()
-                    hand.append(deck.pop(0))
             tick_buffs(all_u)
         else:
             # 每2个动作轻微恢复
@@ -991,7 +889,7 @@ def run_speed_battle(my_heroes, enemies, stage):
     else:
         r["jade_reward"]=max(2,stage["drops"]["jade"]//4)
         r["failed"]=True
-    r["cards_played"] = len([a for a in all_actions if a.get("type")=="card_play"])
+
     return r
 
 # ═══ 交互式战斗会话（杀戮尖塔式手牌） ═══
@@ -1004,12 +902,6 @@ class BattleSession:
         self.enemies = enemies
         self.stage = stage
         self.all_u = my_heroes + enemies
-        self.deck = init_deck()
-        self.hand = []
-        for _ in range(min(3, len(self.deck))):
-            self.hand.append(self.deck.pop(0))
-        self.card_energy = 1
-        self.max_card_energy = 3
         self.all_actions = []
         self.tick_no = 0
         self.actions_since_draw = 0
@@ -1067,9 +959,21 @@ class BattleSession:
 
     def _inject_action_hp(self, a):
         """注入实时HP/idx到action"""
-        if a.get("type")=="card_play": return
-        # 多段AOE子动作跳过HP覆盖（expand已计算渐进HP）
-        if a.get("total_hits") and a.get("aoe"): return
+        # 多段AOE子动作: 只注入攻击者信息, 不覆盖渐进HP
+        if a.get("total_hits") and a.get("aoe"):
+            unit2 = next((u for u in self.my_heroes if u.get("name") == a.get("attacker_name")), None)
+            if unit2:
+                a["attacker_idx"] = next((i for i, uu in enumerate(self.my_heroes) if uu.get("name") == a.get("attacker_name")), 0)
+                a["hero_eff_atk"] = cstat(unit2, "atk", unit2["atk"])
+                a["hero_eff_crit"] = cstat(unit2, "crit", unit2["crit"])
+                a["hero_base_atk"] = unit2["atk"]
+                a["hero_base_crit"] = unit2["crit"]
+                a["hero_buffs"] = [b["stat"] for b in unit2.get("buffs", [])]
+                a["hero_debuffs"] = [d["stat"] for d in unit2.get("debuffs", [])]
+                a["attacker_color"] = unit2.get("color", "#888")
+                a["attacker_class"] = unit2.get("class", "")
+                a["attacker_quality"] = unit2.get("quality", "")
+            return
         u2=self.my_heroes+self.enemies
         a["attacker_idx"]=next((i for i,uu in enumerate(self.enemies if a.get("side")=="enemy" else self.my_heroes) if uu.get("name")==a.get("attacker_name")),0)
         if a.get("side")=="ally" or a.get("side")=="heal":
@@ -1181,30 +1085,8 @@ class BattleSession:
                 if not alive_h or not alive_e: break
             if not alive_h or not alive_e: break
 
-            # 每轮结束后抽牌+恢复能量
-            total_alive=len([u for u in self.all_u if u.get("alive",True)])
-            if total_alive>0 and self.actions_since_draw>=total_alive:
-                self.actions_since_draw=0
-                # 恢复1点打牌能量
-                self.card_energy=min(self.card_energy+1,self.max_card_energy)
-                # 自动抽1张
-                if len(self.hand)<5:
-                    if self.deck:
-                        self.hand.append(self.deck.pop(0))
-                    else:
-                        self.deck=init_deck()
-                        self.hand.append(self.deck.pop(0))
-                tick_buffs(self.all_u)
-                # 有新牌和有能量 → 打牌阶段
-                if self.hand and self.card_energy>0:
-                    if self.auto_mode:
-                        # 托管模式：自动选牌出牌
-                        self.auto_play_card()
-                        continue
-                    return self._make_card_state()
-                continue
-            elif self.tick_no%3==0:
-                tick_buffs(self.all_u)
+            tick_buffs(self.all_u)
+            continue
 
         # 战斗结束
         self.done=True
@@ -1215,16 +1097,7 @@ class BattleSession:
         self._last_sent = len(self.all_actions)
         return acts
 
-    def _make_card_state(self):
-        return {
-            "phase":"card",
-            "initial_state":self._initial_state,
-            "hand":[{"id":c["id"],"name":c["name"],"desc":c["desc"],"cost":c["cost"],"rarity":c["rarity"]} for c in self.hand],
-            "card_energy":self.card_energy,
-            "my_heroes":self._get_heroes_state(),
-            "enemies":self._get_enemies_state(),
-            "actions":self._get_new_actions()
-        }
+    # (card system removed)
 
     def _get_heroes_state(self):
         return [{"name":f["name"],"class":f["class"],"quality":f["quality"],"color":f["color"],
@@ -1258,70 +1131,17 @@ class BattleSession:
         else:
             r["jade_reward"]=max(2,self.stage["drops"]["jade"]//4)
             r["failed"]=True
-        r["cards_played"]=len([a for a in self.all_actions if a.get("type")=="card_play"])
         r["phase"]="done"
         return r
 
     def play_card(self, card_id):
-        """玩家打出一张牌，应用效果后继续自动行动"""
-        card=next((c for c in self.hand if c["id"]==card_id),None)
-        if not card: return {"error":"没有这张牌"}
-        if card["cost"]>self.card_energy: return {"error":"能量不足"}
-        self.hand.remove(card)
-        self.card_energy-=card["cost"]
-        # 找到当前行动的人
-        current_hero=next((u for u in self.my_heroes if u.get("alive",True)),None)
-        card_result=apply_card_effect(card,self.my_heroes,self.enemies,current_hero)
-        card_result.update({"card":card,"type":"card_play","attacker_name":current_hero["name"] if current_hero else ""})
-        self.all_actions.append(card_result)
-        self._inject_action_hp(card_result)
-        # 继续自动行动直到下次打牌或结束
         return self.step_until_card()
-
     def skip_card(self):
-        """跳过打牌，继续自动行动"""
         return self.step_until_card()
-
     def auto_play_card(self):
-        """托管模式自动选牌出牌"""
-        if not self.hand or self.card_energy<=0:
-            return
-        affordable=[c for c in self.hand if c["cost"]<=self.card_energy]
-        if not affordable:
-            return
-        # 选牌策略
-        # 1. 有敌方低血量→暗算
-        alive_e=[e for e in self.enemies if e.get("alive",True)]
-        if alive_e:
-            lowest_e=min(alive_e, key=lambda x: x["hp"])
-            if lowest_e["hp"]/max(1,lowest_e["max_hp"])<0.3:
-                assassinate=next((c for c in affordable if c["id"]=="assassinate"),None)
-                if assassinate:
-                    self._do_auto_play(assassinate)
-                    return
-        # 2. 我方低血量→急救
-        alive_a=[a for a in self.my_heroes if a.get("alive",True)]
-        if alive_a:
-            lowest_a=min(alive_a, key=lambda x: x["hp"]/max(1,x["max_hp"]))
-            if lowest_a["hp"]/max(1,lowest_a["max_hp"])<0.35:
-                heal=next((c for c in affordable if c["id"]=="first_aid"),None)
-                if heal:
-                    self._do_auto_play(heal)
-                    return
-        # 3. 选稀有度最高的可支付卡
-        rarity_order={"凡品":0,"良品":1,"极品":2,"绝品":3,"传说":4}
-        affordable.sort(key=lambda c: -rarity_order.get(c["rarity"],0))
-        self._do_auto_play(affordable[0])
-
+        pass
     def _do_auto_play(self, card):
-        """内部执行出牌"""
-        self.hand.remove(card)
-        self.card_energy-=card["cost"]
-        current_hero=next((u for u in self.my_heroes if u.get("alive",True)),None)
-        card_result=apply_card_effect(card,self.my_heroes,self.enemies,current_hero)
-        card_result.update({"card":card,"type":"card_play","attacker_name":current_hero["name"] if current_hero else ""})
-        self.all_actions.append(card_result)
-        self._inject_action_hp(card_result)
+        pass
 
     def _get_current_phase(self):
         if self.done:
@@ -1360,57 +1180,10 @@ def api_battle_start():
     sess=init_battle_session(g)
     uid=session.get("user_id")
     BATTLE_SESSIONS[uid]=sess
-    data=request.get_json()
-    if data and data.get("auto"):
-        sess.auto_mode=True
-    # 第一步: 运行初始被动, 然后直到card点(托管模式直接打完)
     result=sess.step_until_card()
-    result["auto"]=sess.auto_mode
-    return jsonify(result)
-
-@app.route("/api/battle/toggle-auto", methods=["POST"])
-@login_required
-def api_battle_toggle_auto():
-    uid=session.get("user_id")
-    sess=BATTLE_SESSIONS.get(uid)
-    if not sess: return jsonify({"error":"没有活跃战斗"})
-    sess.auto_mode=not sess.auto_mode
-    # 如果切到自动，立即继续战斗
-    if sess.auto_mode:
-        result=sess.step_until_card()
-        result["auto"]=True
-        # 战斗结束处理
-        if result.get("phase")=="done":
-            _apply_battle_rewards(result,uid)
-    else:
-        result={"ok":True,"auto":False,"phase":sess._get_current_phase()}
-    return jsonify(result)
-
-@app.route("/api/battle/card", methods=["POST"])
-@login_required
-def api_battle_card():
-    uid=session.get("user_id")
-    sess=BATTLE_SESSIONS.get(uid)
-    if not sess: return jsonify({"error":"没有活跃战斗"})
-    data=request.get_json()
-    card_id=data.get("card_id","") if data else ""
-    if card_id:
-        result=sess.play_card(card_id)
-    else:
-        result=sess.skip_card()
-    # 如果战斗结束，清除会话+保存奖励
+    result["auto"]=True
     if result.get("phase")=="done":
-        _apply_battle_rewards(result,uid)
-    return jsonify(result)
-
-@app.route("/api/battle/skip", methods=["POST"])
-@login_required
-def api_battle_skip():
-    uid=session.get("user_id")
-    sess=BATTLE_SESSIONS.get(uid)
-    if not sess: return jsonify({"error":"没有活跃战斗"})
-    result=sess.skip_card()
-    _apply_battle_rewards(result,uid)
+        _apply_battle_rewards(result, uid)
     return jsonify(result)
 
 def _apply_battle_rewards(result,uid):
@@ -1421,13 +1194,12 @@ def _apply_battle_rewards(result,uid):
     if not g: return
     if result["win"]:
         jr=result.get("jade_reward",3)
-        si=g["stage_index"]  # 存当前关数用于经验
+        si=g["stage_index"]
         g["stage_index"]+=1
         if result.get("equip_reward"):
             ex=next((e for e in g["equip_bag"] if isinstance(e,dict) and e.get("id")==result["equip_reward"]),None)
             if ex: ex["count"]+=1
             else: g["equip_bag"].append({"id":result["equip_reward"],"count":1})
-        # 经验奖励
         exp_msg=add_exp_to_heroes(g,si)
         result["exp_msg"]=exp_msg
     else:
@@ -1947,14 +1719,37 @@ def hero_use_skill(unit, allies, enemies):
             ls_pct=0.3
             if up and up.get("lifesteal_pct"): ls_pct=up["lifesteal_pct"]
             unit["hp"]=min(unit["max_hp"],unit["hp"]+int(r["damage"]*ls_pct))
-        return {"name":t["name"],"damage":r["damage"],"crit":cr,"killed":killed,"immune":r.get("immune",False),"max_hp":t["max_hp"],"hp_pct":max(0,t["hp"]/max(1,t["max_hp"]))}
+        return {"name":t["name"],"damage":r["damage"],"crit":cr,"killed":killed,"immune":r.get("immune",False),
+                "max_hp":t["max_hp"],"hp_pct":max(0,t["hp"]/max(1,t["max_hp"])),
+                "idx":next((i for i,e in enumerate(enemies) if e.get("name")==t["name"]),0)}
 
     # 收集总伤害结果
     all_targets_data=[]
     total_dmg=0
     
-    if is_aoe:
-        # AOE: 打一次, expand内部按段数拆分
+    if is_aoe and multi_hit_count > 1:
+        # AOE多段: 真正循环multi_hit_count次, 每次攻击全体存活敌人
+        remaining_hits = multi_hit_count
+        while remaining_hits > 0:
+            alive_tars = [t for t in tars if t.get("alive", True)]
+            if not alive_tars: break
+            round_data = []
+            for t in alive_tars:
+                td = _process_dmg_target(t, True)
+                if td:
+                    round_data.append(td)
+                    total_dmg += td["damage"]
+            all_targets_data.append(round_data)
+            remaining_hits -= 1
+        # 保存真实轮次数据, 让expand直接用它拆
+        _round_data = all_targets_data
+        # 重置targets为flat列表（兼容旧代码）
+        flat = []
+        for rd in all_targets_data:
+            flat.extend(rd)
+        all_targets_data = flat
+    elif is_aoe:
+        # 单发AOE
         for t in tars:
             if not t.get("alive",True): continue
             td=_process_dmg_target(t,True)
@@ -2002,8 +1797,11 @@ def hero_use_skill(unit, allies, enemies):
             if up and up.get("stun_all") and sp=="taunt": t["stunned"]=True
 
     if is_aoe:
-        return {"side":"ally","type":"skill","attacker_name":unit["name"],"skill":sk_name,
+        rv = {"side":"ally","type":"skill","attacker_name":unit["name"],"skill":sk_name,
                 "aoe":True,"targets":all_targets_data,"multi_hit_count":multi_hit_count}
+        if '_round_data' in dir() and _round_data:
+            rv["round_data"] = _round_data
+        return rv
     else:
         # 单目标多段: 取最后一个目标显示
         last=all_targets_data[-1] if all_targets_data else {"name":"","damage":0,"crit":False,"killed":False}
@@ -2020,23 +1818,30 @@ def expand_multi_hit_action(act, multi_hit_count):
     if not all_hits:
         return [act]
     new_acts = []
+    # 如果有round_data（AOE多段真实循环）, 直接拆分
+    if is_aoe and act.get("round_data"):
+        for hi, rd in enumerate(act["round_data"]):
+            new_act = dict(act)
+            new_act["targets"] = rd
+            new_act["hit_no"] = hi + 1
+            new_act["total_hits"] = len(act["round_data"])
+            new_acts.append(new_act)
+        return new_acts
     if is_aoe and len(all_hits) > 0:
         # AOE多段: 每次对全体敌人造成完全相同伤害, HP逐击递减
-        # 计算每个敌人的每击伤害 = total_damage / multi_hit_count
-        enemy_data = {}  # name -> {max_hp, hit_dmg, start_hp}
+        enemy_data = {}
         for t in all_hits:
             name = t.get("name","")
             max_hp = t.get("max_hp", 0)
-            total_dmg = t.get("damage", 0)
-            per_hit = max(1, int(total_dmg / multi_hit_count))
-            enemy_data[name] = {"max_hp": max_hp, "hit_dmg": per_hit, "idx": t.get("idx", 0)}
+            dmg = max(1, t.get("damage", 0))  # 已经是单次命中伤害, 不除
+            enemy_data[name] = {"max_hp": max_hp, "hit_dmg": dmg, "idx": t.get("idx", 0)}
 
         for hi in range(multi_hit_count):
             hit_targets = []
             for name, info in enemy_data.items():
-                remaining = max(0, info["max_hp"] - hi * info["hit_dmg"])
-                dmg_this_hit = min(info["hit_dmg"], remaining)
-                hp_after = max(0, remaining - dmg_this_hit)
+                hp_before = max(0, info["max_hp"] - hi * info["hit_dmg"])
+                dmg_this_hit = min(info["hit_dmg"], hp_before)
+                hp_after = max(0, hp_before - dmg_this_hit)
                 hp_pct = hp_after / max(1, info["max_hp"])
                 killed = hp_after <= 0
                 hit_targets.append({
@@ -2141,64 +1946,7 @@ def enemy_use_skill(unit, allies, enemies):
     return {"side":"enemy","type":"skill","attacker_name":unit["name"],"skill":unit.get("skill_name","攻击"),
             "aoe":is_aoe,"target_name":t["name"],"damage":total_dmg,"crit":False,"killed":False}
 
-def apply_card_effect(card, allies, enemies, current_hero):
-    """应用卡牌效果"""
-    e = card["effect"]
-    etype = e["type"]
-
-    if etype == "buff_current":
-        current_hero["buffs"].append({"stat":e["stat"],"pct":e["value"],"dur":e["dur"]})
-        return {"msg":f"{card['name']}: {e.get('desc','')}"}
-    elif etype == "buff_all_ally":
-        for a in allies:
-            if a.get("alive",True):
-                a["buffs"].append({"stat":e["stat"],"pct":e["value"],"dur":e["dur"]})
-        return {"msg":f"全体{e.get('desc','')}"}
-    elif etype == "heal":
-        alive_h = [a for a in allies if a.get("alive",True)]
-        if e["target"] == "lowest_hp":
-            t = min(alive_h, key=lambda x: x["hp"]) if alive_h else None
-            if t:
-                heal = int(t["max_hp"] * e["value"])
-                t["hp"] = min(t["max_hp"], t["hp"] + heal)
-                return {"msg":f"回复 {t['name']}+{heal}❤️", "target_name":t["name"], "heal":heal}
-        return {"msg":f"回复{e.get('desc','')}"}
-    elif etype == "energy_all_ally":
-        for a in allies:
-            if a.get("alive",True):
-                a["energy"] = min(a["energy"] + e["value"], 200)
-        return {"msg":f"全体+{e['value']}能量"}
-    elif etype == "debuff_all_enemy":
-        for e_ in enemies:
-            if e_.get("alive",True):
-                e_["debuffs"].append({"stat":e["stat"],"pct":e["value"],"dur":e["dur"]})
-        return {"msg":f"全体敌人{e.get('desc','')}"}
-    elif etype == "dmg":
-        alive_e = [e_ for e_ in enemies if e_.get("alive",True)]
-        if e["target"] == "lowest_hp":
-            t = min(alive_e, key=lambda x: x["hp"]) if alive_e else None
-            if t:
-                d = int(t["atk"] * e["value"] * random.uniform(2, 3))
-                apply_dmg(t, d)
-                killed = t["hp"] <= 0
-                if killed: t["alive"] = False
-                return {"msg":f"对 {t['name']} 造成 {d} 伤害", "target_name":t["name"], "damage":d, "killed":killed}
-        return {"msg":f"{e.get('desc','')}"}
-    elif etype == "shield_all_ally":
-        for a in allies:
-            if a.get("alive",True):
-                a["shield"] = int(a["max_hp"] * e["value"])
-        return {"msg":"全体获得护盾"}
-    elif etype == "taunt":
-        alive_e = [e_ for e_ in enemies if e_.get("alive",True)]
-        for e_ in alive_e:
-            e_["buffs"].append({"stat":"taunted","pct":1.0,"dur":e.get("dur",1)})
-        return {"msg":"嘲讽敌人"}
-    elif etype == "extra_action":
-        current_hero["action_bar"] = 1500  # 强制下次行动
-        return {"msg":"额外行动"}
-    return {"msg":card.get("desc","")}
-
+def _removed_card_effect(): return {}
 # ═══ 战斗API ═══
 @app.route("/api/speed_battle", methods=["POST"])
 @login_required
