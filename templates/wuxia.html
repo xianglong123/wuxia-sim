@@ -328,23 +328,25 @@ function qs(q){return "★".repeat(QO[q]+1)}
 function render(g){
   if(!g)return;game=g;
   try{
-  document.getElementById("jadeDisplay").textContent=g.jade||0;
-  document.getElementById("pullCount").textContent=g.pull_count;
-  document.getElementById("invTotalCount").textContent=g.inventory_count||0;
-  document.getElementById("powerDisplay").textContent=(g.power||0).toLocaleString();
-  document.getElementById("stageDisplay").textContent=g.stage?.name||"-";
-  if(document.getElementById("stageIndexDisplay"))document.getElementById("stageIndexDisplay").textContent=g.stage?.index!==undefined?`第${g.stage.index}关`:"0";
-  document.getElementById("lineupCount").textContent=g.lineup_count+"/6";
-  document.getElementById("msgBox").innerHTML=g.msg||"";
-  if(g.username)document.getElementById("userDisplay").textContent=`👤 ${g.username}`;
-  if(g.offline_msg){document.getElementById("msgBox").innerHTML=`<span style="color:#ffd700">${g.offline_msg}</span>`;g.offline_msg=""}
-  if(g.jade_per_min)document.getElementById("jadeRate").textContent=`+${g.jade_per_min}/分`;
+  const _=(id)=>document.getElementById(id);
+  _("jadeDisplay")&&(_("jadeDisplay").textContent=g.jade||0);
+  _("pullCount")&&(_("pullCount").textContent=g.pull_count);
+  _("invTotalCount")&&(_("invTotalCount").textContent=g.inventory_count||0);
+  _("powerDisplay")&&(_("powerDisplay").textContent=(g.power||0).toLocaleString());
+  _("stageDisplay")&&(_("stageDisplay").textContent=g.stage?.name||"-");
+  if(_("stageIndexDisplay"))_("stageIndexDisplay").textContent=g.stage?.index!==undefined?`第${g.stage.index}关`:"0";
+  _("lineupCount")&&(_("lineupCount").textContent=g.lineup_count+"/6");
+  _("msgBox")&&(_("msgBox").innerHTML=g.msg||"");
+  if(g.username&&_("userDisplay"))_("userDisplay").textContent=`👤 ${g.username}`;
+  if(g.offline_msg&&_("msgBox")){_("msgBox").innerHTML=`<span style="color:#ffd700">${g.offline_msg}</span>`;g.offline_msg=""}
+  if(g.jade_per_min&&_("jadeRate"))_("jadeRate").textContent=`+${g.jade_per_min}/分`;
   const p=g.pity||{count:0,next_guaranteed:10};
-  document.getElementById("pityBar").innerHTML=`<span style="font-size:9px">保底</span>${
-    Array.from({length:10},(_,i)=>i<10-p.next_guaranteed?'<div class="pity-dot pity-done"></div>':i===9?'<div class="pity-dot pity-gold"></div>':'<div class="pity-dot pity-empty"></div>').join("")}`;
-  const bb=document.getElementById("bondBar");
-  bb.innerHTML=(g.bonds&&g.bonds.length)?g.bonds.map(b=>`<span class="bond-tag">🔗 ${b.name}</span>`).join(""):'<span class="bond-empty">暂无羁绊</span>';
-  const lg=document.getElementById("lineupGrid");
+  _("pityBar")&&(_("pityBar").innerHTML=`<span style="font-size:9px">保底</span>${
+    Array.from({length:10},(_,i)=>i<10-p.next_guaranteed?'<div class="pity-dot pity-done"></div>':i===9?'<div class="pity-dot pity-gold"></div>':'<div class="pity-dot pity-empty"></div>').join("")}`);
+  const bb=_("bondBar");
+  if(bb)bb.innerHTML=(g.bonds&&g.bonds.length)?g.bonds.map(b=>`<span class="bond-tag">🔗 ${b.name}</span>`).join(""):'<span class="bond-empty">暂无羁绊</span>';
+  const lg=_("lineupGrid");
+  if(!lg)return;
   lg.innerHTML=g.lineup.length===0?'<div class="hero-card" style="padding:30px;text-align:center"><div style="color:#3a2a3a">还没有上阵英雄</div></div>':'';
   if(g.lineup.length){!async function(){try{
     const r=await fetch("/api/inventory_heroes");const all=await r.json();
@@ -1192,6 +1194,14 @@ async function doConsumeHero(targetId){
       :`📈 ${d.name} +${d.total_exp}经验 (${d.consumed.join(',')})`;
     showError(msg);
     render(d);
+    // 刷新库存列表
+    const ig=document.getElementById("invGrid");
+    if(ig&&ig.classList.contains("open")){
+      ig.classList.remove("open");ig.innerHTML="";
+      const tog=document.querySelector(".inv-toggle");
+      if(tog)tog.textContent=`📦 全部英雄 (${d.inventory_count||0})`;
+      await toggleInv();
+    }
   }catch(e){}
   document.getElementById("loading").style.display="none";
 }
