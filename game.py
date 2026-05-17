@@ -427,7 +427,7 @@ def pull_h(pity):
     q=rq(pity)
     pl=[hid for hid,h in HERO_DATA.items() if h["quality"]==q]
     hid=random.choice(pl) if pl else "lisi"
-    return {"hero_id":hid,"quality":q,"skill_lv":1,"equipped":{"武器":None,"防具":None,"饰品":None},"active":False}
+    return {"hero_id":hid,"quality":q,"skill_lv":1,"level":1,"exp":0,"equipped":{"武器":None,"防具":None,"饰品":None},"active":False}
 
 # ═══════════════════════════════════════════
 # 卡牌系统
@@ -1964,6 +1964,31 @@ def api_pull10():
     r=to_client(g); r["pull"]=[{"hero_id":c["hero_id"],"quality":c["quality"],"hero_name":HERO_DATA[c["hero_id"]]["name"],"hero_class":HERO_DATA[c["hero_id"]]["class"]} for c in cards]; r["is_10_pull"]=True
     return jsonify(r)
 
+@app.route("/api/pull100")
+@login_required
+def api_pull100():
+    g=load_game()
+    if not g: return api_new()
+    if g["jade"]<235: return jsonify({"error":"玉璧不足",**to_client(g)})
+    g["jade"]-=235; g["pull_count"]+=100
+    pulls=[]; qcounts={q:0 for q in ["凡品","良品","极品","绝品","传说"]}
+    bq="凡品"
+    for _ in range(100):
+        card=pull_h(g["pity_counter"])
+        if QUALITY_ORDER.get(card["quality"],0)>=2: g["pity_counter"]=0
+        else: g["pity_counter"]+=1
+        qcounts[card["quality"]]=qcounts.get(card["quality"],0)+1
+        if QUALITY_ORDER.get(card["quality"],0)>QUALITY_ORDER.get(bq,0): bq=card["quality"]
+        ex=next((i for i in g["inventory"] if i["hero_id"]==card["hero_id"]),None)
+        if ex: ex["skill_lv"]=min(7,ex["skill_lv"]+1)
+        else: g["inventory"].append(card)
+        pulls.append(card)
+    g["msg"]=f"🎴 百抽最高{bq}! {qcounts['传说']}传说 {qcounts['绝品']}绝品 {qcounts['极品']}极品"
+    save_game(g)
+    highlights=[c for c in pulls if QUALITY_ORDER.get(c["quality"],0)>=2]
+    r=to_client(g); r["pull"]={"qcounts":qcounts,"highlights":[{"hero_id":c["hero_id"],"quality":c["quality"],"hero_name":HERO_DATA[c["hero_id"]]["name"],"hero_class":HERO_DATA[c["hero_id"]]["class"]} for c in highlights],"count":100}
+    return jsonify(r)
+
 @app.route("/api/lineup/<hero_id>")
 @login_required
 def api_lineup_toggle(hero_id):
@@ -2004,8 +2029,15 @@ def api_hero_detail(hero_id):
         if eid and eid in EQUIP_DATA:
             e=EQUIP_DATA[eid]; eq[s]={"name":e["name"],"quality":e["quality"],"color":e["color"],"atk":e.get("atk",0),"hp":e.get("hp",0),"crit":e.get("crit",0),"special":e.get("special",""),"exclusive":e["exclusive"]==hero_id}
     bonds=get_bonds(g["lineup"])
+    lv=inv.get("level",1)
+    bonus=hero_level_bonus(lv)
+    eff_hp=int(hd["hp"]*bonus); eff_atk=int(hd["atk"]*bonus)
+    eff_crit=hd["crit"]+int(lv/5)
+    for s,eid in inv["equipped"].items():
+        if eid and eid in EQUIP_DATA:
+            e=EQUIP_DATA[eid]; eff_hp+=e.get("hp",0); eff_atk+=e.get("atk",0)
     return jsonify({"hero_id":hero_id,"name":hd["name"],"class":hd["class"],"quality":hd["quality"],"color":hd["color"],
-        "hp":hd["hp"],"atk":hd["atk"],"crit":hd["crit"],"spd":hd.get("spd",100),"skill_cost":hd.get("skill_cost",100),
+        "hp":eff_hp,"atk":eff_atk,"crit":eff_crit,"base_hp":hd["hp"],"base_atk":hd["atk"],"base_crit":hd.get("crit",0),"spd":hd.get("spd",100),"skill_cost":hd.get("skill_cost",100),
         "skill_name":hd["skill_name"],"skill_desc":hd["skill_desc"],
         "skill_aoe":hd.get("skill_aoe",False),"skill_lv":inv["skill_lv"],
         "level":inv.get("level",1),"exp":inv.get("exp",0),"exp_next":inv.get("level",1)*100,
@@ -2121,9 +2153,9 @@ def api_hero_consume():
     t_inv=next((i for i in g["inventory"] if i["hero_id"]==target_id),None)
     if not t_inv: return jsonify({"error":"未找到该英雄"})
     if target_id in consume_ids: return jsonify({"error":"不能吃自己"})
-    if target_id in g["lineup"]: return jsonify({"error":"请先下阵再吞噬"})
     # 经验倍率
     RARITY_EXP={"凡品":300,"良品":800,"极品":2000,"绝品":5000,"传说":12000}
+    RARITY_EXP_LV={"凡品":50,"良品":100,"极品":200,"绝品":400,"传说":800}
     total_exp=0; names=[]
     for cid in consume_ids:
         ci=next((i for i in g["inventory"] if i["hero_id"]==cid),None)
@@ -2132,9 +2164,15 @@ def api_hero_consume():
         if not hd: continue
         if cid in g["lineup"]: return jsonify({"error":f"{hd['name']}在上阵中,不能吞噬"})
         lv=ci.get("level",1)
-        exp=RARITY_EXP.get(hd["quality"],300)+(lv-1)*50
+        sk_lv=ci.get("skill_lv",1)
+        base=RARITY_EXP.get(hd["quality"],300)
+        per_lv=RARITY_EXP_LV.get(hd["quality"],50)
+        exp=base+(lv-1)*per_lv
+        # 技能等级加成: Lv2=1.5x, Lv3=2x ... Lv7=4x
+        sk_mult=1.0+(sk_lv-1)*0.5
+        exp=int(exp*sk_mult)
         total_exp+=exp
-        names.append(hd["name"])
+        names.append(f"{hd['name']}(Lv{sk_lv})")
         g["inventory"].remove(ci)
     # 加经验
     t_inv["exp"]=t_inv.get("exp",0)+total_exp

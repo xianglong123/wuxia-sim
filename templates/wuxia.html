@@ -35,8 +35,8 @@ body{font-family:-apple-system,"PingFang SC","Noto Serif SC",serif;background:#0
 .exp-bar{width:100%;height:14px;border-radius:7px;background:#1a1816;border:1px solid #2a2218;position:relative;margin:4px 0;overflow:hidden}
 .exp-fill{height:100%;border-radius:7px;background:linear-gradient(90deg,#4a8eff,#6ab0ff);transition:width .3s}
 .exp-text{position:absolute;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;font-size:8px;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.6)}
-.action-row{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:10px}
-@media(max-width:400px){.action-row{grid-template-columns:1fr 1fr}}
+.action-row{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:10px}
+@media(max-width:500px){.action-row{grid-template-columns:repeat(3,1fr)}}
 .action-btn{padding:10px;border-radius:8px;border:1px solid #2a2218;background:linear-gradient(180deg,#12100e,#0d0b09);color:#d4c9a8;font-size:12px;cursor:pointer;font-family:inherit;transition:all .2s;text-align:center}
 .action-btn:hover{border-color:#5a4a3a;background:#1a1612;transform:translateY(-1px)}
 .action-btn.gacha{background:linear-gradient(135deg,#3a2a10,#5a3a10);border-color:#8a6a20;color:#ffd700;font-weight:700}
@@ -310,6 +310,7 @@ body{font-family:-apple-system,"PingFang SC","Noto Serif SC",serif;background:#0
   <div class="action-row">
     <button class="action-btn gacha" onclick="singlePull()"><span class="ab-icon">🎴</span><span class="ab-label">单抽 3💎</span></button>
     <button class="action-btn gacha" onclick="tenPull()"><span class="ab-icon">🎴</span><span class="ab-label">十连 25💎</span></button>
+    <button class="action-btn gacha" onclick="hundredPull()" style="background:linear-gradient(135deg,#8a2be2,#b84aff)"><span class="ab-icon">🎴</span><span class="ab-label">百抽 235💎</span></button>
     <button class="action-btn battle" onclick="startBattle()"><span class="ab-icon">⚔️</span><span class="ab-label">挑战</span></button>
     <button class="action-btn auto-battle" onclick="startAutoBattle()"><span class="ab-icon">⚡</span><span class="ab-label">托管</span></button>
     <button class="action-btn" onclick="doSweep()"><span class="ab-icon">⚡</span><span class="ab-label">一键收菜</span></button>
@@ -1104,7 +1105,7 @@ async function showHeroDetail(hid){
     modal.innerHTML=`<div class="modal-inner">
       <div style="font-size:18px;font-weight:700;color:${col}">${h.name} ${ci}${h.class} <span style="font-size:11px;color:#6a5a4a">Lv.${h.level}</span></div>
       <div style="font-size:12px;color:${col};margin-bottom:8px">${qs(h.quality)}${h.quality}</div>
-      <div class="hd-stats"><div class="hd-stat"><div>❤️血量</div><div class="sv">${h.hp.toLocaleString()}</div></div><div class="hd-stat"><div>💥攻击</div><div class="sv">${h.atk.toLocaleString()}</div></div><div class="hd-stat"><div>⚡暴击</div><div class="sv">${h.crit}%</div></div><div class="hd-stat"><div>⚔️战力</div><div class="sv" style="color:${col}">${h.power.toLocaleString()}</div></div></div>
+      <div class="hd-stats"><div class="hd-stat"><div>❤️血量</div><div class="sv">${h.hp.toLocaleString()}<span style="font-size:9px;color:#5a4a3a;font-weight:400">(${h.base_hp?.toLocaleString()})</span></div></div><div class="hd-stat"><div>💥攻击</div><div class="sv">${h.atk.toLocaleString()}<span style="font-size:9px;color:#5a4a3a;font-weight:400">(${h.base_atk?.toLocaleString()})</span></div></div><div class="hd-stat"><div>⚡暴击</div><div class="sv">${h.crit}%<span style="font-size:9px;color:#5a4a3a;font-weight:400">(${h.base_crit||0}%)</span></div></div><div class="hd-stat"><div>⚔️战力</div><div class="sv" style="color:${col}">${h.power.toLocaleString()}</div></div></div>
       <div class="exp-bar"><div class="exp-fill" style="width:${Math.min(100,h.exp/h.exp_next*100)}%"></div><span class="exp-text">Lv.${h.level} ${h.exp}/${h.exp_next}</span></div>
       <div class="hd-section"><div class="hd-section-title">📜${h.skill_name}${aoeTag}<span style="display:inline-block;padding:1px 6px;border-radius:3px;font-size:10px;background:${col};color:#000;margin-left:4px">Lv${h.skill_lv}</span></div><div class="hd-skill">${h.skill_desc}</div>${skUp}</div>
       <div class="hd-section"><div class="hd-section-title">⭐${h.passive_name}</div><div class="hd-skill" style="color:#6a5a4a">${h.passive_desc}</div>${paUp}</div>
@@ -1148,25 +1149,36 @@ async function consumeHeroSelect(targetId){
     if(!opts.length){showError("没有可吞噬的英雄");return}
     const qColors={"凡品":"#888","良品":"#5adb7a","极品":"#4a8eff","绝品":"#b84aff","传说":"#ffd700"};
     const expMap={"凡品":300,"良品":800,"极品":2000,"绝品":5000,"传说":12000};
+    const expLvMap={"凡品":50,"良品":100,"极品":200,"绝品":400,"传说":800};
     const target=all.find(h=>h.hero_id===targetId);
     m.innerHTML=`<div class="modal-inner">
       <div style="font-size:14px;font-weight:700;margin-bottom:8px">🍽️ 选择要吞噬的英雄</div>
       <div style="font-size:10px;color:#6a5a4a;margin-bottom:8px">吞噬后永久消失，给 <span style="color:${target?.color||'#888'};font-weight:600">${target?.name||'?'}</span> 获得经验</div>
+      <div style="margin-bottom:4px"><label style="font-size:10px;color:#4a8eff;cursor:pointer;user-select:none"><input type="checkbox" onchange="toggleAllConsume(this.checked)"> 全选</label></div>
       <div style="display:grid;gap:4px;max-height:300px;overflow-y:auto">${opts.map(h=>{
         const col=qColors[h.quality]||"#888";
         const ci=CI[h.class]||"❓";
-        const exp=expMap[h.quality]||300;
+        const base=expMap[h.quality]||300;
+        const perLv=expLvMap[h.quality]||50;
+        const expRaw=base+((h.level||1)-1)*perLv;
+        const skMult=1.0+((h.skill_lv||1)-1)*0.5;
+        const exp=Math.round(expRaw*skMult);
         return `<label style="display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:6px;border:1px solid #2a2218;background:#0d0b09;cursor:pointer;font-size:11px">
           <input type="checkbox" class="consume-cb" value="${h.hero_id}" onchange="updateConsumeTotal()">
           <span style="color:${col};font-weight:600">${ci}</span>
-          <span style="flex:1;color:#d4c9a8">${h.name} <span style="font-size:9px;color:#6a5a4a">Lv.${h.level}</span></span>
-          <span style="color:#4a8eff">+${exp+(h.level-1)*50}经验</span>
+          <span style="flex:1;color:#d4c9a8">${h.name} <span style="font-size:9px;color:#6a5a4a">Lv.${h.level||1} ⚡Lv${h.skill_lv||1}</span></span>
+          <span style="color:#4a8eff">+${exp}经验</span>
         </label>`
       }).join("")}</div>
       <div style="text-align:center;margin:8px 0;font-size:10px;color:#4a8eff" id="consumeTotal">已选0个, 获得0经验</div>
       <div style="text-align:center"><button class="pull-btn" onclick="doConsumeHero('${targetId}')" style="background:#b84aff;border-color:#b84aff;color:#fff">确认吞噬</button><button class="pull-btn" onclick="closeModal()" style="margin-left:6px">取消</button></div>
     </div>`;
   }catch(e){}
+}
+
+function toggleAllConsume(checked){
+  document.querySelectorAll('.consume-cb').forEach(cb=>cb.checked=checked);
+  updateConsumeTotal();
 }
 
 function updateConsumeTotal(){
@@ -1207,10 +1219,31 @@ async function doConsumeHero(targetId){
 }
 async function singlePull(){if(!game)return;document.getElementById("loading").style.display="flex";try{const d=await apiFetch("/api/pull");render(d);if(d.pull)showPullM(d.pull,false)}catch(e){}document.getElementById("loading").style.display="none"}
 async function tenPull(){if(!game)return;document.getElementById("loading").style.display="flex";try{const d=await apiFetch("/api/pull10");render(d);if(d.pull)showPullM(d.pull,true)}catch(e){}document.getElementById("loading").style.display="none"}
+async function hundredPull(){if(!game)return;document.getElementById("loading").style.display="flex";try{const d=await apiFetch("/api/pull100");render(d);if(d.pull)showHundredPullM(d.pull)}catch(e){}document.getElementById("loading").style.display="none"}
 function showPullM(pull,is10){const pm=document.getElementById("pullModal");pm.style.display="flex";
   if(is10&&Array.isArray(pull)){const s=[...pull].sort((a,b)=>QO[b.quality]-QO[a.quality]);
     pm.innerHTML=`<div class="pull-overlay" onclick="closePull()"><div style="margin-bottom:8px;text-align:center"><span style="font-size:16px;font-weight:700;color:#ffd700">✨十连</span></div><div class="pull10-grid">${s.map((c,i)=>{const col=QC[c.quality]||"#888",ci=CI[c.hero_class]||"❓";return `<div class="pull10-item" style="border-color:${col};animation-delay:${i*0.06}s"><div class="p10-r" style="color:${col}">${c.quality}</div><span class="p10-i" style="color:${col}">${ci}</span><div class="p10-n">${c.hero_name}</div></div>`}).join("")}</div><button class="pull-btn" onclick="closePull()">继续</button></div>`}
   else if(pull){const col=QC[pull.quality]||"#888",ci=CI[pull.hero_class]||"🎴";pm.innerHTML=`<div class="pull-overlay" style="cursor:pointer" onclick="closePull()"><div class="pull-card"><div class="pull-rarity" style="color:${col}">✦${pull.quality}✦</div><div class="pull-icon" style="color:${col}">${ci}</div><div class="pull-name" style="color:${col}">${pull.hero_name}</div></div><div style="margin-top:6px;font-size:11px;color:#5a4a3a">点击继续</div></div>`}}
+function showHundredPullM(pull){
+  const pm=document.getElementById("pullModal");pm.style.display="flex";
+  const qc=pull.qcounts||{};
+  const h=pull.highlights||[];
+  const QC={"凡品":"#888","良品":"#5adb7a","极品":"#4a8eff","绝品":"#b84aff","传说":"#ffd700"};
+  const qo={"凡品":0,"良品":1,"极品":2,"绝品":3,"传说":4};
+  h.sort((a,b)=>qo[b.quality]-qo[a.quality]);
+  pm.innerHTML=`<div class="pull-overlay" onclick="closePull()">
+    <div style="text-align:center;margin-bottom:6px"><span style="font-size:18px;font-weight:700;color:#b84aff">🎴 百抽总结</span></div>
+    <div style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap;margin-bottom:8px">
+      <span style="font-size:12px;color:#888">凡品${qc.凡品||0}</span>
+      <span style="font-size:12px;color:#5adb7a">良品${qc.良品||0}</span>
+      <span style="font-size:12px;color:#4a8eff">极品${qc.极品||0}</span>
+      <span style="font-size:12px;color:#b84aff">绝品${qc.绝品||0}</span>
+      <span style="font-size:14px;font-weight:700;color:#ffd700">传说${qc.传说||0}</span>
+    </div>
+    ${h.length?`<div style="font-size:10px;color:#6a5a4a;margin-bottom:4px">✨ 高品质英雄</div><div class="pull10-grid">${h.map((c,i)=>{const col=QC[c.quality]||"#888",ci=CI[c.hero_class]||"❓";return `<div class="pull10-item" style="border-color:${col};animation-delay:${i*0.1}s"><div class="p10-r" style="color:${col}">${c.quality}</div><span class="p10-i" style="color:${col}">${ci}</span><div class="p10-n" style="color:#d4c9a8">${c.hero_name}</div></div>`}).join("")}</div>`:`<div style="font-size:11px;color:#6a5a4a;text-align:center;padding:12px">没有高品质英雄</div>`}
+    <button class="pull-btn" onclick="closePull()">继续</button>
+  </div>`;
+}
 function closePull(){document.getElementById("pullModal").style.display="none";if(game)render(game);const gr=document.getElementById("invGrid");if(gr&&gr.classList.contains("open")){gr.innerHTML="";gr.classList.remove("open");document.querySelector(".inv-toggle")?.click()}}
 
 // ═══ Missing Functions ═══
