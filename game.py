@@ -640,6 +640,19 @@ def run_speed_battle(my_heroes, enemies, stage):
                     unit["energy"] += min(40, unit.get("energy_gain", 25))
                     act = enemy_basic_attack(unit, my_heroes, enemies)
                 all_actions.append(act)
+                # 注入当时HP状态（非最终态）
+                a=act;u2=my_heroes+enemies
+                if a.get("type")!="card_play":
+                    a["attacker_idx"]=next((i for i,uu in enumerate(u2) if uu.get("name")==a.get("attacker_name")),0)
+                    if a.get("aoe") and a.get("targets"):
+                        for tg in a["targets"]:
+                            uu=next((uu2 for uu2 in u2 if uu2.get("name")==tg.get("name")),None)
+                            if uu: tg["hp_pct"]=max(0,uu["hp"]/max(1,uu["max_hp"])); tg["max_hp"]=uu["max_hp"]
+                            if tg.get("killed") and uu: tg["hp_pct"]=0
+                    elif a.get("target_name"):
+                        uu=next((uu2 for uu2 in u2 if uu2.get("name")==a["target_name"]),None)
+                        if uu: a["target_hp_pct"]=max(0,uu["hp"]/max(1,uu["max_hp"])); a["target_max_hp"]=uu["max_hp"]
+                        if a.get("killed") and uu: a["target_hp_pct"]=0
 
             # ===== 我方行动 =====
             else:
@@ -657,6 +670,19 @@ def run_speed_battle(my_heroes, enemies, stage):
                     act = hero_basic_attack(unit, my_heroes, enemies)
                 act["energy_after"] = unit["energy"]
                 all_actions.append(act)
+                # 注入当时HP状态
+                a2=act;u3=my_heroes+enemies
+                if a2.get("type")!="card_play":
+                    a2["attacker_idx"]=next((i for i,uu in enumerate(u3) if uu.get("name")==a2.get("attacker_name")),0)
+                    if a2.get("aoe") and a2.get("targets"):
+                        for tg in a2["targets"]:
+                            uu=next((uu2 for uu2 in u3 if uu2.get("name")==tg.get("name")),None)
+                            if uu: tg["hp_pct"]=max(0,uu["hp"]/max(1,uu["max_hp"])); tg["max_hp"]=uu["max_hp"]
+                            if tg.get("killed") and uu: tg["hp_pct"]=0
+                    elif a2.get("target_name"):
+                        uu=next((uu2 for uu2 in u3 if uu2.get("name")==a2["target_name"]),None)
+                        if uu: a2["target_hp_pct"]=max(0,uu["hp"]/max(1,uu["max_hp"])); a2["target_max_hp"]=uu["max_hp"]
+                        if a2.get("killed") and uu: a2["target_hp_pct"]=0
 
                 # ===== 打牌阶段 (AI自动选牌) =====
                 if hand and card_energy > 0:
@@ -728,18 +754,6 @@ def run_speed_battle(my_heroes, enemies, stage):
         r["jade_reward"]=max(2,stage["drops"]["jade"]//4)
         r["failed"]=True
     r["cards_played"] = len([a for a in all_actions if a.get("type")=="card_play"])
-    # 补充target_hp_pct/target_max_hp到所有action
-    for a in all_actions:
-        if a.get("type")=="card_play": continue
-        if a.get("aoe") and a.get("targets"):
-            for tg in a["targets"]:
-                u=next((u2 for u2 in my_heroes+enemies if u2.get("name")==tg.get("name")),None)
-                if u: tg["hp_pct"]=max(0,u["hp"]/max(1,u["max_hp"])); tg["max_hp"]=u["max_hp"]
-        elif a.get("target_name"):
-            u=next((u2 for u2 in my_heroes+enemies if u2.get("name")==a["target_name"]),None)
-            if u: a["target_hp_pct"]=max(0,u["hp"]/max(1,u["max_hp"])); a["target_max_hp"]=u["max_hp"]
-        # attacker idx for front-end
-        a["attacker_idx"]=next((i for i,u2 in enumerate(my_heroes+enemies) if u2.get("name")==a.get("attacker_name")),0)
     return r
 
 def hero_basic_attack(unit, allies, enemies):
