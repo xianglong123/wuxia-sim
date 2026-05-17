@@ -291,7 +291,8 @@ function showBattle(br){
   document.getElementById("battleResult").style.display="none";document.getElementById("roundIndicator").textContent="";
   document.getElementById("vsText").style.display="flex";document.getElementById("battleLogT").innerHTML="";
   document.getElementById("battleStats").style.display="none";
-  renderBF(br.my_heroes,br.enemies,false,br.actions,0);
+  renderBF(br.my_heroes,br.enemies,false);
+  updateActionQueue(br.actions,0);
   let ti=0;const aa=br.actions,total=aa.length;
   const liveStats={dmg:{},heal:{},taken:{},bestHit:{name:"",val:0},crits:0};
   function updateStats(act){
@@ -319,9 +320,10 @@ function showBattle(br){
       setTimeout(()=>showBR(br),500);return;
     }
     const act=aa[ti];
-    // 更新行动队列和能量条
-    renderBF(br.my_heroes,br.enemies,false,aa,ti);
+    // 更新行动队列+能量（不重建卡片，避免血条蹦迪）
+    updateActionQueue(aa,ti);
     updateStats(act);
+    updateCardEnergy(act);
     // 卡牌动作: 只显示文字
     if(act.type==="card_play"){
       const msg=act.msg||act.card?.desc||"";
@@ -358,18 +360,15 @@ function showBattle(br){
   setTimeout(nxt,600);
 }
 
-function renderBF(myH,enemies,isFinal,aa,ti){
-  // 渲染行动队列
+// ═══ Action Queue (不重建卡片) ═══
+function updateActionQueue(aa,ti){
   const aq=document.getElementById("actionQueue");
   if(aa&&aa.length>0&&ti!==undefined){
-    const totalActionTypes=["ally","ally","ally","ally","ally","ally","enemy","enemy","enemy","enemy","enemy","enemy",
-      "heal","heal","card","card","card"];
     let h=`<span class="aq-label">⏱️牌轴</span>`;
     const endIdx=Math.min(ti+5,aa.length);
     const showFrom=Math.max(0,endIdx-5);
     for(let j=showFrom;j<endIdx;j++){
-      const a=aa[j];
-      const nm=a.attacker_name||"";
+      const a=aa[j];const nm=a.attacker_name||"";
       const isNext=j===ti?" aq-next":"";
       let cls="aq-item";
       if(a.type==="card_play")cls+=" aq-card";
@@ -381,7 +380,35 @@ function renderBF(myH,enemies,isFinal,aa,ti){
     }
     aq.innerHTML=h;
   }else{aq.innerHTML=""}
+}
 
+// ═══ 能量条实时更新(不重建卡片) ═══
+function updateCardEnergy(act){
+  if(act.type==="card_play")return;
+  if(act.side!=="ally")return;
+  const energy=act.energy_after;
+  if(energy===undefined)return;
+  const myCards=document.querySelectorAll("#bc-my .bc-card");
+  for(let c of myCards){
+    const nm=c.querySelector(".bc-name");
+    if(nm&&nm.textContent===act.attacker_name){
+      // 更新能量数字
+      const enEl=c.querySelector(".bc-energy-num");
+      if(enEl){enEl.textContent="⚡"+energy}
+      // 更新能量条
+      const efEl=c.querySelector(".bc-energy-fill");
+      if(efEl){
+        const pct=Math.min(100,(energy/200)*100);
+        efEl.style.width=pct+"%";
+      }
+      // 能量≥150时脉冲
+      c.classList.toggle("bc-energy-ready",energy>=150);
+      break;
+    }
+  }
+}
+
+function renderBF(myH,enemies,isFinal){
   const RS=(units,side)=>{
     return `<div class="battle-side"><div class="battle-side-label">${side==="my"?"🛡️ 我方":"💀 敌方"}</div><div class="bc" id="bc-${side}">${
       units.map((u,i)=>{
@@ -394,10 +421,8 @@ function renderBF(myH,enemies,isFinal,aa,ti){
         const buffCount=(u.buffs||[]).filter(s=>s!=="immune").length;
         const debuffCount=(u.debuffs||[]).length;
         const glow=buffCount>0?`box-shadow:0 0 8px rgba(90,219,122,.3)`:(debuffCount>0?`box-shadow:0 0 8px rgba(232,90,90,.3)`:"");
-        // 能量条
-        const energy=u.energy||0;
-        const spd=u.spd||100;
-        const skillCost=200; // approximate
+        // 能量条(非最终状态从0开始)
+        const energy=isFinal?(u.energy||0):0;
         const energyPct=Math.min(100,(energy/200)*100);
         const energyReady=energy>=150?" bc-energy-ready":"";
         const hpShow=isFinal?`<span>❤️${currentHp}</span>`:`<span id="bchptxt-${side}-${i}">❤️${currentHp}</span>`;
