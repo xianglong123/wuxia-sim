@@ -497,12 +497,30 @@ def h2f(hid, inv):
             "_hd":hd,"side":"ally"}
 
 def cstat(u, stat, base):
+    """Buff计算: 按基数*倍率累加。atk/crit/spd用base*pct, dmg_reduce直接加pct"""
     v=base
     for b in u.get("buffs",[]):
-        if b["stat"]==stat: v*=(1+b["pct"])
+        if b["stat"]==stat:
+            if stat in ("spd",):
+                v+=int(b.get("pct",0))  # spd是绝对值
+            else:
+                v+=int(base*b.get("pct",0))  # 比例加成
     for d in u.get("debuffs",[]):
-        if d["stat"]==stat: v*=(1+d["pct"])
-    return int(v)
+        if d["stat"]==stat:
+            if stat in ("spd",):
+                v+=int(d.get("pct",0))
+            else:
+                v+=int(base*d.get("pct",0))
+    return max(1 if stat in ("atk","hp","spd","crit") else 0, int(v))
+
+def get_dmg_reduce(t):
+    """独立计算减伤(0~0.8): dmg_reduce直接从buff累加pct"""
+    dr=0
+    for b in t.get("buffs",[]):
+        if b["stat"]=="dmg_reduce": dr+=b["pct"]
+    for d in t.get("debuffs",[]):
+        if d["stat"]=="dmg_reduce": dr+=d["pct"]
+    return max(-0.5, min(0.8, dr))
 
 def get_targets(units, mode):
     alive=[u for u in units if u.get("alive",True)]
@@ -735,6 +753,7 @@ def run_speed_battle(my_heroes, enemies, stage):
     r = {"win": win, "rounds": tick_no, "actions": all_actions}
     r["my_heroes"]=[{"name":f["name"],"class":f["class"],"quality":f["quality"],"color":f["color"],
         "max_hp":f["max_hp"],"atk":f["atk"],"crit":f["crit"],
+        "eff_atk":cstat(f,"atk",f["atk"]),"eff_crit":cstat(f,"crit",f["crit"]),
         "hp_pct":max(0,f["hp"]/max(1,f["max_hp"])),"alive":f.get("alive",True),
         "shield_pct":f.get("shield",0)/max(1,f["max_hp"]),
         "energy":f.get("energy",0),"spd":f.get("spd",100),
@@ -742,6 +761,7 @@ def run_speed_battle(my_heroes, enemies, stage):
         "debuffs":[d["stat"] for d in f.get("debuffs",[])]} for f in my_heroes]
     r["enemies"]=[{"name":e["name"],"class":e["class"],"quality":e["quality"],"color":e["color"],
         "max_hp":e["max_hp"],"atk":e["atk"],
+        "eff_atk":cstat(e,"atk",e["atk"]),"eff_crit":cstat(e,"crit",e["crit"]),
         "hp_pct":max(0,e["hp"]/max(1,e["max_hp"])),"alive":e.get("alive",True),
         "energy":e.get("energy",0),
         "buffs":[b["stat"] for b in e.get("buffs",[])],
@@ -807,7 +827,7 @@ def hero_basic_attack(unit, allies, enemies):
             d = int(ba * bdmg * random.uniform(0.85, 1.0))
             cr = random.random() < unit["crit"]/100
             if cr: d = int(d * 1.5)
-            dr = cstat(t, "dmg_reduce", 0)
+            dr = get_dmg_reduce(t)
             d = int(d * (1 - dr))
             r = apply_dmg(t, d)
             killed = t["hp"] <= 0
@@ -823,7 +843,7 @@ def hero_basic_attack(unit, allies, enemies):
         d = int(ba * bdmg * random.uniform(0.85, 1.0))
         cr = random.random() < unit["crit"]/100
         if cr: d = int(d * 1.5)
-        dr = cstat(t, "dmg_reduce", 0)
+        dr = get_dmg_reduce(t)
         d = int(d * (1 - dr))
         r = apply_dmg(t, d)
         killed = t["hp"] <= 0
@@ -838,7 +858,7 @@ def hero_basic_attack(unit, allies, enemies):
                 d2 = int(ba * bdmg * random.uniform(0.85, 1.0))
                 cr2 = random.random() < unit["crit"]/100
                 if cr2: d2 = int(d2 * 1.5)
-                dr2 = cstat(t, "dmg_reduce", 0)
+                dr2 = get_dmg_reduce(t)
                 d2 = int(d2 * (1 - dr2))
                 r2 = apply_dmg(t, d2)
                 d += r2["damage"]
@@ -887,14 +907,18 @@ def hero_use_skill(unit, allies, enemies):
             for t in targets:
                 heal = int(t["max_hp"] * hd["skill_heal_pct"])
                 t["hp"] = min(t["max_hp"], t["hp"] + heal)
+            buff_tags=[]
             for b in hd.get("skill_buffs",[]):
                 for t in targets:
                     t["buffs"].append({"stat":b["stat"],"pct":b["pct"],"dur":b["dur"]})
+                buff_tags.append(b["stat"])
             if "immunity" in specials:
                 for t in targets:
                     t["buffs"].append({"stat":"immune","pct":1.0,"dur":2})
+                buff_tags.append("immune")
             return {"side":"heal","type":"skill","attacker_name":unit["name"],"skill":sk_name,
-                    "aoe":True,"targets":[{"name":t["name"],"heal":int(t["max_hp"]*hd["skill_heal_pct"])} for t in targets]}
+                    "aoe":True,"targets":[{"name":t["name"],"heal":int(t["max_hp"]*hd["skill_heal_pct"])} for t in targets],
+                    "buff_effects":buff_tags}
         else:
             targets = [min([a for a in allies if a.get("alive",True)], key=lambda x: x["hp"])] if [a for a in allies if a.get("alive",True)] else []
             if targets:
@@ -908,13 +932,18 @@ def hero_use_skill(unit, allies, enemies):
     alive_e = [e for e in enemies if e.get("alive",True)]
     if target_mode == "self":
         # 自身buff技能
+        buff_tags=[]
         for b in hd.get("skill_buffs",[]):
             unit["buffs"].append({"stat":b["stat"],"pct":b["pct"],"dur":b["dur"]})
+            buff_tags.append(b["stat"])
         if "lifesteal" in specials:
             unit["buffs"].append({"stat":"lifesteal","pct":0.4,"dur":3})
+            buff_tags.append("lifesteal")
         if "reflect" in specials:
             unit["buffs"].append({"stat":"reflect","pct":0.5,"dur":3})
+            buff_tags.append("reflect")
         return {"side":"ally","type":"skill","attacker_name":unit["name"],"skill":sk_name,
+                "buff_effects":buff_tags,
                 "aoe":False,"target_name":unit["name"],"damage":0,"buffed":True}
 
     tars = get_targets(alive_e, target_mode)
@@ -943,7 +972,7 @@ def hero_use_skill(unit, allies, enemies):
             cr = random.random() < unit["crit"]/100
             if "guaranteed_crit" in specials: cr = True
             if cr: d = int(d * 1.5)
-            dr = cstat(t, "dmg_reduce", 0)
+            dr = get_dmg_reduce(t)
             d = int(d * (1 - dr))
             ignore = "ignore_shield" in specials
             r = apply_dmg(t, d, ignore)
@@ -984,7 +1013,7 @@ def hero_use_skill(unit, allies, enemies):
         cr = random.random() < unit["crit"]/100
         if "guaranteed_crit" in specials: cr = True
         if cr: d = int(d * 1.5)
-        dr = cstat(t, "dmg_reduce", 0)
+        dr = get_dmg_reduce(t)
         d = int(d * (1 - dr))
         r = apply_dmg(t, d)
         killed = t["hp"] <= 0
@@ -1007,7 +1036,7 @@ def enemy_basic_attack(unit, allies, enemies):
     d = int(ba * dmg_pct * random.uniform(0.8, 1.0))
     cr = random.random() < unit["crit"]/100
     if cr: d = int(d * 1.5)
-    dr = cstat(t, "dmg_reduce", 0)
+    dr = get_dmg_reduce(t)
     d = int(d * (1 - dr))
     r = apply_dmg(t, d)
     killed = t["hp"] <= 0
@@ -1039,7 +1068,7 @@ def enemy_use_skill(unit, allies, enemies):
         d = int(ba * random.uniform(0.4, 0.8))
         cr = random.random() < unit["crit"]/100
         if cr: d = int(d * 1.5)
-        dr = cstat(t, "dmg_reduce", 0)
+        dr = get_dmg_reduce(t)
         d = int(d * (1 - dr))
         r = apply_dmg(t, d)
         total_dmg += r["damage"]

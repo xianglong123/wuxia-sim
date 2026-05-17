@@ -317,6 +317,7 @@ function showBattle(br){
   document.getElementById("battleResult").style.display="none";document.getElementById("roundIndicator").textContent="";
   document.getElementById("vsText").style.display="flex";document.getElementById("battleLogT").innerHTML="";
   document.getElementById("battleStats").style.display="none";
+  window._lastBr=br;
   renderBF(br.my_heroes,br.enemies,false);
   updateActionQueue(br.actions,0);
   let ti=0;const aa=br.actions,total=aa.length;
@@ -350,6 +351,13 @@ function showBattle(br){
     updateActionQueue(aa,ti);
     updateStats(act);
     updateCardEnergy(act);
+    // Buff通知(技能buff/debuff)
+    if(act.buff_effects&&act.buff_effects.length>0){
+      const be=act.buff_effects;
+      const bLabels={"atk":"⚔️+攻","immune":"🛡️免疫","dmg_reduce":"🛡️减伤","lifesteal":"💉吸血","reflect":"🔄反伤","spd":"👟加速"};
+      const label=be.map(b=>bLabels[b]||b).join(" ");
+      buffNotify(label,"#5adb7a");
+    }
     // 卡牌动作: 只显示文字
     if(act.type==="card_play"){
       const msg=act.msg||act.card?.desc||"";
@@ -408,7 +416,69 @@ function updateActionQueue(aa,ti){
   }else{aq.innerHTML=""}
 }
 
-// ═══ 能量条实时更新(不重建卡片) ═══
+// ═══ Buff标记实时更新 ═══
+function updateCardBuffs(act){
+  if(act.type==="card_play")return;
+  if(act.side==="heal"||act.side==="ally"){
+    // 更新所有我方卡片的buff标签
+    const myCards=document.querySelectorAll("#bc-my .bc-card");
+    // 从battle result取最新buff数据
+    const br=window._lastBr;
+    if(!br||!br.my_heroes)return;
+    for(let i=0;i<myCards.length&&i<br.my_heroes.length;i++){
+      const h=br.my_heroes[i];
+      const c=myCards[i];
+      if(!c||!h)continue;
+      // 更新eff_atk/eff_crit显示
+      const infoLine=c.querySelector(".bc-info>div:not(.bc-name):not(.bc-class)");
+      if(infoLine){
+        const baseAtk=h.atk||0;
+        const effAtk=h.eff_atk||baseAtk;
+        if(effAtk!==baseAtk){
+          let html=infoLine.innerHTML;
+          // Replace atk display
+          html=html.replace(/⚔️\d+/,`⚔️${effAtk}`);
+          html=html.replace(/\(\d+\)/g,`(${baseAtk})`);
+          infoLine.innerHTML=html;
+        }
+      }
+      // 更新buff标签
+      const existingBuffs=c.querySelector(".bc-buffs");
+      if(existingBuffs){
+        const tags=[];
+        for(let b of h.buffs||[]){
+          if(b==="immune")tags.push('<span class="bc-buff ultimate">🛡️免疫</span>');
+          else if(b==="atk")tags.push('<span class="bc-buff positive">⚔️+攻</span>');
+          else if(b==="dmg_reduce")tags.push('<span class="bc-buff positive">🛡️减伤</span>');
+          else if(b==="lifesteal")tags.push('<span class="bc-buff positive">💉吸血</span>');
+          else if(b==="reflect")tags.push('<span class="bc-buff positive">🔄反伤</span>');
+          else if(b==="spd")tags.push('<span class="bc-buff positive">👟加速</span>');
+          else tags.push(`<span class="bc-buff positive">${b}</span>`);
+        }
+        for(let d of h.debuffs||[]){
+          if(d==="burn")tags.push('<span class="bc-buff negative">🔥灼烧</span>');
+          else if(d==="stun"||d==="freeze")tags.push('<span class="bc-buff negative">💀眩晕</span>');
+          else if(d==="heal_block")tags.push('<span class="bc-buff negative">🚫禁疗</span>');
+          else if(d==="atk")tags.push('<span class="bc-buff negative">⬇️攻-</span>');
+          else tags.push(`<span class="bc-buff negative">${d}</span>`);
+        }
+        existingBuffs.innerHTML=tags.slice(0,5).join("");
+        // 圣盾图标
+        const nm=c.querySelector(".bc-name");
+        if(nm&&h.buffs&&h.buffs.includes("immune")){
+          if(!nm.innerHTML.includes("🛡️"))nm.innerHTML+=' <span class="bc-shield-icon">🛡️</span>';
+        }
+      }
+    }
+  }
+}
+
+// ═══ Buff通知 ═══
+function buffNotify(text,clr){
+  const el=document.createElement("div");el.className="skill-popup skill-big";
+  el.innerHTML=`<span class="s-icon" style="color:${clr||"#5adb7a"}">✨</span><div class="s-name" style="color:${clr||"#5adb7a"}">${text}</div>`;
+  document.body.appendChild(el);setTimeout(()=>el.remove(),1400);
+}
 function updateCardEnergy(act){
   if(act.type==="card_play")return;
   const energy=act.energy_after;
@@ -475,9 +545,15 @@ function renderBF(myH,enemies,isFinal){
         const energyPct=Math.min(100,(energy/200)*100);
         const energyReady=energy>=150?" bc-energy-ready":"";
         const hpShow=isFinal?`<span>❤️${currentHp}</span>`:`<span id="bchptxt-${side}-${i}">❤️${currentHp}</span>`;
+        const effAtk=u.eff_atk||u.atk||0;
+        const effCrit=u.eff_crit||u.crit||0;
+        const atkChanged=effAtk!==(u.atk||0);
+        const critChanged=effCrit!==(u.crit||0);
+        const atkShow=atkChanged?`<span style="color:#5adb7a;font-weight:700">⚔️${effAtk}</span><span style="font-size:7px;color:#5a4a3a">(${u.atk||0})</span>`:`<span>⚔️${effAtk}</span>`;
+        const critShow=critChanged?`<span style="color:#5adb7a;font-weight:700">⚡${effCrit}%</span><span style="font-size:7px;color:#5a4a3a">(${u.crit||0}%)</span>`:`<span>⚡${effCrit}%</span>`;
         return `<div class="bc-card ${alive?'':'bc-dead'}" id="bc-${side}-${i}" style="border-color:${u.color};${glow}"><span class="bc-icon">${ci}</span>
           <div class="bc-info"><div class="bc-name">${u.name}${shieldIcon}</div><div class="bc-class">${u.class}</div>
-          <div style="display:flex;gap:3px;font-size:8px;color:#6a5a4a;flex-wrap:wrap">${hpShow} <span class="bc-energy-num${energyReady}">⚡${energy}</span> <span>⚔️${u.atk||0}</span> <span>⚡${u.crit||0}%</span></div>
+          <div style="display:flex;gap:3px;font-size:8px;color:#6a5a4a;flex-wrap:wrap">${hpShow} <span class="bc-energy-num${energyReady}">⚡${energy}</span> ${atkShow} ${critShow}</div>
           <div class="bc-hp-strip"><div class="bc-hp-fill" id="bchp-${side}-${i}" style="width:${hpPct}%;background:${hpCol}"></div></div>
           <div class="bc-energy-strip${energyReady}"><div class="bc-energy-fill" id="bcene-${side}-${i}" style="width:${energyPct}%"></div></div>${buffRow}</div></div>`;
       }).join("")}</div></div>`;
