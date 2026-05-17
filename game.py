@@ -264,7 +264,7 @@ reg({"id":"pangtong","name":"庞统","class":"法师","quality":"绝品","color"
 reg({"id":"lihai","name":"李白","class":"战士","quality":"传说","color":"#ffd700",
     "hp":2800,"atk":580,"crit":25,"spd":160,"skill_cost":140,
     "skill_name":"青莲剑诀","skill_desc":"掷出佩剑化为漫天剑光，攻击全体敌人3次，每剑80%伤害",
-    "skill_aoe":True,"skill_target":"all_enemy","skill_special":["multi_hit"],
+    "skill_aoe":True,"skill_target":"all_enemy","skill_dmg_pct":0.8,"skill_special":["multi_hit"],
     "skill_upgrades":{3:"第四剑追击+暴击率+20%",5:"剑气纵横:每剑120%",7:"剑开天门:9999真实伤害必定暴击", 9:"#6攻击+50%+15%吸血"},
     "basic_name":"月下独酌","basic_desc":"剑光如月，攻击2次每次80%伤害","basic_dmg_pct":0.8,"basic_energy_gain":45,
     "basic_aoe":False,"basic_target":"single","basic_special":[{"type":"multi_hit","count":2}],
@@ -296,7 +296,7 @@ reg({"id":"huatuo","name":"华佗","class":"奶妈","quality":"传说","color":"
 reg({"id":"zhaoyun","name":"赵云","class":"战士","quality":"传说","color":"#ffd700",
     "hp":3200,"atk":420,"crit":22,"spd":150,"skill_cost":130,
     "skill_name":"七进七出","skill_desc":"冲入敌阵连续冲锋7次，每次对全体敌人造成30%伤害+10%吸血",
-    "skill_aoe":True,"skill_target":"all_enemy","skill_special":["multi_hit","lifesteal"],
+    "skill_aoe":True,"skill_target":"all_enemy","skill_dmg_pct":0.3,"skill_special":["multi_hit","lifesteal"],
     "skill_upgrades":{3:"冲锋吸血20%",5:"优先攻击后排",7:"终结一击:全体500%伤害", 9:"#1开局满能量"},
     "basic_name":"龙胆亮银","basic_desc":"亮银枪出如龙，攻击2次每次100%伤害","basic_dmg_pct":1.0,"basic_energy_gain":40,
     "basic_aoe":False,"basic_target":"single","basic_special":[{"type":"multi_hit","count":2}],
@@ -1935,11 +1935,17 @@ def hero_use_skill(unit, allies, enemies):
     total_dmg=0
     
     if is_aoe:
-        # AOE: 对每个目标打multi_hit次
-        for t in tars:
-            if not t.get("alive",True): continue
-            td=_process_dmg_target(t,True)
-            if td: all_targets_data.append(td); total_dmg+=td["damage"]
+        # AOE: 真实命中multi_hit次, 每次对全体存活敌人造成伤害
+        remaining_hits = multi_hit_count
+        while remaining_hits > 0:
+            alive_tars = [t for t in tars if t.get("alive", True)]
+            if not alive_tars: break
+            for t in alive_tars:
+                td = _process_dmg_target(t, True)
+                if td: all_targets_data.append(td); total_dmg += td["damage"]
+            remaining_hits -= 1
+        # 内部已拆开每击伤害, 不让expand再次拆分
+        multi_hit_count = 1
     else:
         # ST: 打multi_hit次（可能多个目标不同）
         remaining_hits=multi_hit_count
