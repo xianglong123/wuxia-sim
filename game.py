@@ -494,7 +494,7 @@ def h2f(hid, inv):
             "hp":hp,"max_hp":hp,"atk":atk,"crit":hd["crit"],"spd":hd.get("spd",100),"_skill_cost":hd.get("skill_cost",100),
             "alive":True,"shield":0,"buffs":[],"debuffs":[],"stunned":False,"frozen":False,"reflect":False,
             "energy":0,"action_bar":random.randint(0,400),
-            "_hd":hd,"side":"ally"}
+            "_hd":hd,"_skill_lv":inv.get("skill_lv",1),"side":"ally"}
 
 def cstat(u, stat, base):
     """Buff计算: 按基数*倍率累加。atk/crit/spd用base*pct, dmg_reduce直接加pct"""
@@ -616,7 +616,41 @@ def run_speed_battle(my_heroes, enemies, stage):
     card_energy = 1
     max_card_energy = 3
 
+    all_actions = []
     logs = []  # 战斗记录
+
+    # 被动系统上下文
+    passive_ctx = {"all_actions": all_actions, "passive_counters": {}, "triggered":set()}
+
+    # 战斗开始被动
+    for u in my_heroes:
+        hd=u.get("_hd")
+        if hd:
+            sk_lv=u.get("_skill_lv",1)
+            # 郭奉孝: 奇谋 - 战斗开始回复全体15%血量
+            if hd["id"]=="guojia":
+                heal_pct=0.15+(0.1 if sk_lv>=3 else 0)
+                for a in my_heroes:
+                    if a.get("alive",True):
+                        heal=int(a["max_hp"]*heal_pct)
+                        a["hp"]=min(a["max_hp"],a["hp"]+heal)
+                all_actions.append({"side":"heal","type":"passive","attacker_name":"郭奉孝",
+                    "skill":"奇谋","aoe":True,"targets":[{"name":a["name"],"heal":int(a["max_hp"]*heal_pct)} for a in my_heroes if a.get("alive",True)]})
+            # 甘宁: 铃铛 - 降低敌方全体10%攻击
+            if hd["id"]=="ganning":
+                atk_pct=-0.1-(0.1 if sk_lv>=3 else 0)
+                for e in enemies:
+                    if e.get("alive",True):
+                        e["debuffs"].append({"stat":"atk","pct":atk_pct,"dur":-1})
+            # 貂蝉: 离间 - 魅惑一个敌人3秒
+            if hd["id"]=="diaochan":
+                alive_e=[e for e in enemies if e.get("alive",True)]
+                if alive_e:
+                    target=random.choice(alive_e)
+                    target["debuffs"].append({"stat":"charm","pct":1.0,"dur":3})
+                    all_actions.append({"side":"enemy","type":"passive","attacker_name":"貂蝉",
+                        "skill":"离间","aoe":False,"target_name":target["name"],"msg":"魅惑!"})
+
     max_ticks = 250
     tick_no = 0
     actions_since_draw = 0
@@ -735,6 +769,23 @@ def run_speed_battle(my_heroes, enemies, stage):
                         })
                         all_actions.append(card_result)
                         logs.append(f"🎴 {unit['name']} 使用 {played['name']}！{played['desc']}")
+
+            # 被动触发检查(击杀/队友低血/队友死亡)
+            for passive_unit in my_heroes:
+                phd=passive_unit.get("_hd")
+                if not phd or not passive_unit.get("alive",True): continue
+                psk_lv=passive_unit.get("_skill_lv",1)
+                # 检查刚被击杀的目标(吕布无双等)
+                if unit.get("side")=="ally" and act.get("killed") and act.get("target_name"):
+                    check_passives(passive_unit, phd, psk_lv, my_heroes, enemies, "on_kill", passive_ctx)
+                # 华佗: 检查最低血量
+                if phd["id"]=="huatuo":
+                    lowest=min([a for a in my_heroes if a.get("alive",True)],key=lambda x:x["hp"]/max(1,x["max_hp"]),default=None)
+                    if lowest and lowest["hp"]/max(1,lowest["max_hp"])<0.3 and lowest!=passive_unit:
+                        check_passives(passive_unit, phd, psk_lv, my_heroes, enemies, "on_ally_low_hp", passive_ctx)
+                # 蔡文姬: 检查队友死亡
+                if phd["id"]=="caiwenji" and act.get("killed") and act.get("side")=="enemy" and act.get("target_name") and any(u.get("name")==act["target_name"] and u.get("alive")==False for u in my_heroes):
+                    check_passives(passive_unit, phd, psk_lv, my_heroes, enemies, "on_ally_die", passive_ctx)
 
             # 检查战斗结束
             alive_h = [u for u in my_heroes if u.get("alive",True)]
@@ -907,6 +958,106 @@ def apply_basic_specials(unit, hd, targets):
             for tar in targets:
                 tar["debuffs"].append({"stat":"burn","pct":sp.get("pct",0.05),"dur":sp.get("dur",2)})
 
+# ═══ 技能升级 & 被动触发系统 ═══
+def apply_skill_upgrades(unit, hd, sk_lv, allies, enemies, sk_context):
+    """根据技能等级应用升级效果。返回额外buff/debuff列表。"""
+    if not hd or sk_lv < 3: return
+    hid=hd["id"]; extra={}
+    if hid=="huatuo" and sk_lv>=3:
+        # 华佗Lv3: 免疫期间暴击率+20%
+        if not extra.get("extra_buffs"): extra["extra_buffs"]=[]
+        extra["extra_buffs"].append({"stat":"crit","pct":0.2,"dur":2})
+    if hid=="caiwenji" and sk_lv>=3:
+        # 蔡文姬Lv3: 额外30%护盾
+        for t in (allies if hd.get("skill_target")=="all_ally" else []):
+            if t.get("alive",True):
+                t["shield"]=int(t["max_hp"]*0.3)
+    if hid=="xiahoudun" and sk_lv>=3:
+        # 夏侯惇Lv3: 自损降至5%
+        if "lifesteal" in hd.get("skill_special",[]):
+            unit["hp"]+=int(unit["max_hp"]*0.05)  # 回血抵消部分自损
+    if hid=="dianwei" and sk_lv>=3:
+        # 典韦Lv3: 免疫控制
+        if not extra.get("extra_buffs"): extra["extra_buffs"]=[]
+        extra["extra_buffs"].append({"stat":"immune","pct":1.0,"dur":hd.get("skill_buffs",[{"dur":3}])[0]["dur"]})
+    if hid=="zhangfei" and sk_lv>=3:
+        # 张飞Lv3: 降敌攻25%
+        for e in enemies:
+            if e.get("alive",True):
+                e["debuffs"].append({"stat":"atk","pct":-0.25,"dur":3})
+    if hid=="guanyu" and sk_lv>=3:
+        # 关羽Lv3: 蓄力免疫控制
+        if not extra.get("extra_buffs"): extra["extra_buffs"]=[]
+        extra["extra_buffs"].append({"stat":"immune","pct":1.0,"dur":1})
+    if hid=="lihai" and sk_lv>=3:
+        # 李白Lv3: 第四剑
+        extra["extra_hits"]=1
+    if hid=="zhaoyun" and sk_lv>=3:
+        # 赵云Lv3: 吸血20%
+        if not extra.get("extra_buffs"): extra["extra_buffs"]=[]
+        extra["extra_buffs"].append({"stat":"lifesteal","pct":0.2,"dur":2})
+    if hid=="luobu" and sk_lv>=3:
+        # 吕布Lv3: 击退眩晕
+        extra["extra_special"]="stun"
+    if hid=="diaochan" and sk_lv>=3:
+        # 貂蝉Lv3: 杀敌刷新闪避
+        if not extra.get("extra_buffs"): extra["extra_buffs"]=[]
+        extra["extra_buffs"].append({"stat":"dodge_refresh","pct":1.0,"dur":1})
+    if hid=="zhugeliang" and sk_lv>=3:
+        # 诸葛亮Lv3: 额外50%闪电伤害
+        for e in enemies:
+            if e.get("alive",True):
+                e["hp"]-=int(e["max_hp"]*0.05)
+    if hid=="yangyouji" and sk_lv>=3:
+        # 养由基Lv3: 暴击率+30%
+        if not extra.get("extra_buffs"): extra["extra_buffs"]=[]
+        extra["extra_buffs"].append({"stat":"crit","pct":0.3,"dur":2})
+    return extra
+
+def check_passives(unit, hd, sk_lv, allies, enemies, event, context):
+    """检查并触发被动。event: 'on_ally_low_hp','on_kill','on_start','on_hit'"""
+    if not hd: return
+    hid=hd["id"]
+    # 华佗: 妙手回春 - 队友低于30%自动回复15%(每场2次)
+    if hid=="huatuo" and event=="on_ally_low_hp":
+        # 通过context.get("passive_counter",0)追踪触发次数
+        triggers=context.get("passive_counters",{}).get("huatuo_miaoshou",0)
+        max_triggers=2+(1 if sk_lv>=3 else 0)
+        if triggers<max_triggers:
+            lowest=min([a for a in allies if a.get("alive",True)],key=lambda x:x["hp"]/max(1,x["max_hp"]))
+            if lowest and lowest["hp"]/max(1,lowest["max_hp"])<0.3:
+                heal_pct=0.15+(0.15 if sk_lv>=5 else 0)
+                heal=int(lowest["max_hp"]*heal_pct)
+                lowest["hp"]=min(lowest["max_hp"],lowest["hp"]+heal)
+                if "passive_counters" not in context: context["passive_counters"]={}
+                context["passive_counters"]["huatuo_miaoshou"]=triggers+1
+                context["all_actions"].append({"side":"heal","type":"passive","attacker_name":hd["name"],
+                    "skill":"妙手回春","aoe":False,"target_name":lowest["name"],"heal":heal,"msg":f"被动触发:回复{lowest['name']}{heal}❤️"})
+    # 蔡文姬: 悲歌 - 队友死亡全体回复25%
+    if hid=="caiwenji" and event=="on_ally_die":
+        heal_pct=0.25+(0.15 if sk_lv>=3 else 0)
+        for a in allies:
+            if a.get("alive",True):
+                heal=int(a["max_hp"]*heal_pct)
+                a["hp"]=min(a["max_hp"],a["hp"]+heal)
+    # 吕布: 无双 - 每击败敌人+20%攻击
+    if hid=="luobu" and event=="on_kill":
+        max_layer=3+(1 if sk_lv>=3 else 0)
+        layer=context.get("passive_counters",{}).get("luobu_wushuang",0)+1
+        if layer<=max_layer:
+            if "passive_counters" not in context: context["passive_counters"]={}
+            context["passive_counters"]["luobu_wushuang"]=layer
+            atk_pct=0.2+(0.05 if sk_lv>=5 else 0)
+            unit["buffs"].append({"stat":"atk","pct":atk_pct,"dur":-1})
+    # 关羽: 武圣 - 第一次技能必定暴击+伤害50%
+    if hid=="guanyu" and event=="on_skill":
+        if context.get("passive_counters",{}).get("guanyu_wusheng",0)==0:
+            if "passive_counters" not in context: context["passive_counters"]={}
+            context["passive_counters"]["guanyu_wusheng"]=1
+            # 通过附加buff实现
+            unit["buffs"].append({"stat":"guaranteed_crit","pct":1.0,"dur":1})
+            unit["buffs"].append({"stat":"skill_dmg_pct","pct":0.5,"dur":1})
+
 def hero_use_skill(unit, allies, enemies):
     hd = unit.get("_hd")
     if not hd: return {"side":"ally","type":"skill","attacker_name":unit["name"],"damage":0}
@@ -917,6 +1068,7 @@ def hero_use_skill(unit, allies, enemies):
 
     # 治疗型技能
     if hd.get("skill_heal_pct", 0) > 0:
+        sk_lv=unit.get("_skill_lv",1)
         if target_mode == "all_ally":
             targets = [a for a in allies if a.get("alive",True)]
             for t in targets:
@@ -931,6 +1083,13 @@ def hero_use_skill(unit, allies, enemies):
                 for t in targets:
                     t["buffs"].append({"stat":"immune","pct":1.0,"dur":2})
                 buff_tags.append("immune")
+            # 技能升级效果
+            up=apply_skill_upgrades(unit, hd, sk_lv, allies, enemies, {})
+            if up and up.get("extra_buffs"):
+                for b in up["extra_buffs"]:
+                    for t in targets:
+                        t["buffs"].append({"stat":b["stat"],"pct":b["pct"],"dur":b["dur"]})
+                    buff_tags.append(b["stat"])
             return {"side":"heal","type":"skill","attacker_name":unit["name"],"skill":sk_name,
                     "aoe":True,"targets":[{"name":t["name"],"heal":int(t["max_hp"]*hd["skill_heal_pct"])} for t in targets],
                     "buff_effects":buff_tags}
@@ -945,6 +1104,7 @@ def hero_use_skill(unit, allies, enemies):
 
     # 攻击型技能
     alive_e = [e for e in enemies if e.get("alive",True)]
+    sk_lv=unit.get("_skill_lv",1)
     if target_mode == "self":
         # 自身buff技能
         buff_tags=[]
@@ -957,6 +1117,12 @@ def hero_use_skill(unit, allies, enemies):
         if "reflect" in specials:
             unit["buffs"].append({"stat":"reflect","pct":0.5,"dur":3})
             buff_tags.append("reflect")
+        # 技能升级
+        up=apply_skill_upgrades(unit, hd, sk_lv, allies, enemies, {})
+        if up and up.get("extra_buffs"):
+            for b in up["extra_buffs"]:
+                unit["buffs"].append({"stat":b["stat"],"pct":b["pct"],"dur":b["dur"]})
+                buff_tags.append(b["stat"])
         return {"side":"ally","type":"skill","attacker_name":unit["name"],"skill":sk_name,
                 "buff_effects":buff_tags,
                 "aoe":False,"target_name":unit["name"],"damage":0,"buffed":True}
