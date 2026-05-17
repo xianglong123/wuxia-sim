@@ -542,7 +542,7 @@ function showBattleResult(d){
   // But for simplicity, just show the final board state + render(game) to update
             
   // Update game state for rewards
-  if(game){game.jade=(game.jade||0)+jr;game.stage_index=(game.stage_index||0)+(win?1:0)}
+  if(game){game.jade=(game.jade||0)+jr;if(win){game.stage_index=(game.stage_index||0)+1;if(game.stage)game.stage.index=game.stage_index;game.stage.name=d.stage_name||game.stage.name}}
   render(game);
 }
 
