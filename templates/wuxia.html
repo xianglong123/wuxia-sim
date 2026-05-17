@@ -352,14 +352,28 @@ function showBattle(br){
     updateStats(act);
     updateCardEnergy(act);
     updateCardStats(act);
-    // Buff通知(技能buff/debuff)
+    // ═══ Buff通知(非basic都显示) ═══
     if(act.buff_effects&&act.buff_effects.length>0){
       const be=act.buff_effects;
-      const bLabels={"atk":"⚔️+攻","immune":"🛡️免疫","dmg_reduce":"🛡️减伤","lifesteal":"💉吸血","reflect":"🔄反伤","spd":"👟加速"};
+      const bLabels={"atk":"⚔️+攻","immune":"🛡️免疫","dmg_reduce":"🛡️减伤","lifesteal":"💉吸血","reflect":"🔄反伤","spd":"👟加速","crit":"⚡暴击"};
       const label=be.map(b=>bLabels[b]||b).join(" ");
       buffNotify(label,"#5adb7a");
     }
-    // 卡牌动作: 只显示文字
+    // ═══ 被动触发 ═══
+    if(act.type==="passive"){
+      const msg=act.msg||act.skill||"";
+      const el=document.getElementById("roundIndicator");el.textContent="✨ 被动触发";
+      skillPopup(act.skill||"被动",act.side||"ally","#5adb7a",true);
+      // 闪屏
+      sfx("green");
+      // 日志
+      const lt=`✨ ${act.attacker_name||""} ${act.skill}: ${msg}`;
+      const ld=document.createElement("div");ld.className="bl-line bl-heal";ld.textContent=lt;
+      document.getElementById("battleLogT").appendChild(ld);
+      document.getElementById("battleLogT").scrollTop=document.getElementById("battleLogT").scrollHeight;
+      ti++;setTimeout(nxt,600);return;
+    }
+    // ═══ 卡牌动作 ═══
     if(act.type==="card_play"){
       const msg=act.msg||act.card?.desc||"";
       const lt=`🎴 ${act.attacker_name||""} 打出 ${act.card?.name||""}: ${msg}`;
@@ -367,10 +381,12 @@ function showBattle(br){
       document.getElementById("battleLogT").appendChild(ld);
       document.getElementById("battleLogT").scrollTop=document.getElementById("battleLogT").scrollHeight;
       document.getElementById("roundIndicator").textContent="🎴 战术卡";
-      skillPopup(act.card?.name||"战术", "ally", "#5adb7a");
-      ti++;setTimeout(nxt,150);return;
+      skillPopup(act.card?.name||"战术","ally","#ffd700",true);
+      // 卡牌有额外停顿感
+      document.body.style.animation="shake .15s ease";setTimeout(()=>{document.body.style.animation=""},200);
+      ti++;setTimeout(nxt,500);return;
     }
-    // 战斗动作为技能/基础攻击
+    // ═══ 战斗动作(技能/普攻) ═══
     const isSkill=act.type==="skill";
     const icon=isSkill?"⚡":"🗡️";
     let lt="",lc="bl-line";

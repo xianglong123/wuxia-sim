@@ -497,18 +497,22 @@ def h2f(hid, inv):
             "_hd":hd,"_skill_lv":inv.get("skill_lv",1),"side":"ally"}
 
 def cstat(u, stat, base):
-    """Buff计算: 按基数*倍率累加。atk/crit/spd用base*pct, dmg_reduce直接加pct"""
+    """Buff计算. atk/spd用base*pct累加; crit用加法(百分比点); dmg_reduce单独处理"""
     v=base
     for b in u.get("buffs",[]):
         if b["stat"]==stat:
             if stat in ("spd",):
-                v+=int(b.get("pct",0))  # spd是绝对值
+                v+=int(b.get("pct",0))  # spd绝对值
+            elif stat=="crit":
+                v+=int(b.get("pct",0)*100)  # crit加法：+20%直加20点
             else:
-                v+=int(base*b.get("pct",0))  # 比例加成
+                v+=int(base*b.get("pct",0))  # atk等比例
     for d in u.get("debuffs",[]):
         if d["stat"]==stat:
             if stat in ("spd",):
                 v+=int(d.get("pct",0))
+            elif stat=="crit":
+                v+=int(d.get("pct",0)*100)
             else:
                 v+=int(base*d.get("pct",0))
     return max(1 if stat in ("atk","hp","spd","crit") else 0, int(v))
