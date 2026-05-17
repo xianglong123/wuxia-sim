@@ -125,7 +125,7 @@ reg({"id":"lisi","name":"李四","class":"战士","quality":"凡品","color":"#8
     "skill_name":"乱砍","skill_desc":"对单个敌人造成80%伤害，30%概率降低目标攻击10%×2回合",
     "skill_aoe":False,"skill_target":"single","skill_special":[],"skill_debuffs":[{"stat":"atk","pct":-0.1,"dur":2,"chance":0.3}],
     "skill_upgrades":{3:"伤害120%, 削弱概率50%"},
-    "basic_name":"横劈","basic_desc":"挥刀横斩，造成100%伤害","basic_dmg_pct":1.0,"basic_energy_gain":25,
+    "basic_name":"横劈","basic_desc":"挥刀横斩，造成100%伤害","basic_dmg_pct":1.0,"basic_energy_gain":40,
     "basic_aoe":False,"basic_target":"single","basic_special":[],
     "passive_name":"蛮力","passive_desc":"攻击力+10%","passive_upgrades":{3:"攻击力+20%"}})
 reg({"id":"wangdazhuang","name":"王大壮","class":"肉盾","quality":"凡品","color":"#888",
@@ -133,7 +133,7 @@ reg({"id":"wangdazhuang","name":"王大壮","class":"肉盾","quality":"凡品",
     "skill_name":"站住别跑","skill_desc":"嘲讽一个敌人，自身减伤30%×2回合",
     "skill_aoe":False,"skill_target":"single","skill_special":["taunt"],"skill_buffs":[{"stat":"dmg_reduce","pct":0.3,"dur":2}],
     "skill_upgrades":{3:"嘲讽两个敌人，减伤50%"},
-    "basic_name":"盾击","basic_desc":"盾牌猛击，造成80%伤害并自身减伤5%×1回合","basic_dmg_pct":0.8,"basic_energy_gain":25,
+    "basic_name":"盾击","basic_desc":"盾牌猛击，造成80%伤害并自身减伤5%×1回合","basic_dmg_pct":0.8,"basic_energy_gain":40,
     "basic_aoe":False,"basic_target":"single","basic_special":[{"type":"self_buff","stat":"dmg_reduce","pct":0.05,"dur":1}],
     "passive_name":"皮厚","passive_desc":"血量+15%","passive_upgrades":{3:"血量+25%"}})
 reg({"id":"xiaocui","name":"小翠","class":"奶妈","quality":"凡品","color":"#888",
@@ -142,7 +142,7 @@ reg({"id":"xiaocui","name":"小翠","class":"奶妈","quality":"凡品","color":
     "skill_aoe":False,"skill_target":"lowest_hp_ally","skill_heal_pct":0.2,
     "skill_buffs":[{"stat":"dmg_reduce","pct":0.15,"dur":2}],
     "skill_upgrades":{3:"回复30%，防御加成25%"},
-    "basic_name":"针灸","basic_desc":"银针轻刺，回复最低血量队友15%","basic_dmg_pct":0,"basic_energy_gain":20,
+    "basic_name":"针灸","basic_desc":"银针轻刺，回复最低血量队友15%","basic_dmg_pct":0,"basic_energy_gain":50,
     "basic_aoe":False,"basic_target":"lowest_hp_ally","basic_special":[{"type":"heal","pct":0.15}],
     "passive_name":"细心","passive_desc":"治疗量+10%","passive_upgrades":{3:"治疗量+20%"}})
 reg({"id":"zhangtiezhu","name":"张铁柱","class":"射手","quality":"凡品","color":"#888",
@@ -150,7 +150,7 @@ reg({"id":"zhangtiezhu","name":"张铁柱","class":"射手","quality":"凡品","
     "skill_name":"扔石头","skill_desc":"对单个敌人造成100%伤害，20%概率眩晕",
     "skill_aoe":False,"skill_target":"single","skill_special":["stun"],
     "skill_upgrades":{3:"伤害120%，眩晕概率35%"},
-    "basic_name":"射击","basic_desc":"瞄准射击，造成120%伤害","basic_dmg_pct":1.2,"basic_energy_gain":20,
+    "basic_name":"射击","basic_desc":"瞄准射击，造成120%伤害","basic_dmg_pct":1.2,"basic_energy_gain":50,
     "basic_aoe":False,"basic_target":"single","basic_special":[],
     "passive_name":"鹰眼","passive_desc":"命中率+10%","passive_upgrades":{3:"命中率+20%"}})
 
@@ -160,7 +160,7 @@ reg({"id":"huangzhong","name":"黄忠老将","class":"射手","quality":"良品"
     "skill_name":"百步穿杨","skill_desc":"狙击敌方后排，造成200%伤害，必定暴击",
     "skill_aoe":False,"skill_target":"back_row","skill_special":["guaranteed_crit"],
     "skill_upgrades":{3:"伤害250%，爆伤翻倍",5:"攻击后排全体"},
-    "basic_name":"劲射","basic_desc":"强力射击，造成120%伤害","basic_dmg_pct":1.2,"basic_energy_gain":20,
+    "basic_name":"劲射","basic_desc":"强力射击，造成120%伤害","basic_dmg_pct":1.2,"basic_energy_gain":50,
     "basic_aoe":False,"basic_target":"single","basic_special":[],
     "passive_name":"老当益壮","passive_desc":"高于50%血量时攻击+20%","passive_upgrades":{3:"攻击+35%",5:"触发条件降至30%"}})
 reg({"id":"guojia","name":"郭奉孝","class":"法师","quality":"良品","color":"#5adb7a",
@@ -168,7 +168,7 @@ reg({"id":"guojia","name":"郭奉孝","class":"法师","quality":"良品","color
     "skill_name":"冰霜术","skill_desc":"对全体敌人造成80%伤害，40%概率冰冻1回合",
     "skill_aoe":True,"skill_target":"all_enemy","skill_special":["freeze"],
     "skill_upgrades":{3:"冰冻概率60%，伤害120%",5:"冰冻持续2回合"},
-    "basic_name":"凝冰","basic_desc":"冰晶飞射，造成80%伤害，10%概率冰冻","basic_dmg_pct":0.8,"basic_energy_gain":25,
+    "basic_name":"凝冰","basic_desc":"冰晶飞射，造成80%伤害，10%概率冰冻","basic_dmg_pct":0.8,"basic_energy_gain":40,
     "basic_aoe":False,"basic_target":"single","basic_special":[{"type":"debuff","stat":"stun","chance":0.1,"dur":1}],
     "passive_name":"奇谋","passive_desc":"战斗开始回复全体15%血量","passive_upgrades":{3:"回复25%",5:"额外增加10%攻击buff"}})
 reg({"id":"yanshisan","name":"燕十三","class":"刺客","quality":"良品","color":"#5adb7a",
@@ -176,7 +176,7 @@ reg({"id":"yanshisan","name":"燕十三","class":"刺客","quality":"良品","co
     "skill_name":"背刺","skill_desc":"对血量最低敌人造成250%伤害，击杀后刷新技能",
     "skill_aoe":False,"skill_target":"lowest_hp","skill_special":["refresh_on_kill"],
     "skill_upgrades":{3:"伤害350%",5:"击杀后攻击+20%×2回合"},
-    "basic_name":"暗影刺","basic_desc":"迅捷突刺，造成130%伤害，能量回复+10","basic_dmg_pct":1.3,"basic_energy_gain":35,
+    "basic_name":"暗影刺","basic_desc":"迅捷突刺，造成130%伤害，能量回复+10","basic_dmg_pct":1.3,"basic_energy_gain":50,
     "basic_aoe":False,"basic_target":"single","basic_special":[],
     "passive_name":"影步","passive_desc":"闪避率+15%","passive_upgrades":{3:"闪避+25%",5:"闪避后回血10%"}})
 reg({"id":"zhoucang","name":"周仓","class":"肉盾","quality":"良品","color":"#5adb7a",
@@ -184,7 +184,7 @@ reg({"id":"zhoucang","name":"周仓","class":"肉盾","quality":"良品","color"
     "skill_name":"护卫","skill_desc":"为最低血量队友承担50%伤害×3秒，自身减伤20%",
     "skill_aoe":False,"skill_target":"lowest_hp_ally","skill_special":["protect"],
     "skill_upgrades":{3:"承伤降低40%持续4秒",5:"保护期间自身回血10%"},
-    "basic_name":"掩护","basic_desc":"横盾格挡，造成70%伤害并援护最低血量队友","basic_dmg_pct":0.7,"basic_energy_gain":25,
+    "basic_name":"掩护","basic_desc":"横盾格挡，造成70%伤害并援护最低血量队友","basic_dmg_pct":0.7,"basic_energy_gain":40,
     "basic_aoe":False,"basic_target":"single","basic_special":[{"type":"protect","pct":0.3}],
     "passive_name":"忠勇","passive_desc":"保护队友时自身回复5%","passive_upgrades":{3:"回复10%",5:"回复全体5%"}})
 
@@ -194,7 +194,7 @@ reg({"id":"xiahoudun","name":"夏侯惇","class":"战士","quality":"极品","co
     "skill_name":"拔矢啖睛","skill_desc":"自损10%血量，对全体造成血量×6伤害，50%吸血",
     "skill_aoe":True,"skill_target":"all_enemy","skill_special":["lifesteal"],
     "skill_upgrades":{3:"伤害系数×10，自损5%",5:"获得护盾(吸收30%最大血量)"},
-    "basic_name":"怒斩","basic_desc":"含怒挥刀，造成100%伤害，吸血20%","basic_dmg_pct":1.0,"basic_energy_gain":25,
+    "basic_name":"怒斩","basic_desc":"含怒挥刀，造成100%伤害，吸血20%","basic_dmg_pct":1.0,"basic_energy_gain":40,
     "basic_aoe":False,"basic_target":"single","basic_special":[{"type":"lifesteal","pct":0.2}],
     "passive_name":"刚烈","passive_desc":"受到暴击时反弹150%伤害","passive_upgrades":{3:"反弹200%",5:"任何攻击30%反弹"}})
 reg({"id":"caiwenji","name":"蔡文姬","class":"奶妈","quality":"极品","color":"#4a8eff",
@@ -202,7 +202,7 @@ reg({"id":"caiwenji","name":"蔡文姬","class":"奶妈","quality":"极品","col
     "skill_name":"胡笳十八拍","skill_desc":"全体回复20%+驱散所有负面+攻击+20%×2回合",
     "skill_aoe":True,"skill_target":"all_ally","skill_heal_pct":0.2,"skill_special":["cleanse"],"skill_buffs":[{"stat":"atk","pct":0.2,"dur":2}],
     "skill_upgrades":{3:"额外获得30%护盾",5:"攻击加成提升至35%"},
-    "basic_name":"抚琴","basic_desc":"轻拨琴弦，全体回复8%血量","basic_dmg_pct":0,"basic_energy_gain":20,
+    "basic_name":"抚琴","basic_desc":"轻拨琴弦，全体回复8%血量","basic_dmg_pct":0,"basic_energy_gain":50,
     "basic_aoe":True,"basic_target":"all_ally","basic_special":[{"type":"heal","pct":0.08}],
     "passive_name":"悲歌","passive_desc":"队友死亡时全体回复25%","passive_upgrades":{3:"回复40%",5:"触发时自身无敌2秒"}})
 reg({"id":"ganning","name":"甘宁","class":"刺客","quality":"极品","color":"#4a8eff",
@@ -210,7 +210,7 @@ reg({"id":"ganning","name":"甘宁","class":"刺客","quality":"极品","color":
     "skill_name":"锦帆夜袭","skill_desc":"突袭敌方后排全体，造成180%伤害，暴击时击晕",
     "skill_aoe":True,"skill_target":"back_row","skill_special":["stun_on_crit"],
     "skill_upgrades":{3:"伤害250%，击杀后额外行动",5:"必定暴击，伤害350%"},
-    "basic_name":"铃铛斩","basic_desc":"铃响刀至，造成120%伤害","basic_dmg_pct":1.2,"basic_energy_gain":20,
+    "basic_name":"铃铛斩","basic_desc":"铃响刀至，造成120%伤害","basic_dmg_pct":1.2,"basic_energy_gain":50,
     "basic_aoe":False,"basic_target":"single","basic_special":[],
     "passive_name":"铃铛","passive_desc":"战斗开始降低敌方全体10%攻击","passive_upgrades":{3:"降低20%",5:"额外降低5%暴击"}})
 reg({"id":"dianwei","name":"典韦","class":"肉盾","quality":"极品","color":"#4a8eff",
@@ -218,7 +218,7 @@ reg({"id":"dianwei","name":"典韦","class":"肉盾","quality":"极品","color":
     "skill_name":"古之恶来","skill_desc":"狂暴:攻击+60%+吸血40%+反弹50%×3回合",
     "skill_aoe":False,"skill_target":"self","skill_special":["lifesteal","reflect"],"skill_buffs":[{"stat":"atk","pct":0.6,"dur":3}],
     "skill_upgrades":{3:"狂暴期间免疫控制",5:"结束时对全体造成200%伤害"},
-    "basic_name":"巨力挥击","basic_desc":"铁戟横扫，造成120%伤害，回复自身5%血量","basic_dmg_pct":1.2,"basic_energy_gain":25,
+    "basic_name":"巨力挥击","basic_desc":"铁戟横扫，造成120%伤害，回复自身5%血量","basic_dmg_pct":1.2,"basic_energy_gain":40,
     "basic_aoe":False,"basic_target":"single","basic_special":[{"type":"self_heal","pct":0.05}],
     "passive_name":"死战","passive_desc":"血量低于20%时攻击翻倍","passive_upgrades":{3:"触发阈值30%",5:"血量低于20%无敌2秒"}})
 
@@ -228,7 +228,7 @@ reg({"id":"yangyouji","name":"养由基","class":"射手","quality":"绝品","co
     "skill_name":"穿云箭","skill_desc":"穿透全体敌人造成200%伤害，无视护盾，暴击伤害翻倍",
     "skill_aoe":True,"skill_target":"all_enemy","skill_special":["ignore_shield"],
     "skill_upgrades":{3:"穿透后暴击率+30%",5:"暴击时4倍伤害",7:"一箭双雕:攻击两次"},
-    "basic_name":"精准射击","basic_desc":"百步穿杨，造成150%伤害","basic_dmg_pct":1.5,"basic_energy_gain":20,
+    "basic_name":"精准射击","basic_desc":"百步穿杨，造成150%伤害","basic_dmg_pct":1.5,"basic_energy_gain":50,
     "basic_aoe":False,"basic_target":"single","basic_special":[],
     "passive_name":"百发百中","passive_desc":"无视闪避，暴击率+15%","passive_upgrades":{3:"暴击率+25%",5:"爆伤+50%",7:"每暴击一次攻击+5%"}})
 reg({"id":"luobu","name":"吕布","class":"战士","quality":"绝品","color":"#b84aff",
@@ -236,7 +236,7 @@ reg({"id":"luobu","name":"吕布","class":"战士","quality":"绝品","color":"#
     "skill_name":"方天画戟","skill_desc":"横扫前排全体造成180%伤害，降低目标攻击20%×2回合",
     "skill_aoe":True,"skill_target":"front_row","skill_debuffs":[{"stat":"atk","pct":-0.2,"dur":2}],
     "skill_upgrades":{3:"击退附带眩晕1回合",5:"只命中一个敌人时伤害翻倍",7:"技能范围扩大至全体"},
-    "basic_name":"横戟","basic_desc":"方天画戟横扫，对前排全体造成80%伤害","basic_dmg_pct":0.8,"basic_energy_gain":25,
+    "basic_name":"横戟","basic_desc":"方天画戟横扫，对前排全体造成80%伤害","basic_dmg_pct":0.8,"basic_energy_gain":40,
     "basic_aoe":True,"basic_target":"front_row","basic_special":[],
     "passive_name":"无双","passive_desc":"每击败一个敌人攻击+20%(最多3层)","passive_upgrades":{3:"每层+25%最多4层",5:"每层额外+10%暴击",7:"满层技能无冷却"}})
 reg({"id":"zhugeliang","name":"诸葛亮","class":"法师","quality":"绝品","color":"#b84aff",
@@ -244,7 +244,7 @@ reg({"id":"zhugeliang","name":"诸葛亮","class":"法师","quality":"绝品","c
     "skill_name":"借东风","skill_desc":"召唤暴风攻击全体敌人，造成150%伤害+降低攻击20%×3回合",
     "skill_aoe":True,"skill_target":"all_enemy","skill_debuffs":[{"stat":"atk","pct":-0.2,"dur":3}],
     "skill_upgrades":{3:"暴风附带闪电:额外50%伤害",5:"降低攻击30%+减速",7:"暴风持续3回合叠加"},
-    "basic_name":"羽扇纶巾","basic_desc":"轻摇羽扇，造成100%伤害","basic_dmg_pct":1.0,"basic_energy_gain":20,
+    "basic_name":"羽扇纶巾","basic_desc":"轻摇羽扇，造成100%伤害","basic_dmg_pct":1.0,"basic_energy_gain":50,
     "basic_aoe":False,"basic_target":"single","basic_special":[],
     "passive_name":"空城计","passive_desc":"血量低于30%时隐身2秒","passive_upgrades":{3:"隐身每秒回血5%",5:"隐身结束全队回血10%",7:"隐身技能加速2倍"}})
 reg({"id":"pangtong","name":"庞统","class":"法师","quality":"绝品","color":"#b84aff",
@@ -252,7 +252,7 @@ reg({"id":"pangtong","name":"庞统","class":"法师","quality":"绝品","color"
     "skill_name":"连环计","skill_desc":"对全体敌人施加锁链造成120%伤害+灼烧(每回合15%×2回合)",
     "skill_aoe":True,"skill_target":"all_enemy","skill_special":["burn"],
     "skill_upgrades":{3:"灼烧期间无法治疗",5:"锁链爆炸额外150%伤害",7:"灼烧传播至新敌人"},
-    "basic_name":"锁链击","basic_desc":"铁索横空，造成100%伤害并5%灼烧×2回合","basic_dmg_pct":1.0,"basic_energy_gain":25,
+    "basic_name":"锁链击","basic_desc":"铁索横空，造成100%伤害并5%灼烧×2回合","basic_dmg_pct":1.0,"basic_energy_gain":40,
     "basic_aoe":False,"basic_target":"single","basic_special":[{"type":"burn","pct":0.05,"dur":2}],
     "passive_name":"铁索连舟","passive_desc":"战斗开始锁住全体敌人2秒","passive_upgrades":{3:"锁住3秒",5:"锁住期间受伤+30%",7:"解锁时造成200%伤害"}})
 
@@ -262,15 +262,15 @@ reg({"id":"lihai","name":"李白","class":"战士","quality":"传说","color":"#
     "skill_name":"青莲剑诀","skill_desc":"掷出佩剑化为漫天剑光，攻击全体敌人3次，每剑80%伤害",
     "skill_aoe":True,"skill_target":"all_enemy","skill_special":["multi_hit"],
     "skill_upgrades":{3:"第四剑追击+暴击率+20%",5:"剑气纵横:每剑120%",7:"剑开天门:9999真实伤害必定暴击"},
-    "basic_name":"月下独酌","basic_desc":"剑光如月，攻击2次每次80%伤害","basic_dmg_pct":0.8,"basic_energy_gain":30,
+    "basic_name":"月下独酌","basic_desc":"剑光如月，攻击2次每次80%伤害","basic_dmg_pct":0.8,"basic_energy_gain":45,
     "basic_aoe":False,"basic_target":"single","basic_special":[{"type":"multi_hit","count":2}],
     "passive_name":"斗酒诗百篇","passive_desc":"每击败一个敌人攻击+12%(最多5层)","passive_upgrades":{3:"上限8层",5:"每层+20%",7:"满层技能必定暴击"}})
 reg({"id":"zhangfei","name":"张飞","class":"肉盾","quality":"传说","color":"#ffd700",
-    "hp":4800,"atk":320,"crit":10,"spd":80,"skill_cost":160,
+    "hp":4800,"atk":320,"crit":10,"spd":80,"skill_cost":140,
     "skill_name":"当阳怒吼","skill_desc":"全屏嘲讽全体敌人3回合，全体队友获得护盾(吸收25%最大血量)",
     "skill_aoe":True,"skill_target":"all_enemy","skill_special":["taunt","shield_ally"],
     "skill_upgrades":{3:"怒吼降低敌人攻击25%",5:"护盾破碎爆炸",7:"全体队友无敌1回合"},
-    "basic_name":"蛇矛突刺","basic_desc":"丈八蛇矛突刺，造成120%伤害，自身减伤5%×1回合","basic_dmg_pct":1.2,"basic_energy_gain":25,
+    "basic_name":"蛇矛突刺","basic_desc":"丈八蛇矛突刺，造成120%伤害，自身减伤5%×1回合","basic_dmg_pct":1.2,"basic_energy_gain":40,
     "basic_aoe":False,"basic_target":"single","basic_special":[{"type":"self_buff","stat":"dmg_reduce","pct":0.05,"dur":1}],
     "passive_name":"万人敌","passive_desc":"每受一次攻击+5%攻击(最多10层)","passive_upgrades":{3:"上限15层",5:"每层额外+5%减伤",7:"满层反击100%"}})
 reg({"id":"diaochan","name":"貂蝉","class":"刺客","quality":"传说","color":"#ffd700",
@@ -278,15 +278,15 @@ reg({"id":"diaochan","name":"貂蝉","class":"刺客","quality":"传说","color"
     "skill_name":"闭月之舞","skill_desc":"闪避攻击后瞬移至后排连刺，对全体敌人造成150%伤害，必定暴击",
     "skill_aoe":True,"skill_target":"all_enemy","skill_special":["guaranteed_crit"],
     "skill_upgrades":{3:"击杀后刷新闪避",5:"刺击附加灼烧每回合15%×2",7:"溅射周围50%伤害"},
-    "basic_name":"轻舞","basic_desc":"翩若惊鸿，造成80%伤害，闪避下次攻击","basic_dmg_pct":0.8,"basic_energy_gain":20,
+    "basic_name":"轻舞","basic_desc":"翩若惊鸿，造成80%伤害，闪避下次攻击","basic_dmg_pct":0.8,"basic_energy_gain":50,
     "basic_aoe":False,"basic_target":"single","basic_special":[{"type":"dodge","dur":1}],
     "passive_name":"离间","passive_desc":"战斗开始魅惑一个敌人3秒","passive_upgrades":{3:"被魅惑敌人受伤+30%",5:"魅惑结束眩晕2秒",7:"魅惑两个敌人"}})
 reg({"id":"huatuo","name":"华佗","class":"奶妈","quality":"传说","color":"#ffd700",
-    "hp":2200,"atk":220,"crit":8,"spd":110,"skill_cost":180,
+    "hp":2200,"atk":220,"crit":8,"spd":110,"skill_cost":140,
     "skill_name":"麻沸散","skill_desc":"全体回复30%+免疫伤害2回合+攻击+30%×2回合",
     "skill_aoe":True,"skill_target":"all_ally","skill_heal_pct":0.3,"skill_special":["immunity"],"skill_buffs":[{"stat":"atk","pct":0.3,"dur":2}],
     "skill_upgrades":{3:"免疫期间暴击率+20%",5:"回复40%+附加护盾",7:"免疫结束重置所有冷却"},
-    "basic_name":"望闻问切","basic_desc":"施以针术，回复最低血量队友20%","basic_dmg_pct":0,"basic_energy_gain":20,
+    "basic_name":"望闻问切","basic_desc":"施以针术，回复最低血量队友20%","basic_dmg_pct":0,"basic_energy_gain":50,
     "basic_aoe":False,"basic_target":"lowest_hp_ally","basic_special":[{"type":"heal","pct":0.2}],
     "passive_name":"妙手回春","passive_desc":"队友低于30%自动回复15%(每场2次)","passive_upgrades":{3:"触发次数+1",5:"回复30%",7:"触发时全队驱散"}})
 reg({"id":"zhaoyun","name":"赵云","class":"战士","quality":"传说","color":"#ffd700",
@@ -294,7 +294,7 @@ reg({"id":"zhaoyun","name":"赵云","class":"战士","quality":"传说","color":
     "skill_name":"七进七出","skill_desc":"冲入敌阵连续冲锋7次，每次对全体敌人造成30%伤害+10%吸血",
     "skill_aoe":True,"skill_target":"all_enemy","skill_special":["multi_hit","lifesteal"],
     "skill_upgrades":{3:"冲锋吸血20%",5:"优先攻击后排",7:"终结一击:全体500%伤害"},
-    "basic_name":"龙胆亮银","basic_desc":"亮银枪出如龙，攻击2次每次100%伤害","basic_dmg_pct":1.0,"basic_energy_gain":25,
+    "basic_name":"龙胆亮银","basic_desc":"亮银枪出如龙，攻击2次每次100%伤害","basic_dmg_pct":1.0,"basic_energy_gain":40,
     "basic_aoe":False,"basic_target":"single","basic_special":[{"type":"multi_hit","count":2}],
     "passive_name":"一身是胆","passive_desc":"每损失10%血量攻击+8%","passive_upgrades":{3:"每损失10%额外+5%暴击",5:"低于30%无敌1秒",7:"损失血量加成翻倍"}})
 reg({"id":"guanyu","name":"关羽","class":"战士","quality":"传说","color":"#ffd700",
@@ -302,7 +302,7 @@ reg({"id":"guanyu","name":"关羽","class":"战士","quality":"传说","color":"
     "skill_name":"青龙偃月","skill_desc":"蓄力后挥出惊世一刀，对全体敌人造成300%伤害",
     "skill_aoe":True,"skill_target":"all_enemy","skill_special":["execute"],
     "skill_upgrades":{3:"蓄力期间免疫控制",5:"刀气留痕每秒20%×3回合",7:"血量低于50%的敌人直接斩杀"},
-    "basic_name":"拖刀斩","basic_desc":"拖刀蓄力势如破竹，造成100%伤害","basic_dmg_pct":1.0,"basic_energy_gain":25,
+    "basic_name":"拖刀斩","basic_desc":"拖刀蓄力势如破竹，造成100%伤害","basic_dmg_pct":1.0,"basic_energy_gain":40,
     "basic_aoe":False,"basic_target":"single","basic_special":[],
     "passive_name":"武圣","passive_desc":"开局第一刀必定暴击伤害+50%","passive_upgrades":{3:"第一刀伤害翻倍",5:"前三刀必定暴击",7:"武圣降临:第一次技能真实伤害"}})
 
@@ -599,7 +599,7 @@ def run_speed_battle(my_heroes, enemies, stage):
     max_card_energy = 3
 
     logs = []  # 战斗记录
-    max_ticks = 150
+    max_ticks = 250
     tick_no = 0
     actions_since_draw = 0
     all_actions = []
@@ -730,7 +730,7 @@ def run_speed_battle(my_heroes, enemies, stage):
     # 构建战斗结果
     r = {"win": win, "rounds": tick_no, "actions": all_actions}
     r["my_heroes"]=[{"name":f["name"],"class":f["class"],"quality":f["quality"],"color":f["color"],
-        "max_hp":f["max_hp"],"atk":f["atk"],
+        "max_hp":f["max_hp"],"atk":f["atk"],"crit":f["crit"],
         "hp_pct":max(0,f["hp"]/max(1,f["max_hp"])),"alive":f.get("alive",True),
         "shield_pct":f.get("shield",0)/max(1,f["max_hp"]),
         "energy":f.get("energy",0),"spd":f.get("spd",100),

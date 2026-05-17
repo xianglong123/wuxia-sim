@@ -385,23 +385,21 @@ function updateActionQueue(aa,ti){
 // ═══ 能量条实时更新(不重建卡片) ═══
 function updateCardEnergy(act){
   if(act.type==="card_play")return;
-  if(act.side!=="ally")return;
   const energy=act.energy_after;
   if(energy===undefined)return;
+  // heal侧动作也在我方卡片上显示能量
+  const side=act.side==="heal"?"my":"my";
   const myCards=document.querySelectorAll("#bc-my .bc-card");
   for(let c of myCards){
     const nm=c.querySelector(".bc-name");
     if(nm&&nm.textContent===act.attacker_name){
-      // 更新能量数字
       const enEl=c.querySelector(".bc-energy-num");
       if(enEl){enEl.textContent="⚡"+energy}
-      // 更新能量条
       const efEl=c.querySelector(".bc-energy-fill");
       if(efEl){
         const pct=Math.min(100,(energy/200)*100);
         efEl.style.width=pct+"%";
       }
-      // 能量≥150时脉冲
       c.classList.toggle("bc-energy-ready",energy>=150);
       break;
     }
@@ -428,7 +426,7 @@ function renderBF(myH,enemies,isFinal){
         const hpShow=isFinal?`<span>❤️${currentHp}</span>`:`<span id="bchptxt-${side}-${i}">❤️${currentHp}</span>`;
         return `<div class="bc-card ${alive?'':'bc-dead'}" id="bc-${side}-${i}" style="border-color:${u.color};${glow}"><span class="bc-icon">${ci}</span>
           <div class="bc-info"><div class="bc-name">${u.name}</div><div class="bc-class">${u.class}</div>
-          <div style="display:flex;gap:4px;font-size:9px;color:#6a5a4a">${hpShow} <span class="bc-energy-num${energyReady}">⚡${energy}</span></div>
+          <div style="display:flex;gap:3px;font-size:8px;color:#6a5a4a;flex-wrap:wrap">${hpShow} <span class="bc-energy-num${energyReady}">⚡${energy}</span> <span>⚔️${u.atk||0}</span> <span>⚡${u.crit||0}%</span></div>
           <div class="bc-hp-strip"><div class="bc-hp-fill" id="bchp-${side}-${i}" style="width:${hpPct}%;background:${hpCol}"></div></div>
           <div class="bc-energy-strip${energyReady}"><div class="bc-energy-fill" id="bcene-${side}-${i}" style="width:${energyPct}%"></div></div></div></div>`;
       }).join("")}</div></div>`;
