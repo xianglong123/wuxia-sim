@@ -264,7 +264,7 @@ function render(g){
 async function startBattle(){
   if(!game||!game.lineup||!game.lineup.length){showError("请先上阵英雄");return}
   document.getElementById("loading").style.display="flex";
-  try{const d=await apiFetch("/api/battle");game=d;if(!d.battle_result){showError("异常");document.getElementById("loading").style.display="none";return}showBattle(d.battle_result)}catch(e){}
+  try{const d=await apiFetch("/api/speed_battle",{method:"POST"});game=d;if(!d.battle_result){showError("异常");document.getElementById("loading").style.display="none";return}showBattle(d.battle_result)}catch(e){}
   document.getElementById("loading").style.display="none";
 }
 
@@ -275,39 +275,26 @@ function showBattle(br){
   document.getElementById("vsText").style.display="flex";document.getElementById("battleLogT").innerHTML="";
   document.getElementById("battleStats").style.display="none";
   renderBF(br.my_heroes,br.enemies,false);
-  let ti=0;const aa=br.turns.flatMap(t=>t.actions),total=aa.length;
-  // Stats tracking (实时)
+  let ti=0;const aa=br.actions,total=aa.length;
   const liveStats={dmg:{},heal:{},taken:{},bestHit:{name:"",val:0},crits:0};
-  // Round tracking
-  let lastRound=0;
   function updateStats(act){
-    // 输出统计（我方）
+    if(act.type==="card_play")return;
     if(act.side==="ally"){
       const dmg=act.aoe&&act.targets?act.targets.reduce((s,t)=>s+(t.damage||0),0):(act.damage||0);
-      if(dmg>0){
-        liveStats.dmg[act.attacker_name]=(liveStats.dmg[act.attacker_name]||0)+dmg;
-        if(dmg>liveStats.bestHit.val)liveStats.bestHit={name:act.attacker_name,val:dmg};
-      }
+      if(dmg>0){liveStats.dmg[act.attacker_name]=(liveStats.dmg[act.attacker_name]||0)+dmg;
+        if(dmg>liveStats.bestHit.val)liveStats.bestHit={name:act.attacker_name,val:dmg};}
       if(act.crit)liveStats.crits++;
     }
-    // 治疗统计：AOE群奶用targets数组汇总，单体奶用act.heal
     if(act.side==="heal"){
       const heal=act.aoe&&act.targets?act.targets.reduce((s,t)=>s+(t.heal||0),0):(act.heal||0);
       if(heal>0)liveStats.heal[act.attacker_name]=(liveStats.heal[act.attacker_name]||0)+heal;
     }
-    // 扛伤统计：AOE遍历targets，单体用target_name
     if(act.damage>0){
-      if(act.aoe&&act.targets){
-        for(let tg of act.targets){
-          if(tg.name)liveStats.taken[tg.name]=(liveStats.taken[tg.name]||0)+(tg.damage||0);
-        }
-      }else if(act.target_name){
-        liveStats.taken[act.target_name]=(liveStats.taken[act.target_name]||0)+act.damage;
-      }
+      if(act.aoe&&act.targets){for(let tg of act.targets){if(tg.name)liveStats.taken[tg.name]=(liveStats.taken[tg.name]||0)+(tg.damage||0);}}
+      else if(act.target_name){liveStats.taken[act.target_name]=(liveStats.taken[act.target_name]||0)+act.damage;}
     }
     renderStatsPanel(liveStats);
   }
-  // Round tracking
   function nxt(){
     if(ti>=total){
       document.getElementById("vsText").style.display="none";document.getElementById("roundIndicator").textContent="⚔️ 战斗结束";
@@ -316,34 +303,38 @@ function showBattle(br){
     }
     const act=aa[ti];
     updateStats(act);
-    // Round transition
-    const thisRound=br.turns.findIndex(t=>t.actions.includes(act))+1;
-    if(thisRound!==lastRound&&thisRound>1){lastRound=thisRound;
-      // 回合边界检测：是否一方已全灭
-      const allEnemyCards=document.querySelectorAll("#bc-enemy .bc-card");
-      const allAllyCards=document.querySelectorAll("#bc-my .bc-card");
-      const enemyAllDead=allEnemyCards.length>0&&Array.from(allEnemyCards).every(c=>c.classList.contains("bc-dead"));
-      const allyAllDead=allAllyCards.length>0&&Array.from(allAllyCards).every(c=>c.classList.contains("bc-dead"));
-      if(enemyAllDead||allyAllDead){
-        document.getElementById("vsText").style.display="none";document.getElementById("roundIndicator").textContent="⚔️ 战斗结束";
-        renderBF(br.my_heroes,br.enemies,true);
-        setTimeout(()=>showBR(br),500);
-        ti=total;return;
-      }
-      const rp=document.createElement("div");rp.className="round-popup";
-      rp.innerHTML=`<div class="r-text">⚔️ 第${thisRound}回合</div>`;
-      document.body.appendChild(rp);setTimeout(()=>rp.remove(),900);
+    // 卡牌动作: 只显示文字
+    if(act.type==="card_play"){
+      const msg=act.msg||act.card?.desc||"";
+      const lt=`🎴 ${act.attacker_name||""} 打出 ${act.card?.name||""}: ${msg}`;
+      const ld=document.createElement("div");ld.className="bl-line bl-heal";ld.textContent=lt;
+      document.getElementById("battleLogT").appendChild(ld);
+      document.getElementById("battleLogT").scrollTop=document.getElementById("battleLogT").scrollHeight;
+      document.getElementById("roundIndicator").textContent="🎴 战术卡";
+      skillPopup(act.card?.name||"战术", "ally", "#5adb7a");
+      ti++;setTimeout(nxt,300);return;
     }
-    // Log
+    // 战斗动作为技能/基础攻击
+    const isSkill=act.type==="skill";
+    const icon=isSkill?"⚡":"🗡️";
     let lt="",lc="bl-line";
-    if(act.heal&&act.heal>0&&!act.aoe){lt=`💚 ${act.attacker_name}${act.skill}→${act.target_name||""}❤️+${act.heal}`;lc+=" bl-heal"}
-    else if(act.heal&&act.aoe&&act.targets){lt=`💚 ${act.attacker_name}${act.skill}(群奶)❤️${act.targets.reduce((s,t)=>s+(t.heal||0),0)}`;lc+=" bl-heal"}
-    else if(act.aoe&&act.targets){lt=`${act.side==="ally"?"⚔️":"💀"}${act.attacker_name}${act.skill}(群攻)`;lc+=act.side==="ally"?" bl-ally":" bl-enemy"}
-    else{lt=`${act.side==="ally"?"⚔️":"💀"}${act.attacker_name}${act.skill}→${act.target_name}💥${act.damage}${act.crit?"⭐":""}`;lc+=act.side==="ally"?" bl-ally":" bl-enemy"}
+    if(act.side==="heal"){
+      if(act.aoe&&act.targets){
+        lt=`💚 ${act.attacker_name}${act.skill}(群奶)❤️${act.targets.reduce((s,t)=>s+(t.heal||0),0)}`;
+      }else{lt=`💚 ${act.attacker_name}${act.skill}→❤️+${act.heal}`;}
+      lc+=" bl-heal";
+    }else if(act.aoe&&act.targets){
+      lt=`${act.side==="ally"?icon:"💀"}${act.attacker_name}${act.skill}(群攻)`;
+      lc+=act.side==="ally"?" bl-ally":" bl-enemy";
+    }else{
+      lt=`${act.side==="ally"?icon:"💀"}${act.attacker_name}${act.skill}→${act.target_name}💥${act.damage}${act.crit?"⭐":""}`;
+      lc+=act.side==="ally"?" bl-ally":" bl-enemy";
+    }
     const ld=document.createElement("div");ld.className=lc;ld.textContent=lt;
-    document.getElementById("battleLogT").appendChild(ld);document.getElementById("battleLogT").scrollTop=document.getElementById("battleLogT").scrollHeight;
-    document.getElementById("roundIndicator").textContent=act.side==="ally"?"⚔️ 我方":act.side==="heal"?"💚 治疗":"💀 敌方";
-    animateAct(act,()=>{ti++;setTimeout(nxt,300+(act.killed?250:0)+(act.crit?200:0))});
+    document.getElementById("battleLogT").appendChild(ld);
+    document.getElementById("battleLogT").scrollTop=document.getElementById("battleLogT").scrollHeight;
+    document.getElementById("roundIndicator").textContent=`${act.side==="ally"?icon:act.side==="heal"?"💚":"💀"} ${act.side==="ally"?"我方":act.side==="heal"?"治疗":"敌方"} ${isSkill?"技能":"普攻"}`;
+    animateAct(act,()=>{ti++;setTimeout(nxt,200+(act.killed?150:0)+(act.crit?100:0))});
   }
   setTimeout(nxt,600);
 }
@@ -357,21 +348,20 @@ function renderBF(myH,enemies,isFinal){
         const hpCol=hpPct>50?'#5adb7a':hpPct>25?'#e8b84a':'#e85a5a';
         const alive=isFinal?(u.alive!==false):true;
         const shieldPct=isFinal?(u.shield_pct||0)*100:0;
-        const baseAtk=u.atk||0;const effAtk=u.eff_atk||baseAtk;const atkChanged=effAtk!==baseAtk;
         const currentHp=Math.round((u.max_hp||0)*(isFinal?Math.max(0,u.hp_pct||0):1));
-        const baseCrit=u.crit||0;const effCrit=u.eff_crit||baseCrit;
         const buffCount=(u.buffs||[]).filter(s=>s!=="immune").length;
         const debuffCount=(u.debuffs||[]).length;
-        const immuneFlag=(u.buffs||[]).includes("immune");
-        const hpShow=isFinal?`<span>❤️${currentHp}</span>`:`<span id="bchptxt-${side}-${i}">❤️${currentHp}</span>`;
-        const atkShow=atkChanged?`<span style="color:#5adb7a;font-weight:700">⚔️${effAtk}</span><span style="font-size:7px;color:#5a4a3a">(${baseAtk})</span>`:`<span>⚔️${baseAtk}</span>`;
-        const critShow=effCrit!==baseCrit?`<span style="color:#5adb7a;font-weight:700">⚡${effCrit}%</span><span style="font-size:7px;color:#5a4a3a">(${baseCrit}%)</span>`:`<span>⚡${baseCrit}%</span>`;
         const glow=buffCount>0?`box-shadow:0 0 8px rgba(90,219,122,.3)`:(debuffCount>0?`box-shadow:0 0 8px rgba(232,90,90,.3)`:"");
-        const sts=immuneFlag?`<span style="color:#4a8eff;font-weight:700">🛡️</span>`:"";
+        // 能量条
+        const energy=u.energy||0;
+        const spd=u.spd||100;
+        const energyPct=Math.min(100,(energy/200)*100);
+        const hpShow=isFinal?`<span>❤️${currentHp}</span>`:`<span id="bchptxt-${side}-${i}">❤️${currentHp}</span>`;
         return `<div class="bc-card ${alive?'':'bc-dead'}" id="bc-${side}-${i}" style="border-color:${u.color};${glow}"><span class="bc-icon">${ci}</span>
           <div class="bc-info"><div class="bc-name">${u.name}</div><div class="bc-class">${u.class}</div>
-          <div style="display:flex;gap:4px;font-size:9px;color:#6a5a4a">${hpShow}${atkShow}${sts}</div>
+          <div style="display:flex;gap:4px;font-size:9px;color:#6a5a4a">${hpShow} <span style="color:#4a8eff">⚡${energy}</span> <span>👟${spd}</span></div>
           <div class="bc-hp-strip"><div class="bc-hp-fill" id="bchp-${side}-${i}" style="width:${hpPct}%;background:${hpCol}"></div></div>
+          <div style="height:3px;background:#1a1a24;border-radius:2px;margin-top:1px;overflow:hidden"><div style="width:${energyPct}%;height:100%;background:#4a8eff;border-radius:2px;transition:width .3s"></div></div>
           </div></div>`;
       }).join("")}</div></div>`;
   };
@@ -524,9 +514,9 @@ function showBR(br){
   const rd=document.getElementById("battleResult");rd.style.display="block";
   const win=br.win,jr=br.jade_reward||0,eq=br.equip_reward;
   let lh=`💎+${jr}`;
-  if(eq)lh+=` <span style="color:${eq.color}">${eq.type==="武器"?"🗡️":eq.type==="防具"?"🛡️":"💍"}${eq.name}</span>`;
+  if(eq)lh+=` <span style="color:#5adb7a">🗡️${eq}</span>`;
   if(br.new_stage)lh+=` <span style="color:#5adb7a">➡️${br.new_stage}</span>`;
-  rd.innerHTML=`<div class="br-title ${win?'win':'lose'}">${win?'🏆胜利':'💀败北'}</div><div style="font-size:11px;color:#6a5a4a">${br.rounds}回合</div><div style="margin:6px 0;font-size:12px">${lh}</div><button class="br-btn" onclick="closeBattle();render(game)">继续征战</button>`;
+  rd.innerHTML=`<div class="br-title ${win?'win':'lose'}">${win?'🏆胜利':'💀败北'}</div><div style="font-size:11px;color:#6a5a4a">${br.rounds||0}ticks</div><div style="margin:6px 0;font-size:12px">${lh}</div><button class="br-btn" onclick="closeBattle();render(game)">继续征战</button>`;
   render(game);
 }
 function closeBattle(){document.getElementById("battleOverlay").style.display="none"}
@@ -631,7 +621,7 @@ function renderTujiHeroes(){
       h+=`<div class="tuji-card" style="border-color:${QC[q]};border-left:3px solid ${QC[q]}" onclick="showTujiHero('${hero.id}')">
         <div class="tc-icon" style="color:${QC[q]}">${ci} ${hero.class}${skAoe}</div>
         <div class="tc-name" style="color:${QC[q]}">${hero.name}</div>
-        <div class="tc-sub">❤️${hero.hp} ⚔️${hero.atk} ⚡${hero.crit}%</div>
+        <div class="tc-sub">❤️${hero.hp} ⚔️${hero.atk} 👟${hero.spd||100}</div>
       </div>`;
     }
   }
@@ -646,8 +636,11 @@ function showTujiHero(hid){
   const col=QC[hero.quality]||"#888",ci=CI[hero.class]||"❓";
   const skUp=Object.entries(hero.skill_upgrades||{}).map(([lv,desc])=>`<div class="hd-upgrade" style="color:#5adb7a">🔓Lv${lv}:${desc}</div>`).join("");
   const paUp=Object.entries(hero.passive_upgrades||{}).map(([lv,desc])=>`<div class="hd-upgrade" style="color:#5adb7a">🔓Lv${lv}:${desc}</div>`).join("");
-  const aoeTag=hero.skill_aoe?'<span style="font-size:10px;padding:1px 6px;border-radius:3px;background:rgba(255,215,0,.15);color:#ffd700;font-weight:600;margin-left:6px">群攻</span>':'';
-  // 相关羁绊
+    const aoeTag=hero.skill_aoe?'<span style="font-size:10px;padding:1px 6px;border-radius:3px;background:rgba(255,215,0,.15);color:#ffd700;font-weight:600;margin-left:6px">群攻</span>':'';
+    const spd=hero.spd||100;
+    const skCost=hero.skill_cost||100;
+    const bg=hero.basic_energy_gain||25;
+    // 相关羁绊
   const bonds=(tujiData.bonds||[]).filter(b=>b.members.some(m=>m===hero.name));
   const bonH=bonds.length?`<div class="hd-section"><div class="hd-section-title">🔗 羁绊</div>${bonds.map(b=>`<div style="font-size:11px;color:#5adb7a;padding:2px 6px">${b.name}: ${b.desc}</div>`).join("")}</div>`:'';
   // 专属装备
@@ -657,7 +650,8 @@ function showTujiHero(hid){
   modal.innerHTML=`<div class="modal-inner">
     <div style="font-size:18px;font-weight:700;color:${col}">${hero.name} ${ci}${hero.class}</div>
     <div style="font-size:12px;color:${col};margin-bottom:8px">${"★".repeat(Math.min(Object.keys(QC).indexOf(hero.quality)+1,5))}${hero.quality}</div>
-    <div class="hd-stats"><div class="hd-stat"><div>❤️血量</div><div class="sv">${hero.hp.toLocaleString()}</div></div><div class="hd-stat"><div>💥攻击</div><div class="sv">${hero.atk.toLocaleString()}</div></div><div class="hd-stat"><div>⚡暴击</div><div class="sv">${hero.crit}%</div></div><div class="hd-stat"><div>🏷️定位</div><div class="sv" style="font-size:15px">${ci}${hero.class}</div></div></div>
+    <div class="hd-stats"><div class="hd-stat"><div>❤️血量</div><div class="sv">${hero.hp.toLocaleString()}</div></div><div class="hd-stat"><div>💥攻击</div><div class="sv">${hero.atk.toLocaleString()}</div></div><div class="hd-stat"><div>⚡暴击</div><div class="sv">${hero.crit}%</div></div><div class="hd-stat"><div>👟速度</div><div class="sv" style="font-size:15px">${hero.spd||100}</div></div></div>
+    <div class="hd-stats" style="margin-bottom:12px"><div class="hd-stat"><div>🗡️普攻</div><div style="font-size:12px;color:#8a7a5a">${hero.basic_name||""}</div><div style="font-size:10px;color:#5a4a3a">${hero.basic_desc||""} ⚡+${hero.basic_energy_gain||25}</div></div><div class="hd-stat"><div>⚡技能消耗</div><div class="sv" style="color:#4a8eff;font-size:16px">${hero.skill_cost||100}</div><div style="font-size:10px;color:#5a4a3a">满能:200</div></div></div>
     <div class="hd-section"><div class="hd-section-title">📜${hero.skill_name}${aoeTag}</div><div class="hd-skill">${hero.skill_desc}</div>${skUp}</div>
     <div class="hd-section"><div class="hd-section-title">⭐${hero.passive_name}</div><div class="hd-skill" style="color:#6a5a4a">${hero.passive_desc}</div>${paUp}</div>
     ${bonH}${exH}
