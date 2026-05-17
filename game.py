@@ -297,7 +297,7 @@ reg({"id":"zhaoyun","name":"赵云","class":"战士","quality":"传说","color":
     "hp":3200,"atk":420,"crit":22,"spd":150,"skill_cost":130,
     "skill_name":"七进七出","skill_desc":"冲入敌阵连续冲锋7次，每次对全体敌人造成30%伤害+10%吸血",
     "skill_aoe":True,"skill_target":"all_enemy","skill_dmg_pct":0.3,"skill_special":["multi_hit","lifesteal"],
-    "skill_upgrades":{3:"冲锋吸血20%",5:"优先攻击后排",7:"终结一击:全体500%伤害", 9:"#1开局满能量"},
+    "skill_upgrades":{3:"冲锋吸血20%",5:"优先攻击后排",7:"终结一击:半血以下直接斩杀", 9:"#1开局满能量"},
     "basic_name":"龙胆亮银","basic_desc":"亮银枪出如龙，攻击2次每次100%伤害","basic_dmg_pct":1.0,"basic_energy_gain":40,
     "basic_aoe":False,"basic_target":"single","basic_special":[{"type":"multi_hit","count":2}],
     "passive_name":"一身是胆","passive_desc":"每损失10%血量攻击+8%","passive_upgrades":{3:"每损失10%额外+5%暴击",5:"低于30%无敌1秒",7:"损失血量加成翻倍"}})
@@ -1357,7 +1357,7 @@ def apply_skill_upgrades(unit, hd, sk_lv, allies, enemies, sk_context):
             if not extra.get("extra_buffs"): extra["extra_buffs"]=[]
             extra["extra_buffs"].append({"stat":"dodge_refresh","pct":1.0,"dur":1})
         if hid=="zhugeliang":
-            extra["extra_damage"]=0.05  # 诸葛亮Lv3: 额外50%闪电伤害(=5%maxHP)
+            extra["extra_damage"]=0.5  # 诸葛亮Lv3: 额外50%攻击伤害
         if hid=="yangyouji":
             if not extra.get("extra_buffs"): extra["extra_buffs"]=[]
             extra["extra_buffs"].append({"stat":"crit","pct":0.3,"dur":2})
@@ -1386,16 +1386,15 @@ def apply_skill_upgrades(unit, hd, sk_lv, allies, enemies, sk_context):
     # ─── Lv7 ───
     if sk_lv>=7:
         if hid=="zhaoyun":
-            extra["execute_pct"]=True  # 赵云Lv7: 终结一击500%伤害
-            extra["extra_damage"]=1.5  # 额外伤害
+            extra["execute_pct"]=True  # 赵云Lv7: 终结一击，血量低于50%直接斩杀
         if hid=="zhangfei":
             if not extra.get("extra_buffs"): extra["extra_buffs"]=[]
             extra["extra_buffs"].append({"stat":"invincible","pct":1.0,"dur":1})  # 张飞Lv7: 全体无敌1回合
         if hid=="guanyu":
             extra["execute_pct"]=True  # 关羽Lv7: 血量低于50%斩杀
         if hid=="lihai":
-            extra["guaranteed_crit"]=True  # 李白Lv7: 剑开天门
-            extra["extra_damage"]=2.0  # 9999其实=200%maxHP
+            extra["guaranteed_crit"]=True  # 李白Lv7: 剑开天门必定暴击
+            extra["extra_damage"]=5.0  # 剑开天门: ATK×5真实伤害
         if hid=="diaochan":
             pass  # 貂蝉Lv7: 溅射50%
         if hid=="huatuo":
@@ -1773,9 +1772,10 @@ def hero_use_skill(unit, allies, enemies):
 
     # 技能升级额外效果
     if up and up.get("extra_damage"):
+        ba=cstat(unit,"atk",unit["atk"])
         for e in enemies:
             if e.get("alive",True):
-                extra=int(e["max_hp"]*up["extra_damage"])
+                extra=max(1, int(ba * up["extra_damage"] * random.uniform(0.9, 1.1)))
                 apply_dmg(e,extra)
                 if e["hp"]<=0: e["alive"]=False
 
