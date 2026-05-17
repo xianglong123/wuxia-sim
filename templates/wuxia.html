@@ -82,11 +82,37 @@ body{font-family:-apple-system,"PingFang SC","Noto Serif SC",serif;background:#0
 @keyframes dmgFloat{0%{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}100%{opacity:0;transform:translateX(-50%) translateY(-30px) scale(1.3)}}
 .bc-dmg-num.ally-c{color:#ff8a4a}.bc-dmg-num.enemy-c{color:#e85a5a}.bc-dmg-num.crit-c{color:#ffd700;font-size:20px}.bc-dmg-num.heal-c{color:#5adb7a}
 
-/* ── Energy bar with pulse ── */
+/* ── 正反馈+Buff显示 ── */
+.bc-buffs{display:flex;gap:2px;flex-wrap:wrap;margin-top:1px}
+.bc-buff{font-size:7px;padding:1px 4px;border-radius:3px;white-space:nowrap;line-height:1.2}
+.bc-buff.positive{color:#5adb7a;background:rgba(90,219,122,.1)}
+.bc-buff.negative{color:#e85a5a;background:rgba(232,90,90,.1)}
+.bc-buff.ultimate{color:#ffd700;background:rgba(255,215,0,.15);font-size:8px;font-weight:700}
+.bc-shield-icon{display:inline-block;font-size:9px;color:#4a8eff;margin-left:2px;animation:shieldPulse 1s ease infinite}
+@keyframes shieldPulse{0%,100%{opacity:.8;transform:scale(1)}50%{opacity:1;transform:scale(1.15)}}
+
+/* 技能慢放 */
+.skill-popup.skill-big{font-size:52px;animation:spBig 1.2s ease forwards}
+@keyframes spBig{0%{opacity:0;transform:translate(-50%,-50%) scale(.1) rotate(-15deg)}20%{opacity:1;transform:translate(-50%,-50%) scale(1.3)}40%{transform:translate(-50%,-50%) scale(1)}70%{opacity:1}100%{opacity:0;transform:translate(-50%,-60%) scale(1.1)}}
+.skill-popup.skill-big .s-icon{font-size:56px;display:block;margin-bottom:4px}
+.skill-popup.skill-big .s-name{font-size:26px;text-shadow:0 0 40px currentColor,0 0 80px rgba(255,215,0,.3)}
+.skill-popup.skill-big .s-sub{font-size:12px;opacity:.7;margin-top:2px}
+
+/* 治疗爆发 */
+.heal-burst{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:270;pointer-events:none;font-size:48px;font-weight:900;color:#5adb7a;text-shadow:0 0 40px rgba(90,219,122,.5),0 0 80px rgba(90,219,122,.3);animation:healBurst 1s ease forwards}
+@keyframes healBurst{0%{opacity:0;transform:translate(-50%,-50%) scale(.2)}20%{opacity:1;transform:translate(-50%,-50%) scale(1.2)}40%{transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-70%) scale(1.2)}}
+
+/* 闪屏加强 */
+.sfx-skill{animation:sfxSkill .8s ease forwards}
+@keyframes sfxSkill{0%{opacity:.8}60%{opacity:.3}100%{opacity:0}}
+.sfx-skill-red{background:radial-gradient(ellipse at center,rgba(255,138,74,.5),transparent 60%)}
+.sfx-skill-gold{background:radial-gradient(ellipse at center,rgba(255,215,0,.7),transparent 60%)}
+.sfx-skill-green{background:radial-gradient(ellipse at center,rgba(90,219,122,.5),transparent 60%)}
 .bc-energy-strip{height:4px;background:#1a1a24;border-radius:2px;margin-top:1px;overflow:hidden;position:relative}
 .bc-energy-fill{height:100%;background:linear-gradient(90deg,#4a8eff,#6ab0ff);border-radius:2px;transition:width .25s ease}
 .bc-energy-ready .bc-energy-fill{background:linear-gradient(90deg,#ffd700,#ff8a4a);animation:energyPulse .8s ease infinite}
 @keyframes energyPulse{0%,100%{opacity:.7}50%{opacity:1;box-shadow:0 0 6px rgba(255,215,0,.5)}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}50%{transform:translateX(5px)}75%{transform:translateX(-3px)}}
 .bc-energy-num{font-size:9px;font-weight:600;color:#4a8eff;margin-left:2px}
 .bc-energy-ready .bc-energy-num{color:#ffd700}
 
@@ -355,7 +381,7 @@ function showBattle(br){
     document.getElementById("battleLogT").appendChild(ld);
     document.getElementById("battleLogT").scrollTop=document.getElementById("battleLogT").scrollHeight;
     document.getElementById("roundIndicator").textContent=`${act.side==="ally"?icon:act.side==="heal"?"💚":"💀"} ${act.side==="ally"?"我方":act.side==="heal"?"治疗":"敌方"} ${isSkill?"技能":"普攻"}`;
-    animateAct(act,()=>{ti++;setTimeout(nxt,100+(act.killed?120:0)+(act.crit?80:0))});
+    animateAct(act,()=>{ti++;setTimeout(nxt,50+(act.killed?250:0)+(act.crit?150:0));});
   }
   setTimeout(nxt,600);
 }
@@ -419,16 +445,41 @@ function renderBF(myH,enemies,isFinal){
         const buffCount=(u.buffs||[]).filter(s=>s!=="immune").length;
         const debuffCount=(u.debuffs||[]).length;
         const glow=buffCount>0?`box-shadow:0 0 8px rgba(90,219,122,.3)`:(debuffCount>0?`box-shadow:0 0 8px rgba(232,90,90,.3)`:"");
+        // buff/debuff标签
+        const allBuffs=u.buffs||[];
+        const hasImmune=allBuffs.includes("immune");
+        const buffTags=[];
+        for(let b of u.buffs||[]){
+          if(b==="immune")buffTags.push('<span class="bc-buff ultimate">🛡️免疫</span>');
+          else if(b==="atk")buffTags.push('<span class="bc-buff positive">⚔️+攻</span>');
+          else if(b==="dmg_reduce")buffTags.push('<span class="bc-buff positive">🛡️减伤</span>');
+          else if(b==="lifesteal")buffTags.push('<span class="bc-buff positive">💉吸血</span>');
+          else if(b==="reflect")buffTags.push('<span class="bc-buff positive">🔄反伤</span>');
+          else if(b==="spd")buffTags.push('<span class="bc-buff positive">👟加速</span>');
+          else if(b==="atk_mult")buffTags.push('<span class="bc-buff positive">⚡蓄力</span>');
+          else buffTags.push(`<span class="bc-buff positive">${b}</span>`);
+        }
+        for(let d of u.debuffs||[]){
+          if(d==="burn")buffTags.push('<span class="bc-buff negative">🔥灼烧</span>');
+          else if(d==="stun")buffTags.push('<span class="bc-buff negative">💀眩晕</span>');
+          else if(d==="heal_block")buffTags.push('<span class="bc-buff negative">🚫禁疗</span>');
+          else if(d==="atk")buffTags.push('<span class="bc-buff negative">⬇️攻-</span>');
+          else if(d==="crit")buffTags.push('<span class="bc-buff negative">🎯暴-</span>');
+          else if(d==="dmg_reduce")buffTags.push('<span class="bc-buff negative">⬇️防-</span>');
+          else buffTags.push(`<span class="bc-buff negative">${d}</span>`);
+        }
+        const buffRow=buffTags.length?`<div class="bc-buffs">${buffTags.slice(0,4).join("")}</div>`:"";
+        const shieldIcon=hasImmune?'<span class="bc-shield-icon">🛡️</span>':'';
         // 能量条(非最终状态从0开始)
         const energy=isFinal?(u.energy||0):0;
         const energyPct=Math.min(100,(energy/200)*100);
         const energyReady=energy>=150?" bc-energy-ready":"";
         const hpShow=isFinal?`<span>❤️${currentHp}</span>`:`<span id="bchptxt-${side}-${i}">❤️${currentHp}</span>`;
         return `<div class="bc-card ${alive?'':'bc-dead'}" id="bc-${side}-${i}" style="border-color:${u.color};${glow}"><span class="bc-icon">${ci}</span>
-          <div class="bc-info"><div class="bc-name">${u.name}</div><div class="bc-class">${u.class}</div>
+          <div class="bc-info"><div class="bc-name">${u.name}${shieldIcon}</div><div class="bc-class">${u.class}</div>
           <div style="display:flex;gap:3px;font-size:8px;color:#6a5a4a;flex-wrap:wrap">${hpShow} <span class="bc-energy-num${energyReady}">⚡${energy}</span> <span>⚔️${u.atk||0}</span> <span>⚡${u.crit||0}%</span></div>
           <div class="bc-hp-strip"><div class="bc-hp-fill" id="bchp-${side}-${i}" style="width:${hpPct}%;background:${hpCol}"></div></div>
-          <div class="bc-energy-strip${energyReady}"><div class="bc-energy-fill" id="bcene-${side}-${i}" style="width:${energyPct}%"></div></div></div></div>`;
+          <div class="bc-energy-strip${energyReady}"><div class="bc-energy-fill" id="bcene-${side}-${i}" style="width:${energyPct}%"></div></div>${buffRow}</div></div>`;
       }).join("")}</div></div>`;
   };
   document.getElementById("battleField").innerHTML=RS(myH,"my")+RS(enemies,"enemy");
@@ -439,10 +490,17 @@ function renderBF(myH,enemies,isFinal){
 function sfx(type){
   const el=document.createElement("div");el.className=`sfx sfx-${type}`;document.body.appendChild(el);setTimeout(()=>el.remove(),450);
 }
-function skillPopup(skill,side,clr){
-  const el=document.createElement("div");el.className="skill-popup";
-  el.innerHTML=`<span class="s-icon">${side==="ally"?"⚔️":"💀"}</span><div class="s-name" style="color:${clr||"#ffd700"}">⚡${skill}⚡</div><div class="s-side">${side==="ally"?"我方":"敌方"}</div>`;
-  document.body.appendChild(el);setTimeout(()=>el.remove(),700);
+function sfxSkill(type){
+  const el=document.createElement("div");el.className=`sfx sfx-skill sfx-skill-${type}`;document.body.appendChild(el);setTimeout(()=>el.remove(),900);
+}
+function skillPopup(skill,side,clr,isSkill){
+  const el=document.createElement("div");el.className=`skill-popup${isSkill?" skill-big":""}`;
+  el.innerHTML=`<span class="s-icon">${side==="ally"?"⚔️":"💀"}</span><div class="s-name" style="color:${clr||"#ffd700"}">${isSkill?"⚡":""}${skill}${isSkill?"⚡":""}</div><div class="s-sub">${side==="ally"?"我方":"敌方"} ${isSkill?"技能":"普攻"}</div>`;
+  document.body.appendChild(el);setTimeout(()=>el.remove(),isSkill?1400:700);
+}
+function healBurst(amount){
+  const el=document.createElement("div");el.className="heal-burst";
+  el.textContent=`💚 +${amount}`;document.body.appendChild(el);setTimeout(()=>el.remove(),1100);
 }
 function koPopup(){
   const el=document.createElement("div");el.className="ko-popup";
@@ -487,6 +545,7 @@ function screenFlash(type){
 function animateAct(act,cb){
   const isAlly=act.side==="ally";let ts=isAlly?"enemy":"my",as=isAlly?"my":"enemy";
   if(act.side==="heal"){ts="my";as="my"}
+  const isSkill=act.type==="skill";
   // 快速跳过：目标已全部死亡
   if(act.aoe && act.targets && act.targets.length>0){
     const allDead=act.targets.every(tg=>{
@@ -505,51 +564,54 @@ function animateAct(act,cb){
   const ac=document.querySelectorAll(`#bc-${as} .bc-card`);
   const acard=ac[Math.min(ai,ac.length-1)];
 
+  // 技能延迟(base) vs 普攻延迟
+  const skillDelay=isSkill?280:100;
+  const hitDelay=isSkill?200:80;
+
   // ── AOE ──
   if(act.aoe){
     if(!act.targets||act.targets.length===0){
-      if(cb)setTimeout(cb,80);return;
+      if(cb)setTimeout(cb,isSkill?120:50);return;
     }
     const isHeal=act.side==="heal";
-    // 攻击者闪光（立刻）
+    // 攻击者闪光
     if(acard&&!acard.classList.contains("bc-dead")){
       acard.classList.add("bc-attack");
-      // 闪一下立刻移除
-      if(isHeal)setTimeout(()=>{if(acard)acard.classList.remove("bc-attack");},150);
-      else setTimeout(()=>{if(acard)acard.classList.remove("bc-attack");},100);
+      setTimeout(()=>{if(acard)acard.classList.remove("bc-attack");},isSkill?300:150);
     }
-    // skill popup
-    skillPopup(act.skill,act.side,act.attacker_color||"#ffd700");
-    // 特效
-    if(isHeal)sfx("green");else screenFlash(act.crit?"gold":"red");
-    // 目标闪（略微延迟，感觉攻击出手）
+    // skill popup (大号技能版本)
+    skillPopup(act.skill,act.side,act.attacker_color||"#ffd700",isSkill);
+    // 特效 (技能用增强版)
+    if(isHeal){sfxSkill("green");if(isSkill)healBurst(Math.max(...act.targets.map(t=>t.heal||0).filter(v=>v>0),0))}
+    else if(isSkill){sfxSkill(act.crit?"gold":"red");document.body.style.animation="shake .3s ease";setTimeout(()=>{document.body.style.animation=""},350)}
+    else if(act.crit)sfx("gold");else sfx("red");
+    // 目标闪（技能延迟更久）
     setTimeout(()=>{
       act.targets.forEach(tg=>{
         const tc=document.querySelectorAll(`#bc-${ts} .bc-card`);
         const tcard=tc[Math.min(tg.idx||0,tc.length-1)];
         if(!tcard)return;
-        if(tg.heal||isHeal){tcard.classList.add("bc-heal");setTimeout(()=>tcard.classList.remove("bc-heal"),300)}
+        if(tg.heal||isHeal){tcard.classList.add("bc-heal");setTimeout(()=>tcard.classList.remove("bc-heal"),isSkill?600:300)}
         else{
           tcard.classList.add("bc-hit");
-          // 击退效果
-          tcard.style.transform="translateX(4px)";
-          setTimeout(()=>{tcard.style.transform="";tcard.classList.remove("bc-hit")},250);
+          tcard.style.transform=isSkill?"translateX(8px)":"translateX(4px)";
+          setTimeout(()=>{tcard.style.transform="";tcard.classList.remove("bc-hit")},isSkill?400:250);
         }
         if(tg.heal||isHeal){
           const d=document.createElement("div");d.className="bc-dmg-num heal-c";
-          d.textContent=`+${tg.heal||0}❤️`;tcard.appendChild(d);setTimeout(()=>d.remove(),900);
+          d.textContent=`+${tg.heal||0}❤️`;tcard.appendChild(d);setTimeout(()=>d.remove(),isSkill?1400:900);
         }else if(tg.damage>0){
           const d=document.createElement("div");d.className="bc-dmg-num";
           if(tg.crit)d.classList.add("crit-c");else if(isAlly)d.classList.add("ally-c");else d.classList.add("enemy-c");
-          d.textContent=`-${tg.damage}${tg.crit?"⭐":""}`;tcard.appendChild(d);setTimeout(()=>d.remove(),900);
+          d.textContent=`-${tg.damage}${tg.crit?"⭐":""}`;tcard.appendChild(d);setTimeout(()=>d.remove(),isSkill?1400:900);
         }
         const np=Math.max(0,(tg.hp_pct||0)*100);
         const hpEl=document.getElementById(`bchp-${ts}-${tg.idx}`);
         if(hpEl){hpEl.style.width=np+"%";hpEl.style.background=np>50?'#5adb7a':np>25?'#e8b84a':'#e85a5a';setTimeout(()=>{hpEl.style.transition="width .35s ease"},50)}
         if(tg.killed){tcard.classList.add("bc-dead");koPopup();sfx("gold")}
       });
-      if(cb)setTimeout(cb,250);
-    },150);
+      if(cb)setTimeout(cb,isSkill?400:200);
+    },skillDelay);
     return;
   }
 
@@ -558,45 +620,44 @@ function animateAct(act,cb){
   const tc=document.querySelectorAll(`#bc-${ts} .bc-card`);
   const tcard=tc[Math.min(ti,tc.length-1)];
   const isHeal=act.side==="heal";
-  // 攻击者闪光（立刻）
+  // 攻击者闪光
   if(acard&&!acard.classList.contains("bc-dead")){
     acard.classList.add("bc-attack");
-    setTimeout(()=>{if(acard)acard.classList.remove("bc-attack")},100);
+    setTimeout(()=>{if(acard)acard.classList.remove("bc-attack")},isSkill?300:100);
   }
-  skillPopup(act.skill,act.side,act.attacker_color||"#ffd700");
-  if(isHeal)sfx("green");else screenFlash(act.crit?"gold":"red");
+  skillPopup(act.skill,act.side,act.attacker_color||"#ffd700",isSkill);
+  if(isHeal){sfxSkill("green");if(isSkill)healBurst(act.heal||0)}
+  else if(isSkill){sfxSkill(act.crit?"gold":"red");document.body.style.animation="shake .3s ease";setTimeout(()=>{document.body.style.animation=""},350)}
+  else if(act.crit)sfx("gold");else sfx("red");
   // 目标闪
   setTimeout(()=>{
     if(tcard){
       if(isHeal){
-        tcard.classList.add("bc-heal");setTimeout(()=>tcard.classList.remove("bc-heal"),300);
+        tcard.classList.add("bc-heal");setTimeout(()=>tcard.classList.remove("bc-heal"),isSkill?600:300);
       }else{
         tcard.classList.add("bc-hit");
-        tcard.style.transform="translateX(6px)";
-        setTimeout(()=>{tcard.style.transform="";tcard.classList.remove("bc-hit")},250);
+        tcard.style.transform=isSkill?"translateX(8px)":"translateX(6px)";
+        setTimeout(()=>{tcard.style.transform="";tcard.classList.remove("bc-hit")},isSkill?400:250);
       }
     }
-    // HP条更新
     const hpEl=document.getElementById(`bchp-${ts}-${ti}`);
     if(hpEl&&act.target_hp_pct!==undefined){
       const np=Math.max(0,act.target_hp_pct*100);
       hpEl.style.width=np+"%";hpEl.style.background=np>50?'#5adb7a':np>25?'#e8b84a':'#e85a5a';
     }
-    // HP文字更新
     const hpTx=document.getElementById(`bchptxt-${ts}-${ti}`);
     if(hpTx&&act.target_max_hp&&act.target_hp_pct!==undefined){
       hpTx.textContent=`❤️${Math.round(act.target_hp_pct*act.target_max_hp)}`;
     }
-    // 伤害数字
     if((act.damage>0||act.heal>0)&&tcard){
       const d=document.createElement("div");d.className="bc-dmg-num";
       if(act.crit)d.classList.add("crit-c");else if(isHeal)d.classList.add("heal-c");else if(isAlly)d.classList.add("ally-c");else d.classList.add("enemy-c");
       d.textContent=isHeal?`+${act.heal||0}❤️`:`-${act.damage||0}${act.crit?"⭐":""}`;
-      tcard.appendChild(d);setTimeout(()=>d.remove(),900);
+      tcard.appendChild(d);setTimeout(()=>d.remove(),isSkill?1400:900);
     }
     if(act.killed&&tcard){tcard.classList.add("bc-dead");koPopup();sfx("gold")}
-    if(cb)setTimeout(cb,200);
-  },120);
+    if(cb)setTimeout(cb,isSkill?350:150);
+  },hitDelay);
 }
 
 function showStageStats(br,stats){
