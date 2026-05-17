@@ -102,6 +102,10 @@ def load_game():
         g = json.loads(row["game_data"])
         g.setdefault("stage_index",0); g.setdefault("msg",""); g.setdefault("battle_result",None)
         g.setdefault("last_active_time",datetime.now().timestamp()); g.setdefault("offline_msg","")
+        for inv in g.get("inventory",[]):
+            inv.setdefault("level",1); inv.setdefault("exp",0)
+        for eb in g.get("equip_bag",[]):
+            if isinstance(eb,dict): eb.setdefault("upgrade_lv",0)
         return g
     return None
 
@@ -361,11 +365,11 @@ def gen_stage(power, si):
     elif si < 15: pl=["longquan_sword","mingguang_armor","jade_pendant"]; jb=18; ec=0.4
     elif si < 25: pl=["halberd","qilin_armor","pojun_bow","bagua_mirror"]; jb=30; ec=0.5
     else: pl=["qinglian_sword","zhangba_spear","qinglong_blade","chitu","heshi_bi"]; jb=45; ec=0.55
-    return {"id":f"s{si}","name":gen_stage_name(si),"power":ep,"drops":{"jade":jb,"equip_chance":min(ec+si*0.005,0.7),"equip_pool":pl}}
+    return {"id":f"s{si}","name":gen_stage_name(si),"_index":si,"power":ep,"drops":{"jade":jb,"equip_chance":min(ec+si*0.005,0.7),"equip_pool":pl}}
 
 # ═══ 游戏状态 ═══
 def new_game_inner():
-    inv=[{"hero_id":sid,"skill_lv":1,"equipped":{"武器":None,"防具":None,"饰品":None},"active":True} for sid in ["lisi","wangdazhuang","xiaocui"]]
+    inv=[{"hero_id":sid,"skill_lv":1,"level":1,"exp":0,"equipped":{"武器":None,"防具":None,"饰品":None},"active":True} for sid in ["lisi","wangdazhuang","xiaocui"]]
     return {"jade":10,"inventory":inv,"equip_bag":[{"id":"wood_sword","count":1}],"lineup":["lisi","wangdazhuang","xiaocui"],
             "pull_count":0,"pity_counter":0,"stage_index":0,"ticks":0,"msg":"☯ 欢迎来到江湖！",
             "selected_hero":None,"game_over":False,"won":False,"last_active_time":datetime.now().timestamp(),"offline_msg":""}
@@ -377,18 +381,35 @@ def calc_pow(all_data, lineup, inventory, equip_bag):
         if not inv: continue
         hd=all_data.get(hid)
         if not hd: continue
-        p=hd["hp"]+hd["atk"]*2+hd.get("spd",100)*2
+        lv=inv.get("level",1)
+        bonus=hero_level_bonus(lv)
+        hp=int(hd["hp"]*bonus); atk=int(hd["atk"]*bonus)
+        spd=hd.get("spd",100)
+        crit=hd["crit"]+int(lv/5)
         for s,eq in inv["equipped"].items():
-            if eq and eq in EQUIP_DATA: e=EQUIP_DATA[eq]; p+=e["atk"]*2+e["hp"]
+            if eq and eq in EQUIP_DATA:
+                e=EQUIP_DATA[eq]
+                ulv=0
+                if equip_bag:
+                    eb=next((x for x in equip_bag if isinstance(x,dict) and x.get("id")==eq),None)
+                    if eb: ulv=eb.get("upgrade_lv",0)
+                mult=1.0+ulv*0.25
+                if ulv>=10: mult+=0.5
+                elif ulv>=5: mult+=0.25
+                hp+=int(e.get("hp",0)*mult); atk+=int(e.get("atk",0)*mult)
+        p=hp+atk*2+spd*2
         p*=(1+(inv["skill_lv"]-1)*0.1); t+=p
     return int(t)
 
-def calc_hp(hid, sl, eq):
+def calc_hp(hid, sl, eq, inv=None):
     hd=HERO_DATA.get(hid)
     if not hd: return 0
-    p=hd["hp"]+hd["atk"]*2+hd.get("spd",100)*2
+    lv=inv.get("level",1) if inv else 1
+    bonus=hero_level_bonus(lv)
+    hp=int(hd["hp"]*bonus); atk=int(hd["atk"]*bonus)
     for s,eid in eq.items():
-        if eid and eid in EQUIP_DATA: e=EQUIP_DATA[eid]; p+=e.get("atk",0)*2+e.get("hp",0)
+        if eid and eid in EQUIP_DATA: e=EQUIP_DATA[eid]; hp+=e.get("hp",0); atk+=e.get("atk",0)
+    p=hp+atk*2+int(hd.get("spd",100)*2)
     p*=(1+(sl-1)*0.1); return int(p)
 
 def get_bonds(lineup):
@@ -484,17 +505,70 @@ def gen_enemy(name, ps):
             "energy":0,"skill_cost":random.randint(80,150),
             "energy_gain":25,"basic_dmg_pct":0.6,"side":"enemy"}
 
-def h2f(hid, inv):
+def h2f(hid, inv, equip_bag=None):
     hd=HERO_DATA.get(hid)
     if not hd: return None
-    hp=hd["hp"]; atk=hd["atk"]
+    lv=inv.get("level",1)
+    # 基础属性
+    hp=int(hd["hp"]*hero_level_bonus(lv)); atk=int(hd["atk"]*hero_level_bonus(lv))
+    crit=hd["crit"]+int(lv/5)  # 每5级+1暴击
     for s,eq in inv["equipped"].items():
-        if eq and eq in EQUIP_DATA: e=EQUIP_DATA[eq]; hp+=e.get("hp",0); atk+=e.get("atk",0)
+        if eq and eq in EQUIP_DATA:
+            e=EQUIP_DATA[eq]
+            ulv=0
+            if equip_bag:
+                eb=next((x for x in equip_bag if isinstance(x,dict) and x.get("id")==eq),None)
+                if eb: ulv=eb.get("upgrade_lv",0)
+            mult=1.0+ulv*0.25
+            if ulv>=10: mult+=0.5
+            elif ulv>=5: mult+=0.25
+            hp+=int(e.get("hp",0)*mult); atk+=int(e.get("atk",0)*mult)
     return {"id":hid,"name":hd["name"],"class":hd["class"],"quality":hd["quality"],"color":hd["color"],
-            "hp":hp,"max_hp":hp,"atk":atk,"crit":hd["crit"],"spd":hd.get("spd",100),"_skill_cost":hd.get("skill_cost",100),
+            "hp":hp,"max_hp":hp,"atk":atk,"crit":crit,"spd":hd.get("spd",100),"_skill_cost":hd.get("skill_cost",100),
             "alive":True,"shield":0,"buffs":[],"debuffs":[],"stunned":False,"frozen":False,"reflect":False,
             "energy":0,"action_bar":random.randint(0,400),
             "_hd":hd,"_skill_lv":inv.get("skill_lv",1),"side":"ally"}
+
+def hero_level_bonus(lv):
+    """等级属性倍率: 每级+8%, 每10级突破额外+30%"""
+    b=1.0+(lv-1)*0.08
+    b+=int(lv/10)*0.3  # 10级+0.3, 20级+0.6...
+    return b
+
+def equip_effective_stat(ed, stat):
+    """装备强化后的有效属性"""
+    base=ed.get(stat,0)
+    ulv=ed.get("_upgrade_lv",0)
+    if ulv<=0: return base
+    mult=1.0+ulv*0.25
+    if ulv>=10: mult+=0.5
+    elif ulv>=5: mult+=0.25
+    return int(base*mult)
+
+def exp_for_stage(si):
+    """关卡经验奖励"""
+    return 50+si*8  # 0关=50, 10关=130, 50关=450
+
+def add_exp_to_heroes(g, stage_idx):
+    """给上阵英雄加经验, 处理升级"""
+    msgs=[]
+    for inv in g["inventory"]:
+        if inv["hero_id"] not in g["lineup"]: continue
+        exp_gain=exp_for_stage(stage_idx)
+        inv["exp"]=inv.get("exp",0)+exp_gain
+        lv=inv.get("level",1)
+        changed=False
+        while True:
+            needed=lv*100
+            if inv["exp"]>=needed:
+                inv["exp"]-=needed
+                lv+=1
+                inv["level"]=lv
+                changed=True
+            else: break
+        if changed:
+            msgs.append(f"{HERO_DATA.get(inv['hero_id'],{}).get('name','?')}升到{lv}级!")
+    return msgs
 
 def cstat(u, stat, base):
     """Buff计算. atk/spd用base*pct累加; crit用加法(百分比点); dmg_reduce单独处理"""
@@ -1072,6 +1146,7 @@ class BattleSession:
         if win:
             dr=self.stage["drops"]; jr=dr["jade"]+random.randint(-3,8); jr=max(3,jr)
             r["jade_reward"]=jr
+            r["exp_reward"]=exp_for_stage(self.stage.get("_index",1)) if self.stage else 50
             if random.random()<dr["equip_chance"] and dr["equip_pool"]:
                 eid=random.choice(dr["equip_pool"])
                 r["equip_reward"]=EQUIP_DATA.get(eid,{}).get("name","?")
@@ -1160,7 +1235,7 @@ def init_battle_session(g):
     for hid in g["lineup"]:
         inv=next((i for i in g["inventory"] if i["hero_id"]==hid),None)
         if not inv: continue
-        f=h2f(hid,inv)
+        f=h2f(hid,inv,g.get("equip_bag",[]))
         if f: my_heroes.append(f)
     enemies=[]
     used_names=set()
@@ -1202,15 +1277,7 @@ def api_battle_toggle_auto():
         result["auto"]=True
         # 战斗结束处理
         if result.get("phase")=="done":
-            del BATTLE_SESSIONS[uid]
-            g=load_game()
-            if g:
-                if result["win"]:
-                    jr=result.get("jade_reward",3)
-                    g["jade"]+=jr; g["stage_index"]+=1
-                else:
-                    g["jade"]+=result.get("jade_reward",2)
-                g["ticks"]+=1; save_game(g)
+            _apply_battle_rewards(result,uid)
     else:
         result={"ok":True,"auto":False,"phase":sess._get_current_phase()}
     return jsonify(result)
@@ -1229,25 +1296,7 @@ def api_battle_card():
         result=sess.skip_card()
     # 如果战斗结束，清除会话+保存奖励
     if result.get("phase")=="done":
-        del BATTLE_SESSIONS[uid]
-        g=load_game()
-        if g:
-            if result["win"]:
-                jr=result.get("jade_reward",3)
-                g["jade"]+=jr
-                g["stage_index"]+=1
-                if result.get("equip_reward"):
-                    ex=next((e for e in g["equip_bag"] if isinstance(e,dict) and e.get("id")==result["equip_reward"]),None)
-                    if ex: ex["count"]+=1
-                    else: g["equip_bag"].append({"id":result["equip_reward"],"count":1})
-            else:
-                g["jade"]+=result.get("jade_reward",2)
-            g["ticks"]+=1
-            save_game(g)
-        # 补充老接口兼容字段
-        r2=to_client(g) if g else {}
-        result["stage_name"]=r2.get("stage",{}).get("name","")
-        result["new_stage"]=r2.get("stage",{}).get("name","")
+        _apply_battle_rewards(result,uid)
     return jsonify(result)
 
 @app.route("/api/battle/skip", methods=["POST"])
@@ -1257,17 +1306,32 @@ def api_battle_skip():
     sess=BATTLE_SESSIONS.get(uid)
     if not sess: return jsonify({"error":"没有活跃战斗"})
     result=sess.skip_card()
-    if result.get("phase")=="done":
-        del BATTLE_SESSIONS[uid]
-        g=load_game()
-        if g:
-            if result["win"]:
-                jr=result.get("jade_reward",3)
-                g["jade"]+=jr; g["stage_index"]+=1
-            else:
-                g["jade"]+=result.get("jade_reward",2)
-            g["ticks"]+=1; save_game(g)
+    _apply_battle_rewards(result,uid)
     return jsonify(result)
+
+def _apply_battle_rewards(result,uid):
+    """战斗结束: 保存奖励+经验"""
+    if result.get("phase")!="done": return
+    del BATTLE_SESSIONS[uid]
+    g=load_game()
+    if not g: return
+    if result["win"]:
+        jr=result.get("jade_reward",3)
+        si=g["stage_index"]  # 存当前关数用于经验
+        g["stage_index"]+=1
+        if result.get("equip_reward"):
+            ex=next((e for e in g["equip_bag"] if isinstance(e,dict) and e.get("id")==result["equip_reward"]),None)
+            if ex: ex["count"]+=1
+            else: g["equip_bag"].append({"id":result["equip_reward"],"count":1})
+        # 经验奖励
+        exp_msg=add_exp_to_heroes(g,si)
+        result["exp_msg"]=exp_msg
+    else:
+        g["jade"]+=result.get("jade_reward",2)
+    g["ticks"]+=1; save_game(g)
+    r2=to_client(g) if g else {}
+    result["stage_name"]=r2.get("stage",{}).get("name","")
+    result["new_stage"]=r2.get("stage",{}).get("name","")
 
 def hero_basic_attack(unit, allies, enemies):
     hd = unit.get("_hd")
@@ -1944,8 +2008,9 @@ def api_hero_detail(hero_id):
         "hp":hd["hp"],"atk":hd["atk"],"crit":hd["crit"],"spd":hd.get("spd",100),"skill_cost":hd.get("skill_cost",100),
         "skill_name":hd["skill_name"],"skill_desc":hd["skill_desc"],
         "skill_aoe":hd.get("skill_aoe",False),"skill_lv":inv["skill_lv"],
+        "level":inv.get("level",1),"exp":inv.get("exp",0),"exp_next":inv.get("level",1)*100,
         "skill_upgrades":hd["skill_upgrades"],"passive_name":hd["passive_name"],"passive_desc":hd["passive_desc"],
-        "passive_upgrades":hd["passive_upgrades"],"power":calc_hp(hero_id,inv["skill_lv"],inv["equipped"]),
+        "passive_upgrades":hd["passive_upgrades"],"power":calc_hp(hero_id,inv["skill_lv"],inv["equipped"],inv),
         "basic_name":hd.get("basic_name","攻击"),"basic_desc":hd.get("basic_desc","普通攻击"),
         "basic_energy_gain":hd.get("basic_energy_gain",25),
         "equipped":eq,"bonds":bonds,"in_lineup":hero_id in g["lineup"]})
@@ -1959,7 +2024,7 @@ def api_inventory_heroes():
     for inv in g["inventory"]:
         hd=HERO_DATA.get(inv["hero_id"])
         if hd: hh.append({"hero_id":inv["hero_id"],"name":hd["name"],"class":hd["class"],"quality":hd["quality"],
-            "color":hd["color"],"skill_lv":inv["skill_lv"],"power":calc_hp(inv["hero_id"],inv["skill_lv"],inv["equipped"]),
+            "color":hd["color"],"skill_lv":inv["skill_lv"],"level":inv.get("level",1),"power":calc_hp(inv["hero_id"],inv["skill_lv"],inv["equipped"],inv),
             "equipped":inv["equipped"],"in_lineup":inv["hero_id"] in g["lineup"]})
     hh.sort(key=lambda h:(QUALITY_ORDER.get(h["quality"],0),h["power"]),reverse=True)
     return jsonify(hh)
@@ -1973,7 +2038,8 @@ def api_equip_bag():
         eid=e["id"] if isinstance(e,dict) else e; cnt=e["count"] if isinstance(e,dict) else 1
         if eid in EQUIP_DATA:
             ed=EQUIP_DATA[eid]; items.append({"id":eid,"name":ed["name"],"type":ed["type"],"quality":ed["quality"],
-                "color":ed["color"],"atk":ed.get("atk",0),"hp":ed.get("hp",0),"crit":ed.get("crit",0),"special":ed.get("special",""),"count":cnt})
+                "color":ed["color"],"atk":ed.get("atk",0),"hp":ed.get("hp",0),"crit":ed.get("crit",0),"special":ed.get("special",""),"count":cnt,
+                "upgrade_lv":e.get("upgrade_lv",0) if isinstance(e,dict) else 0})
     items.sort(key=lambda x:(EQ_QUALITY_ORDER.get(x["quality"],0),x["atk"]),reverse=True)
     return jsonify(items)
 
@@ -2013,6 +2079,81 @@ def to_client(g):
         "bonds":bl,"msg":g.get("msg",""),"ticks":g["ticks"],
         "inventory_count":len(g["inventory"]),"username":session.get("username",""),
         "offline_msg":g.get("offline_msg",""),"jade_per_min":round(max(0.3,power/5000),1)}
+
+@app.route("/api/equip/enhance/<eid>", methods=["POST"])
+@login_required
+def api_equip_enhance(eid):
+    g=load_game()
+    if not g: return api_new()
+    if eid not in EQUIP_DATA: return jsonify({"error":"装备不存在"})
+    ed=EQUIP_DATA[eid]
+    eb=next((e for e in g["equip_bag"] if isinstance(e,dict) and e.get("id")==eid),None)
+    if not eb: return jsonify({"error":"没有该装备"})
+    ulv=eb.get("upgrade_lv",0)
+    if ulv>=15: return jsonify({"error":"已满级"})
+    cost_jade=(ulv+1)*15+10  # +0=25, +5=100, +10=175
+    cost_count=1+int(ulv/3)  # +0~2要1件, +3~5要2件...
+    if g["jade"]<cost_jade: return jsonify({"error":f"玉璧不足(需要{cost_jade})"})
+    if eb.get("count",0)<cost_count+1: return jsonify({"error":f"需要{cost_count+1}件同名装备"})
+    g["jade"]-=cost_jade
+    eb["count"]-=cost_count
+    eb["upgrade_lv"]=ulv+1
+    new_lv=ulv+1
+    save_game(g)
+    return jsonify({"ok":True,"upgrade_lv":new_lv,"jade":g["jade"],
+        "msg":f"{ed['name']}强化至+{new_lv}！","stats":{
+            "atk":int(ed.get("atk",0)*(1+new_lv*0.25)),
+            "hp":int(ed.get("hp",0)*(1+new_lv*0.25)),
+            "crit":int(ed.get("crit",0)+new_lv//3)
+        }})
+
+@app.route("/api/hero/consume", methods=["POST"])
+@login_required
+def api_hero_consume():
+    g=load_game()
+    if not g: return api_new()
+    data=request.get_json()
+    if not data: return jsonify({"error":"无效请求"})
+    target_id=data.get("hero_id","")
+    consume_ids=data.get("consumed",[])
+    if not target_id or not consume_ids: return jsonify({"error":"缺少参数"})
+    # 检查目标
+    t_inv=next((i for i in g["inventory"] if i["hero_id"]==target_id),None)
+    if not t_inv: return jsonify({"error":"未找到该英雄"})
+    if target_id in consume_ids: return jsonify({"error":"不能吃自己"})
+    if target_id in g["lineup"]: return jsonify({"error":"请先下阵再吞噬"})
+    # 经验倍率
+    RARITY_EXP={"凡品":300,"良品":800,"极品":2000,"绝品":5000,"传说":12000}
+    total_exp=0; names=[]
+    for cid in consume_ids:
+        ci=next((i for i in g["inventory"] if i["hero_id"]==cid),None)
+        if not ci: continue
+        hd=HERO_DATA.get(cid)
+        if not hd: continue
+        if cid in g["lineup"]: return jsonify({"error":f"{hd['name']}在上阵中,不能吞噬"})
+        lv=ci.get("level",1)
+        exp=RARITY_EXP.get(hd["quality"],300)+(lv-1)*50
+        total_exp+=exp
+        names.append(hd["name"])
+        g["inventory"].remove(ci)
+    # 加经验
+    t_inv["exp"]=t_inv.get("exp",0)+total_exp
+    old_lv=t_inv.get("level",1)
+    new_lv=old_lv
+    while True:
+        needed=new_lv*100
+        if t_inv["exp"]>=needed:
+            t_inv["exp"]-=needed
+            new_lv+=1
+            t_inv["level"]=new_lv
+        else: break
+    t_hd=HERO_DATA.get(target_id,{})
+    save_game(g)
+    return jsonify({"ok":True,"hero_id":target_id,"name":t_hd.get("name","?"),
+        "consumed":names,"total_exp":total_exp,
+        "old_level":old_lv,"new_level":new_lv,
+        "now_exp":t_inv.get("exp",0),"exp_next":new_lv*100,
+        **to_client(g)})
 
 if __name__ == "__main__":
     port=int(sys.argv[1]) if len(sys.argv)>1 else 5002

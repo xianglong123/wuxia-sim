@@ -24,9 +24,17 @@ body{font-family:-apple-system,"PingFang SC","Noto Serif SC",serif;background:#0
 .hero-card{border-radius:8px;padding:10px;cursor:pointer;transition:all .2s;background:#12100e;min-height:80px;position:relative}
 .hero-card:hover{transform:translateY(-2px)}
 .hero-card .h-class{font-size:10px;opacity:.7;margin-bottom:1px}
-.hero-card .h-name{font-size:14px;font-weight:700}
-.hero-card .h-power{font-size:11px;margin-top:4px}
+.hero-card .h-name{font-size:12px;font-weight:600;color:#d4c9a8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hero-card .h-level{font-size:9px;color:#6a5a4a;font-weight:400}
+.hero-card .h-power{font-size:11px;font-weight:600;margin-top:4px}
 .hero-card .h-lv{position:absolute;top:6px;right:8px;font-size:10px;opacity:.6}
+.mini-btn{font-size:9px;padding:2px 6px;border-radius:4px;border:1px solid #4a8eff;background:transparent;color:#4a8eff;cursor:pointer;font-family:inherit;line-height:1}
+.mini-btn:hover{background:rgba(74,142,255,.15)}
+.consume-btn{background:#b84aff;color:#fff;border-color:#b84aff!important}
+/* Exp bar */
+.exp-bar{width:100%;height:14px;border-radius:7px;background:#1a1816;border:1px solid #2a2218;position:relative;margin:4px 0;overflow:hidden}
+.exp-fill{height:100%;border-radius:7px;background:linear-gradient(90deg,#4a8eff,#6ab0ff);transition:width .3s}
+.exp-text{position:absolute;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;font-size:8px;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.6)}
 .action-row{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:10px}
 @media(max-width:400px){.action-row{grid-template-columns:1fr 1fr}}
 .action-btn{padding:10px;border-radius:8px;border:1px solid #2a2218;background:linear-gradient(180deg,#12100e,#0d0b09);color:#d4c9a8;font-size:12px;cursor:pointer;font-family:inherit;transition:all .2s;text-align:center}
@@ -344,7 +352,7 @@ function render(g){
     for(let hid of g.lineup){const h=all.find(x=>x.hero_id===hid);if(!h)continue;
       const col=h.color||QC[h.quality],ci=CI[h.class]||"❓";
       const card=document.createElement("div");card.className="hero-card";card.style.borderColor=col;
-      card.innerHTML=`<div class="h-lv" style="color:${col}">${qs(h.quality)}</div><div class="h-class" style="color:${col}">${ci} ${h.class}</div><div class="h-name">${h.name}</div><div class="h-power" style="color:${col}">⚔️${h.power.toLocaleString()}</div>`;
+      card.innerHTML=`<div class="h-lv" style="color:${col}">${qs(h.quality)}</div><div class="h-class" style="color:${col}">${ci} ${h.class}</div><div class="h-name">${h.name} <span class="h-level">Lv.${h.level||1}</span></div><div class="h-power" style="color:${col}">⚔️${h.power.toLocaleString()}</div>`;
       card.onclick=(()=>showHeroDetail(hid));lg.appendChild(card);
     }}catch(e){}}()}
   }catch(e){showError("渲染:"+e.message)}
@@ -615,6 +623,7 @@ function showBattleResult(d){
   const rd=document.getElementById("battleResult");rd.style.display="block";
   let lh=`💎+${jr}`;
   if(eq)lh+=` <span style="color:#5adb7a">🗡️${eq}</span>`;
+  if(d.exp_msg&&d.exp_msg.length)lh+=`<div style="font-size:9px;color:#6a8eff;margin-top:2px">📈${d.exp_msg.join(' ')}</div>`;
   rd.innerHTML=`<div class="br-title ${win?'win':'lose'}">${win?'🏆胜利':'💀败北'}</div><div style="font-size:11px;color:#6a5a4a">${d.rounds||0}ticks</div><div style="margin:6px 0;font-size:12px">${lh}</div><button class="br-btn" onclick="closeBattle();render(game)">继续征战</button>`;
 
   // Play back ALL remaining actions for the finale
@@ -1091,13 +1100,14 @@ async function showHeroDetail(hid){
     const aoeTag=h.skill_aoe?'<span style="font-size:10px;padding:1px 6px;border-radius:3px;background:rgba(255,215,0,.15);color:#ffd700;font-weight:600;margin-left:6px">群攻</span>':'';
     const modal=document.getElementById("modal");modal.style.display="flex";
     modal.innerHTML=`<div class="modal-inner">
-      <div style="font-size:18px;font-weight:700;color:${col}">${h.name} ${ci}${h.class}</div>
+      <div style="font-size:18px;font-weight:700;color:${col}">${h.name} ${ci}${h.class} <span style="font-size:11px;color:#6a5a4a">Lv.${h.level}</span></div>
       <div style="font-size:12px;color:${col};margin-bottom:8px">${qs(h.quality)}${h.quality}</div>
       <div class="hd-stats"><div class="hd-stat"><div>❤️血量</div><div class="sv">${h.hp.toLocaleString()}</div></div><div class="hd-stat"><div>💥攻击</div><div class="sv">${h.atk.toLocaleString()}</div></div><div class="hd-stat"><div>⚡暴击</div><div class="sv">${h.crit}%</div></div><div class="hd-stat"><div>⚔️战力</div><div class="sv" style="color:${col}">${h.power.toLocaleString()}</div></div></div>
+      <div class="exp-bar"><div class="exp-fill" style="width:${Math.min(100,h.exp/h.exp_next*100)}%"></div><span class="exp-text">Lv.${h.level} ${h.exp}/${h.exp_next}</span></div>
       <div class="hd-section"><div class="hd-section-title">📜${h.skill_name}${aoeTag}<span style="display:inline-block;padding:1px 6px;border-radius:3px;font-size:10px;background:${col};color:#000;margin-left:4px">Lv${h.skill_lv}</span></div><div class="hd-skill">${h.skill_desc}</div>${skUp}</div>
       <div class="hd-section"><div class="hd-section-title">⭐${h.passive_name}</div><div class="hd-skill" style="color:#6a5a4a">${h.passive_desc}</div>${paUp}</div>
       <div class="hd-section"><div class="hd-section-title">🛡️装备</div><div class="equip-slots">${eqH}</div></div>
-      <div style="text-align:center;margin-top:8px"><button class="pull-btn" onclick="toggleLU('${h.hero_id}')">🔄${h.in_lineup?'下阵':'上阵'}</button><button class="pull-btn" onclick="closeModal()" style="margin-left:6px">关闭</button></div></div>`
+      <div style="text-align:center;margin-top:8px"><button class="pull-btn" onclick="toggleLU('${h.hero_id}')">🔄${h.in_lineup?'下阵':'上阵'}</button><button class="pull-btn consume-btn" onclick="consumeHeroSelect('${h.hero_id}')" style="margin-left:6px">🍽️吞噬</button><button class="pull-btn" onclick="closeModal()" style="margin-left:6px">关闭</button></div></div>`
   }catch(e){}
   document.getElementById("loading").style.display="none";
 }
@@ -1106,10 +1116,85 @@ async function showHeroDetail(hid){
 async function toggleLU(hid){closeModal();document.getElementById("loading").style.display="flex";try{render(await apiFetch(`/api/lineup/${hid}`))}catch(e){}document.getElementById("loading").style.display="none"}
 async function showEquipSel(hid,slot){document.getElementById("loading").style.display="flex";try{const bag=await apiFetch("/api/equip_bag");const fl=bag.filter(e=>e.type===slot);
   const m=document.getElementById("modal");m.style.display="flex";m.innerHTML=`<div class="modal-inner"><div style="font-size:14px;font-weight:700;margin-bottom:10px">🔧选择${slot}</div>${fl.length===0?'<div style="color:#3a2a3a;padding:12px">没有该类装备</div>':''}
-  <div style="display:grid;gap:4px">${fl.map(e=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;border-radius:6px;border:1px solid ${e.color};cursor:pointer;font-size:11px;background:#0d0b09" onclick="doEquip2('${hid}','${slot}','${e.id}')"><div><span style="font-weight:600;color:${e.color}">${e.name}</span><span style="font-size:9px;color:#6a5a4a">×${e.count}</span></div><div>⚔️+${e.atk}❤️+${e.hp}</div></div>`).join("")}</div>
+  <div style="display:grid;gap:4px">${fl.map(e=>{
+    const ulv=e.upgrade_lv||0;
+    const upTag=ulv>0?`<span style="font-size:9px;color:#2a8a4a;background:rgba(90,219,122,.15);padding:1px 4px;border-radius:3px;margin-left:4px">+${ulv}</span>`:'';
+    const eAtk=Math.round((e.atk||0)*(1+ulv*0.25)+(ulv>=10?0.5:0)+(ulv>=5?0.25:0));
+    const eHp=Math.round((e.hp||0)*(1+ulv*0.25)+(ulv>=10?0.5:0)+(ulv>=5?0.25:0));
+    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;border-radius:6px;border:1px solid ${e.color};cursor:pointer;font-size:11px;background:#0d0b09" onclick="doEquip2('${hid}','${slot}','${e.id}')"><div><span style="font-weight:600;color:${e.color}">${e.name}</span>${upTag}<span style="font-size:9px;color:#6a5a4a">×${e.count}</span></div><div style="display:flex;gap:4px"><span>⚔️+${eAtk}</span><span>❤️+${eHp}</span><button class="mini-btn" onclick="event.stopPropagation();enhanceEquip('${e.id}')">⬆+</button></div></div>`
+  }).join("")}</div>
   <div style="margin-top:4px"><div class="pull-btn" onclick="doEquip2('${hid}','${slot}','none')" style="display:inline-block">卸下</div></div>
   <div style="text-align:center;margin-top:8px"><button class="pull-btn" onclick="closeModal()">取消</button></div></div>`}catch(e){}document.getElementById("loading").style.display="none"}
 async function doEquip2(hid,slot,eid){document.getElementById("loading").style.display="flex";try{const d=await apiFetch(`/api/equip/${hid}/${slot}/${eid}`);closeModal();render(d)}catch(e){}document.getElementById("loading").style.display="none"}
+
+async function enhanceEquip(eid){
+  document.getElementById("loading").style.display="flex";
+  try{
+    const d=await apiFetch("/api/equip/enhance/"+eid,{method:"POST"});
+    if(d.error){showError(d.error);document.getElementById("loading").style.display="none";return}
+    showError(`✨ ${d.msg} ⚔️+${d.stats.atk} ❤️+${d.stats.hp}`);
+    render(d);
+  }catch(e){}
+  document.getElementById("loading").style.display="none";
+}
+
+async function consumeHeroSelect(targetId){
+  const m=document.getElementById("modal");
+  try{
+    const all=await apiFetch("/api/inventory_heroes");
+    const opts=all.filter(h=>h.hero_id!==targetId&&!h.in_lineup);
+    if(!opts.length){showError("没有可吞噬的英雄");return}
+    const qColors={"凡品":"#888","良品":"#5adb7a","极品":"#4a8eff","绝品":"#b84aff","传说":"#ffd700"};
+    const expMap={"凡品":300,"良品":800,"极品":2000,"绝品":5000,"传说":12000};
+    const target=all.find(h=>h.hero_id===targetId);
+    m.innerHTML=`<div class="modal-inner">
+      <div style="font-size:14px;font-weight:700;margin-bottom:8px">🍽️ 选择要吞噬的英雄</div>
+      <div style="font-size:10px;color:#6a5a4a;margin-bottom:8px">吞噬后永久消失，给 <span style="color:${target?.color||'#888'};font-weight:600">${target?.name||'?'}</span> 获得经验</div>
+      <div style="display:grid;gap:4px;max-height:300px;overflow-y:auto">${opts.map(h=>{
+        const col=qColors[h.quality]||"#888";
+        const ci=CI[h.class]||"❓";
+        const exp=expMap[h.quality]||300;
+        return `<label style="display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:6px;border:1px solid #2a2218;background:#0d0b09;cursor:pointer;font-size:11px">
+          <input type="checkbox" class="consume-cb" value="${h.hero_id}" onchange="updateConsumeTotal()">
+          <span style="color:${col};font-weight:600">${ci}</span>
+          <span style="flex:1;color:#d4c9a8">${h.name} <span style="font-size:9px;color:#6a5a4a">Lv.${h.level}</span></span>
+          <span style="color:#4a8eff">+${exp+(h.level-1)*50}经验</span>
+        </label>`
+      }).join("")}</div>
+      <div style="text-align:center;margin:8px 0;font-size:10px;color:#4a8eff" id="consumeTotal">已选0个, 获得0经验</div>
+      <div style="text-align:center"><button class="pull-btn" onclick="doConsumeHero('${targetId}')" style="background:#b84aff;border-color:#b84aff;color:#fff">确认吞噬</button><button class="pull-btn" onclick="closeModal()" style="margin-left:6px">取消</button></div>
+    </div>`;
+  }catch(e){}
+}
+
+function updateConsumeTotal(){
+  const cbs=document.querySelectorAll('.consume-cb:checked');
+  let total=0;
+  cbs.forEach(cb=>{
+    const label=cb.closest('label');
+    const expText=label.lastElementChild.textContent;
+    total+=parseInt(expText.match(/\d+/)[0]);
+  });
+  document.getElementById('consumeTotal').textContent=`已选${cbs.length}个, 获得${total}经验`;
+}
+
+async function doConsumeHero(targetId){
+  const cbs=document.querySelectorAll('.consume-cb:checked');
+  const ids=Array.from(cbs).map(cb=>cb.value);
+  if(!ids.length){showError("请至少选一个英雄");return}
+  document.getElementById("loading").style.display="flex";
+  try{
+    const d=await apiFetch("/api/hero/consume",{method:"POST",body:JSON.stringify({hero_id:targetId,consumed:ids})});
+    if(d.error){showError(d.error);document.getElementById("loading").style.display="none";return}
+    closeModal();
+    const msg=d.new_level>d.old_level
+      ?`⚡ ${d.name} ${d.old_level}级→${d.new_level}级! 吞噬了${d.consumed.join(',')}`
+      :`📈 ${d.name} +${d.total_exp}经验 (${d.consumed.join(',')})`;
+    showError(msg);
+    render(d);
+  }catch(e){}
+  document.getElementById("loading").style.display="none";
+}
 async function singlePull(){if(!game)return;document.getElementById("loading").style.display="flex";try{const d=await apiFetch("/api/pull");render(d);if(d.pull)showPullM(d.pull,false)}catch(e){}document.getElementById("loading").style.display="none"}
 async function tenPull(){if(!game)return;document.getElementById("loading").style.display="flex";try{const d=await apiFetch("/api/pull10");render(d);if(d.pull)showPullM(d.pull,true)}catch(e){}document.getElementById("loading").style.display="none"}
 function showPullM(pull,is10){const pm=document.getElementById("pullModal");pm.style.display="flex";
