@@ -52,7 +52,7 @@ body{font-family:-apple-system,"PingFang SC","Noto Serif SC",serif;background:#0
 .inv-grid.open{display:grid}
 .inv-hero{padding:8px;border-radius:6px;border:1px solid #2a2218;cursor:pointer;font-size:11px;transition:all .15s;background:#12100e}
 .inv-hero .iq{font-size:9px;font-weight:700}.inv-hero .in{font-size:12px;font-weight:600}.inv-hero .ip{font-size:10px;color:#5adb7a}
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.92);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:200;padding:16px}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.92);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:400;padding:16px}
 .modal-inner{background:#12100e;border:1px solid #3a3020;border-radius:12px;padding:20px;max-width:480px;width:100%;max-height:80vh;overflow-y:auto}
 .hd-title{font-size:18px;font-weight:700}.hd-stats{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px}
 .hd-stat{border:1px solid #2a2218;border-radius:6px;padding:6px 10px;font-size:12px;background:#0d0b09}
@@ -111,7 +111,7 @@ body{font-family:-apple-system,"PingFang SC","Noto Serif SC",serif;background:#0
 .speed-control{display:flex;gap:6px;margin:2px 0 4px}
 .speed-btn{padding:2px 12px;border-radius:4px;border:1px solid #2a2218;background:#0d0b09;color:#6a5a4a;font-size:11px;cursor:pointer;font-family:inherit}
 .speed-btn.active{background:rgba(255,215,0,.15);border-color:#ffd700;color:#ffd700}
-.battle-field{display:flex;gap:10px;justify-content:center;align-items:flex-start;width:100%;max-width:600px;flex-wrap:wrap}
+.battle-field{display:flex;gap:10px;justify-content:center;align-items:flex-start;width:100%;max-width:600px}
 .battle-side{flex:1;min-width:140px;max-width:280px}
 .battle-side-label{font-size:10px;color:#6a5a4a;margin-bottom:3px;text-align:center}
 .bc{display:flex;flex-direction:column;gap:2px}
@@ -125,6 +125,17 @@ body{font-family:-apple-system,"PingFang SC","Noto Serif SC",serif;background:#0
 @keyframes bcHit{0%{border-color:#e85a5a;background:rgba(232,90,90,.15)}100%{border-color:#2a2218;background:#0d0b09}}
 @keyframes bcHeal{0%{border-color:#5adb7a;background:rgba(90,219,122,.12);box-shadow:0 0 8px rgba(90,219,122,.3)}100%{border-color:#2a2218;background:#0d0b09}}
 .bc-icon{font-size:13px;flex-shrink:0}.bc-info{flex:1;min-width:0}.bc-name{font-weight:600;font-size:10px}.bc-class{font-size:7px;color:#6a5a4a}
+/* 敌方技能面板 */
+.bc-skill-panel{width:140px;flex-shrink:0;background:#0d0b09;border:1px solid #2a1a1a;border-radius:6px;padding:6px 8px;font-size:10px;max-height:300px;overflow-y:auto}
+.bc-skill-panel .sp-title{font-size:9px;color:#e85a5a;font-weight:600;margin-bottom:4px;text-align:center;border-bottom:1px solid #2a1a1a;padding-bottom:3px}
+.bc-skill-panel .sp-row{display:flex;gap:4px;padding:3px 0;border-bottom:1px solid #1a0a0a;cursor:pointer;transition:all .15s}
+.bc-skill-panel .sp-row:hover{background:rgba(232,90,90,.05)}
+.bc-skill-panel .sp-row.sp-highlight{background:rgba(232,90,90,.1);border-left:2px solid #e85a5a;padding-left:4px}
+.bc-skill-panel .sp-icon{font-size:11px;flex-shrink:0;width:16px;text-align:center}
+.bc-skill-panel .sp-info{flex:1;min-width:0}
+.bc-skill-panel .sp-name{font-size:9px;font-weight:600;color:#d4c9a8}
+.bc-skill-panel .sp-desc{font-size:8px;color:#6a5a4a;line-height:1.3}
+.bc-skill-panel .sp-passive{color:#ff3333;font-size:8px}
 .bc-hp-strip{position:relative;height:4px;background:#1a1a24;border-radius:2px;overflow:hidden;margin-top:1px}
 .bc-hp-fill{height:100%;border-radius:2px;transition:width .35s ease}
 .bc-shield{position:absolute;top:0;right:0;height:100%;background:rgba(74,142,255,.4);border-radius:2px;transition:width .35s ease}
@@ -326,6 +337,7 @@ body{font-family:-apple-system,"PingFang SC","Noto Serif SC",serif;background:#0
     <div class="res-bar">
       <span>💎<span id="jadeDisplay">0</span> <span id="jadeRate" style="font-size:10px;color:#5adb7a"></span></span>
       <span style="font-size:10px;color:#b84aff">💠<span id="expPoolDisplay">0</span></span>
+      <span style="font-size:10px;color:#4a8eff">💫<span id="equipExpDisplay">0</span></span>
       <span class="pity-bar" id="pityBar"></span>
       <span style="font-size:10px">抽<span id="pullCount">0</span></span>
       <span style="font-size:10px;color:#5adb7a;cursor:pointer;font-weight:600" onclick="openTuji()">📖 图鉴</span>
@@ -370,7 +382,10 @@ body{font-family:-apple-system,"PingFang SC","Noto Serif SC",serif;background:#0
   <div class="lineup-title">👥 上阵英雄</div>
   <div class="lineup-grid" id="lineupGrid"></div>
   <div class="action-row">
-    <button class="action-btn gacha" onclick="singlePull()"><span class="ab-icon">🎴</span><span class="ab-label">单抽 3💎</span></button>
+    <button class="action-btn gacha" onclick="singlePull()" style="background:linear-gradient(135deg,#3a2a10,#5a3a10)"><span class="ab-icon">🎴</span><span class="ab-label">英雄 3💎</span></button>
+    <button class="action-btn gacha" onclick="singleEquipPull()" style="background:linear-gradient(135deg,#1a1a3a,#3a2a6a)"><span class="ab-icon">🔮</span><span class="ab-label">铸魂 5💎</span></button>
+    <button class="action-btn gacha" onclick="tenEquipPull()" style="background:linear-gradient(135deg,#2a1a4a,#4a2a8a)"><span class="ab-icon">🔮</span><span class="ab-label">铸魂十连 45💎</span></button>
+    <button class="action-btn gacha" onclick="hundredEquipPull()" style="background:linear-gradient(135deg,#6a2a8a,#a04aff)"><span class="ab-icon">🔮</span><span class="ab-label">铸魂百抽 430💎</span></button>
     <button class="action-btn gacha" onclick="tenPull()"><span class="ab-icon">🎴</span><span class="ab-label">十连 25💎</span></button>
     <button class="action-btn gacha" onclick="hundredPull()" style="background:linear-gradient(135deg,#8a2be2,#b84aff)"><span class="ab-icon">🎴</span><span class="ab-label">百抽 235💎</span></button>
     <button class="action-btn battle" onclick="startBattle()"><span class="ab-icon">⚔️</span><span class="ab-label">挑战</span></button>
@@ -396,6 +411,7 @@ function render(g){
   const _=(id)=>document.getElementById(id);
   _("jadeDisplay")&&(_("jadeDisplay").textContent=g.jade||0);
   _("expPoolDisplay")&&(_("expPoolDisplay").textContent=g.dupe_exp_total||0);
+  _("equipExpDisplay")&&(_("equipExpDisplay").textContent=g.equip_exp_total||0);
   _("pullCount")&&(_("pullCount").textContent=g.pull_count);
   _("invTotalCount")&&(_("invTotalCount").textContent=g.inventory_count||0);
   _("powerDisplay")&&(_("powerDisplay").textContent=(g.power||0).toLocaleString());
@@ -420,7 +436,7 @@ function render(g){
     for(let hid of g.lineup){const h=all.find(x=>x.hero_id===hid);if(!h)continue;
       const col=h.color||QC[h.quality],ci=CI[h.class]||"❓";
       const card=document.createElement("div");card.className="hero-card";card.style.borderColor=col;
-      card.innerHTML=`<div class="h-lv" style="color:${col}">${qs(h.quality)}</div><div class="h-class" style="color:${col}">${ci} ${h.class}</div><div class="h-name">${h.name} <span class="h-level">Lv.${h.level||1}</span></div><div class="h-power" style="color:${col}">⚔️${h.power.toLocaleString()}</div>`;
+      card.innerHTML=`<div class="h-lv" style="color:${col}">${qs(h.quality)}</div><div class="h-class" style="color:${col}">${ci} ${h.class}</div><div class="h-name">${h.name} <span class="h-level">Lv.${h.level||1}</span></div><div class="h-power" style="color:${col}">⚔️${h.power.toLocaleString()}</div><div style="font-size:9px;color:#5a4a3a;margin-top:2px">💥${h.atk||0} ❤️${h.hp||0} ⚡${h.crit||0}% 🎯${Math.round((h.crit_dmg||1.5)*100)}% 🛡️${Math.round((h.dmg_reduce||0)*100)}%</div>`;
       card.onclick=(()=>showHeroDetail(hid));lg.appendChild(card);
     }}catch(e){}}()}
   }catch(e){showError("渲染:"+e.message)}
@@ -820,14 +836,36 @@ function renderBF(myH,enemies,isFinal,lv9Buffs){
         const posNum=side==="my"&&u.position?`<span class="bc-pos">#${u.position}</span>`:"";
         const lv9Desc=lv9Buffs?lv9Buffs.find(b=>b.pos===u.position)?.desc:"";
         const lv9Tag=lv9Desc?`<span class="bc-lv9" title="${lv9Desc}">Lv9</span>`:"";
-        return `<div class="bc-card ${alive?'':'bc-dead'}" id="bc-${side}-${i}" style="border-color:${u.color};${glow}"><span class="bc-icon">${ci}</span>
-          <div class="bc-info"><div class="bc-name">${posNum}${lv9Tag}${u.name}${shieldIcon}</div><div class="bc-class">${u.class}</div>
+        const isEnemy=side==="enemy";
+        const ciIcon=u.prof_icon||CI[u.class]||"❓";
+        return `<div class="bc-card ${alive?'':'bc-dead'}" id="bc-${side}-${i}" style="border-color:${u.color};${glow}"><span class="bc-icon">${ciIcon}</span>
+          <div class="bc-info"><div class="bc-name">${posNum}${lv9Tag}${u.name}${shieldIcon}</div><div class="bc-class">${u.class}${isEnemy?'<span style="font-size:7px;color:#6a4a4a"> ⚡技能→右</span>':''}</div>
           <div style="display:flex;gap:3px;font-size:8px;color:#6a5a4a;flex-wrap:wrap">${hpShow} <span class="bc-energy-num${energyReady}">⚡${energy}</span> ${atkShow} ${critShow}</div>
           <div class="bc-hp-strip"><div class="bc-hp-fill" id="bchp-${side}-${i}" style="width:${hpPct}%;background:${hpCol}"></div></div>
           <div class="bc-energy-strip${energyReady}"><div class="bc-energy-fill" id="bcene-${side}-${i}" style="width:${energyPct}%"></div></div>${buffRow}</div></div>`;
       }).join("")}</div></div>`;
   };
-  document.getElementById("battleField").innerHTML=RS(myH,"my")+RS(enemies,"enemy");
+  // 敌方技能面板（右侧）
+  const SP=(units)=>{
+    if(!units||!units.length)return "";
+    return `<div class="bc-skill-panel"><div class="sp-title">💀 敌方技能</div>${
+      units.map((u,i)=>{
+        const ciIcon=u.prof_icon||CI[u.class]||"❓";
+        const hasSkill=u.skill_name||u.skill_desc;
+        const hasBossPassive=u.boss_passive_name;
+        if(!hasSkill&&!hasBossPassive)return "";
+        return `<div class="sp-row" id="sp-row-${i}">
+          <span class="sp-icon">${ciIcon}</span>
+          <div class="sp-info">
+            <div class="sp-name">${u.name}: ⚡${u.skill_name||'普攻'}</div>
+            <div class="sp-desc">${u.skill_desc||''}</div>
+            ${hasBossPassive?`<div class="sp-passive">👑${u.boss_passive_name}: ${u.boss_passive_desc}</div>`:''}
+          </div>
+        </div>`;
+      }).filter(s=>s).join("")
+    }</div>`;
+  };
+  document.getElementById("battleField").innerHTML=RS(myH,"my")+RS(enemies,"enemy")+SP(enemies);
   document.getElementById("vsText").style.display="flex";
 }
 
@@ -854,7 +892,7 @@ function koPopup(){
 
 /* ── Hero Skill Spotlight: card zooms center, big damage ── */
 function heroSkillSpotlight(act, onDone){
-  const CI={"战士":"⚔️","肉盾":"🛡️","刺客":"🗡️","射手":"🏹","法师":"🔮","奶妈":"💚"};
+const CI={"战士":"🗡️","肉盾":"🛡️","刺客":"💀","法师":"🔥","射手":"🎯","奶妈":"💚","铁卫":"🛡️","术士":"🔥"};
   const QLTY_COLORS={"凡品":"#888","良品":"#5adb7a","极品":"#4a8eff","绝品":"#b84aff","传说":"#ffd700"};
   const clr=act.attacker_color||"#888";
   const icon=CI[act.attacker_class]||"❓";
@@ -1144,14 +1182,14 @@ async function showHeroDetail(hid){
     modal.innerHTML=`<div class="modal-inner">
       <div style="font-size:18px;font-weight:700;color:${col}">${h.name} ${ci}${h.class} <span style="font-size:11px;color:#6a5a4a">Lv.${h.level}</span></div>
       <div style="font-size:12px;color:${col};margin-bottom:8px">${qs(h.quality)}${h.quality} <span style="display:inline-block;padding:1px 6px;border-radius:4px;font-size:10px;background:${col};color:#000;font-weight:700">技能Lv${h.skill_lv}</span></div>
-      <div class="hd-stats"><div class="hd-stat"><div>❤️血量</div><div class="sv">${h.hp.toLocaleString()}<span style="font-size:9px;color:#5a4a3a;font-weight:400">(${h.base_hp?.toLocaleString()})</span></div></div><div class="hd-stat"><div>💥攻击</div><div class="sv">${h.atk.toLocaleString()}<span style="font-size:9px;color:#5a4a3a;font-weight:400">(${h.base_atk?.toLocaleString()})</span></div></div><div class="hd-stat"><div>⚡暴击</div><div class="sv">${h.crit}%<span style="font-size:9px;color:#5a4a3a;font-weight:400">(${h.base_crit||0}%)</span></div></div><div class="hd-stat"><div>⚔️战力</div><div class="sv" style="color:${col}">${h.power.toLocaleString()}</div></div></div>
+      <div class="hd-stats"><div class="hd-stat"><div>❤️血量</div><div class="sv">${h.hp.toLocaleString()}<span style="font-size:9px;color:#5a4a3a;font-weight:400">(${h.base_hp?.toLocaleString()})</span></div></div><div class="hd-stat"><div>💥攻击</div><div class="sv">${h.atk.toLocaleString()}<span style="font-size:9px;color:#5a4a3a;font-weight:400">(${h.base_atk?.toLocaleString()})</span></div></div><div class="hd-stat"><div>⚡暴击</div><div class="sv">${h.crit}%<span style="font-size:9px;color:#5a4a3a;font-weight:400">(${h.base_crit||0}%)</span></div></div><div class="hd-stat"><div>🎯爆伤</div><div class="sv">${Math.round((h.crit_dmg||1.5)*100)}%</div></div><div class="hd-stat"><div>🛡️减伤</div><div class="sv">${Math.round((h.dmg_reduce||0)*100)}%</div></div><div class="hd-stat"><div>⚔️战力</div><div class="sv" style="color:${col}">${h.power.toLocaleString()}</div></div></div>
       <div style="margin:6px 0">
         <div style="display:flex;justify-content:space-between;font-size:10px;color:#b84aff;margin-bottom:2px">
           <span>💠升级 ${h.level}→${h.level+1} (需要${h.level_up_cost}💠)</span>
           <span>共${h.dupe_exp_total||0}💠</span>
         </div>
-        <div class="exp-bar"><div class="exp-fill" style="width:${h.level>=100?100:Math.min(100,(h.dupe_exp_total||0)/h.level_up_cost*100)}%;background:linear-gradient(90deg,#b84aff,#e070ff)"></div><span class="exp-text">${h.level>=100?'MAX':(h.dupe_exp_total||0)+'/'+h.level_up_cost}</span></div>
-        ${h.level<100&&(h.dupe_exp_total||0)>=h.level_up_cost?`<div style="text-align:center;margin-top:4px"><button class="mini-btn consume-btn" onclick="doLevelUp('${h.hero_id}')">⬆升级至Lv.${h.level+1}</button></div>`:''}
+        <div class="exp-bar"><div class="exp-fill" style="width:${h.level>=500?100:Math.min(100,(h.dupe_exp_total||0)/h.level_up_cost*100)}%;background:linear-gradient(90deg,#b84aff,#e070ff)"></div><span class="exp-text">${h.level>=500?'MAX':(h.dupe_exp_total||0)+'/'+h.level_up_cost}</span></div>
+        ${h.level<500&&(h.dupe_exp_total||0)>=h.level_up_cost?`<div style="text-align:center;margin-top:4px"><button class="mini-btn consume-btn" onclick="doLevelUp('${h.hero_id}')">⬆升级至Lv.${h.level+1}</button></div>`:''}
       </div>
       <div class="hd-section"><div class="hd-section-title">📜${h.skill_name}${aoeTag}<span style="display:inline-block;padding:1px 6px;border-radius:3px;font-size:10px;background:${col};color:#000;margin-left:4px">Lv${h.skill_lv}</span></div><div class="hd-skill">${h.skill_desc}</div>${skUp}</div>
       <div class="hd-section"><div class="hd-section-title">⭐${h.passive_name}</div><div class="hd-skill" style="color:#6a5a4a">${h.passive_desc}</div>${paUp}</div>
@@ -1167,10 +1205,11 @@ async function showEquipSel(hid,slot){document.getElementById("loading").style.d
   const m=document.getElementById("modal");m.style.display="flex";m.innerHTML=`<div class="modal-inner"><div style="font-size:14px;font-weight:700;margin-bottom:10px">🔧选择${slot}</div>${fl.length===0?'<div style="color:#3a2a3a;padding:12px">没有该类装备</div>':''}
   <div style="display:grid;gap:4px">${fl.map(e=>{
     const ulv=e.upgrade_lv||0;
-    const upTag=ulv>0?`<span style="font-size:9px;color:#2a8a4a;background:rgba(90,219,122,.15);padding:1px 4px;border-radius:3px;margin-left:4px">+${ulv}</span>`:'';
+    const upTag=ulv>0?`<span style="font-size:9px;color:#2a8a4a;background:rgba(90,219,122,.15);padding:1px 4px;border-radius:3px;margin-left:4px\">+${ulv}</span>`:'';
     const eAtk=Math.round((e.atk||0)*(1+ulv*0.25)+(ulv>=10?0.5:0)+(ulv>=5?0.25:0));
     const eHp=Math.round((e.hp||0)*(1+ulv*0.25)+(ulv>=10?0.5:0)+(ulv>=5?0.25:0));
-    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;border-radius:6px;border:1px solid ${e.color};cursor:pointer;font-size:11px;background:#0d0b09" onclick="doEquip2('${hid}','${slot}','${e.id}')"><div><span style="font-weight:600;color:${e.color}">${e.name}</span>${upTag}<span style="font-size:9px;color:#6a5a4a">×${e.count}</span></div><div style="display:flex;gap:4px"><span>⚔️+${eAtk}</span><span>❤️+${eHp}</span><button class="mini-btn" onclick="event.stopPropagation();enhanceEquip('${e.id}')">⬆+</button></div></div>`
+    const upgradeBtn=showEquipUpgradeBtn(e,hid,slot);
+    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;border-radius:6px;border:1px solid ${e.color};cursor:pointer;font-size:11px;background:#0d0b09" onclick="doEquip2('${hid}','${slot}','${e.id}')"><div><span style="font-weight:600;color:${e.color}">${e.name}</span>${upTag}<span style="font-size:9px;color:#6a5a4a">×${e.count}</span></div><div style="display:flex;gap:4px;align-items:center"><span>⚔️+${eAtk}</span><span>❤️+${eHp}</span>${upgradeBtn}</div></div>`
   }).join("")}</div>
   <div style="margin-top:4px"><div class="pull-btn" onclick="doEquip2('${hid}','${slot}','none')" style="display:inline-block">卸下</div></div>
   <div style="text-align:center;margin-top:8px"><button class="pull-btn" onclick="closeModal()">取消</button></div></div>`}catch(e){}document.getElementById("loading").style.display="none"}
@@ -1376,6 +1415,64 @@ function showHundredPullM(pull){
     <button class="pull-btn" onclick="closePull()">继续</button>
   </div>`;
 }
+// ═══ 铸魂池抽卡 ═══
+async function singleEquipPull(){if(!game)return;document.getElementById("loading").style.display="flex";try{const d=await apiFetch("/api/equip_pull");render(d);if(d.equip_pull)showEquipPullM(d.equip_pull,false)}catch(e){}document.getElementById("loading").style.display="none"}
+async function tenEquipPull(){if(!game)return;document.getElementById("loading").style.display="flex";try{const d=await apiFetch("/api/equip_pull10");render(d);if(d.equip_pull)showEquipPullM(d.equip_pull,true)}catch(e){}document.getElementById("loading").style.display="none"}
+async function hundredEquipPull(){if(!game)return;document.getElementById("loading").style.display="flex";try{const d=await apiFetch("/api/equip_pull100");render(d);if(d.equip_pull)showHundredEquipPullM(d.equip_pull)}catch(e){}document.getElementById("loading").style.display="none"}
+const QC_EQUIP={"凡品":"#888","良品":"#5adb7a","极品":"#4a8eff","绝品":"#b84aff","传说":"#ffd700","神卡":"#ff3333"};
+function showEquipPullM(pull,is10){
+  const pm=document.getElementById("pullModal");pm.style.display="flex";
+  if(is10&&Array.isArray(pull)){
+    const s=pull.sort((a,b)=>(Object.keys(QC_EQUIP).indexOf(b.quality)||0)-(Object.keys(QC_EQUIP).indexOf(a.quality)||0));
+    pm.innerHTML=`<div class="pull-overlay" onclick="closePull()"><div style="margin-bottom:8px;text-align:center"><span style="font-size:16px;font-weight:700;color:#4a8eff">🔮铸魂十连</span></div><div class="pull10-grid">${s.map((c,i)=>{
+      const col=QC_EQUIP[c.quality]||"#888";
+      return `<div class="pull10-item" style="border-color:${col};animation-delay:${i*0.06}s"><div class="p10-r" style="color:${col}">${c.quality}</div><div class="p10-n" style="color:${col};font-size:11px">${c.name}</div></div>`;
+    }).join("")}</div><button class="pull-btn" onclick="closePull()">继续</button></div>`;
+  }else if(pull){
+    const col=QC_EQUIP[pull.quality]||"#888";
+    pm.innerHTML=`<div class="pull-overlay" style="cursor:pointer" onclick="closePull()"><div class="pull-card"><div class="pull-rarity" style="color:${col}">🔮${pull.quality}🔮</div><div class="pull-icon" style="color:${col};font-size:48px">🗡️</div><div class="pull-name" style="color:${col};font-size:22px">${pull.name}</div><div style="font-size:10px;color:#6a5a4a;margin-top:4px">${pull.type}</div></div><div style="margin-top:6px;font-size:11px;color:#5a4a3a">点击继续</div></div>`;
+  }
+}
+function showHundredEquipPullM(pull){
+  const pm=document.getElementById("pullModal");pm.style.display="flex";
+  const qc=pull.qcounts||{};
+  const h=pull.highlights||[];
+  const QC={"凡品":"#888","良品":"#5adb7a","极品":"#4a8eff","绝品":"#b84aff","传说":"#ffd700","神卡":"#ff3333"};
+  const qo={"凡品":0,"良品":1,"极品":2,"绝品":3,"传说":4,"神卡":5};
+  h.sort((a,b)=>qo[b.quality]-qo[a.quality]);
+  pm.innerHTML=`<div class="pull-overlay" onclick="closePull()">
+    <div style="text-align:center;margin-bottom:6px"><span style="font-size:18px;font-weight:700;color:#6a2a8a">🔮 铸魂百抽总结</span></div>
+    <div style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap;margin-bottom:8px">
+      <span style="font-size:12px;color:#888">凡品${qc.凡品||0}</span>
+      <span style="font-size:12px;color:#5adb7a">良品${qc.良品||0}</span>
+      <span style="font-size:12px;color:#4a8eff">极品${qc.极品||0}</span>
+      <span style="font-size:14px;font-weight:700;color:#b84aff">绝品${qc.绝品||0}</span>
+      <span style="font-size:14px;font-weight:700;color:#ffd700">传说${qc.传说||0}</span>
+      ${qc.神卡?`<span style="font-size:18px;font-weight:900;color:#ff3333;text-shadow:0 0 10px #ff3333">神卡${qc.神卡}</span>`:""}
+    </div>
+    ${h.length?`<div style="font-size:10px;color:#6a5a4a;margin-bottom:4px">✨ 高品质装备</div><div class="pull10-grid">${h.map((c,i)=>{const col=QC[c.quality]||"#888";return `<div class="pull10-item" style="border-color:${col};animation-delay:${i*0.08}s"><div class="p10-r" style="color:${col}">${c.quality}</div><div class="p10-n" style="color:#d4c9a8;font-size:11px">${c.name}</div><div style="font-size:8px;color:${col}">${c.type}</div></div>`}).join("")}</div>`:`<div style="font-size:11px;color:#6a5a4a;text-align:center;padding:12px">没有高品质装备</div>`}
+    <button class="pull-btn" onclick="closePull()">继续</button>
+  </div>`;
+}
+// ═══ 武器升级 ═══
+async function doEquipUpgrade(eid,hid,slot){
+  document.getElementById("loading").style.display="flex";
+  try{
+    const d=await apiFetch("/api/equip_upgrade/"+eid,{method:"POST"});
+    if(d.error){showError(d.error);document.getElementById("loading").style.display="none";return}
+    showError(`⬆ ${d.msg}`);
+    render(d);
+    if(hid&&slot) showEquipSel(hid,slot);
+  }catch(e){}
+  document.getElementById("loading").style.display="none";
+}
+// 在装备选择弹窗中添加升级按钮
+function showEquipUpgradeBtn(eb,hid,slot){
+  const ulv=eb.upgrade_lv||0;
+  if(ulv>=100)return "";
+  const cost=ulv*5+10;
+  return `<button class="mini-btn consume-btn" onclick="event.stopPropagation();doEquipUpgrade('${eb.id}','${hid}','${slot}')">⬆+${ulv}(${cost}💫)</button>`;
+}
 function closePull(){document.getElementById("pullModal").style.display="none";if(game)render(game);const gr=document.getElementById("invGrid");if(gr&&gr.classList.contains("open")){gr.innerHTML="";gr.classList.remove("open");document.querySelector(".inv-toggle")?.click()}}
 
 // ═══ Missing Functions ═══
@@ -1484,7 +1581,8 @@ function showTujiHero(hid){
 }
 function renderTujiEquips(){
   if(!tujiData||!tujiData.equips){document.getElementById("tujiContent").innerHTML='<div class="tuji-empty">暂无数据</div>';return}
-  const QC={"凡品":"#888","良品":"#5adb7a","极品":"#4a8eff","绝品":"#b84aff","传说":"#ffd700"},QO={"凡品":0,"良品":1,"极品":2,"绝品":3,"传说":4};
+  const QC={"凡品":"#888","良品":"#5adb7a","极品":"#4a8eff","绝品":"#b84aff","传说":"#ffd700","神卡":"#ff3333"};
+  const QO={"凡品":0,"良品":1,"极品":2,"绝品":3,"传说":4,"神卡":5};
   const types=["武器","防具","饰品"];const typeIcons={"武器":"🗡️","防具":"🛡️","饰品":"💍"};
   const sorted=[...tujiData.equips].sort((a,b)=>(QO[b.quality]||0)-(QO[a.quality]||0)||(b.atk||0)-(a.atk||0));
   let h=``;
@@ -1493,19 +1591,58 @@ function renderTujiEquips(){
     if(!items.length)continue;
     h+=`<div class="tuji-section-title">${typeIcons[t]||'📦'}${t}</div><div class="tuji-grid">`;
     for(let eq of items){
-      const star="★".repeat((QO[eq.quality]||0)+1);
+      const star="★".repeat(Math.min((QO[eq.quality]||0)+1,6));
       const exclTag=eq.exclusive?`<span style="color:#ffd700;font-size:8px">专</span>`:'';
-      h+=`<div class="tuji-card" style="border-color:${QC[eq.quality]};border-left:3px solid ${QC[eq.quality]}">
-        <div class="tc-icon" style="color:${QC[eq.quality]}">${star}${eq.quality}${exclTag}</div>
-        <div class="tc-name" style="color:${QC[eq.quality]}">${eq.name}</div>
+      const exclName=eq.exclusive_name?`<span style="font-size:8px;color:#ffd700">${eq.exclusive_name}</span>`:'';
+      const milestones=[];
+      if(eq.lv20)milestones.push(`Lv20:${eq.lv20}`);
+      if(eq.lv40)milestones.push(`Lv40:${eq.lv40}`);
+      if(eq.lv60)milestones.push(`Lv60:${eq.lv60}`);
+      if(eq.lv80)milestones.push(`Lv80:${eq.lv80}`);
+      if(eq.lv100)milestones.push(`Lv100:${eq.lv100}`);
+      const mlTag=milestones.length?milestones.slice(0,2).map(m=>`<span style="font-size:7px;color:#4a8eff">${m}</span>`).join(' '):'';
+      h+=`<div class="tuji-card" style="border-color:${QC[eq.quality]||'#888'};border-left:3px solid ${QC[eq.quality]||'#888'}" onclick="showTujiEquip('${eq.id}')">
+        <div class="tc-icon" style="color:${QC[eq.quality]||'#888'}">${star}${eq.quality}${exclTag}</div>
+        <div class="tc-name" style="color:${QC[eq.quality]||'#888'}">${eq.name}</div>
         <div class="tc-sub" style="font-size:9px">❤️+${eq.hp} ⚔️+${eq.atk} ${eq.crit?'⚡+'+eq.crit+'%':''}</div>
+        ${exclName?`<div style="font-size:8px">${exclName}</div>`:''}
         ${eq.special?`<div class="tc-sub" style="color:#5adb7a;font-size:9px">✨${eq.special}</div>`:''}
-        ${eq.desc?`<div style="font-size:8px;color:#3a2a3a">${eq.desc}</div>`:''}
+        ${mlTag?`<div style="margin-top:2px">${mlTag}</div>`:''}
       </div>`;
     }
     h+=`</div>`;
   }
   document.getElementById("tujiContent").innerHTML=h||'<div class="tuji-empty">暂无装备</div>';
+}
+function showTujiEquip(eid){
+  if(!tujiData)return;
+  const eq=tujiData.equips.find(e=>e.id===eid);
+  if(!eq)return;
+  const QC={"凡品":"#888","良品":"#5adb7a","极品":"#4a8eff","绝品":"#b84aff","传说":"#ffd700","神卡":"#ff3333"};
+  const QO={"凡品":0,"良品":1,"极品":2,"绝品":3,"传说":4,"神卡":5};
+  const col=QC[eq.quality]||'#888';
+  const exclName=eq.exclusive_name?`<div style="font-size:11px;color:#ffd700;margin-top:4px">🗡️ ${eq.exclusive_name}专属</div>`:'';
+  let milestones='';
+  const ms=[{lv:20,desc:eq.lv20},{lv:40,desc:eq.lv40},{lv:60,desc:eq.lv60},{lv:80,desc:eq.lv80},{lv:100,desc:eq.lv100}];
+  for(let m of ms){
+    if(m.desc)milestones+=`<div class="hd-upgrade" style="color:#4a8eff">Lv${m.lv}: ${m.desc}</div>`;
+  }
+  const star="★".repeat(Math.min((QO[eq.quality]||0)+1,6));
+  const modal=document.getElementById("modal");modal.style.display="flex";
+  modal.innerHTML=`<div class="modal-inner">
+    <div style="font-size:18px;font-weight:700;color:${col}">${eq.name}</div>
+    <div style="font-size:12px;color:${col};margin-bottom:8px">${star}${eq.quality} <span style="font-size:10px;color:#6a5a4a">${eq.type}</span></div>
+    <div class="hd-stats">
+      <div class="hd-stat"><div>⚔️攻击</div><div class="sv">+${eq.atk}</div></div>
+      <div class="hd-stat"><div>❤️血量</div><div class="sv">+${eq.hp}</div></div>
+      ${eq.crit?`<div class="hd-stat"><div>⚡暴击</div><div class="sv">+${eq.crit}%</div></div>`:''}
+    </div>
+    ${exclName}
+    ${eq.special?`<div class="hd-section"><div class="hd-section-title">✨ 特效</div><div class="hd-skill" style="color:#5adb7a">${eq.special}</div></div>`:''}
+    ${eq.desc?`<div style="font-size:10px;color:#6a5a4a;margin-bottom:6px">📖 ${eq.desc}</div>`:''}
+    ${milestones?`<div class="hd-section"><div class="hd-section-title">⬆ 升级解锁</div>${milestones}</div>`:''}
+    <div style="text-align:center;margin-top:8px"><button class="pull-btn" onclick="closeModal()">关闭</button></div>
+  </div>`;
 }
 function renderTujiBonds(){
   if(!tujiData||!tujiData.bonds||!tujiData.bonds.length){document.getElementById("tujiContent").innerHTML='<div class="tuji-empty">暂无羁绊</div>';return}

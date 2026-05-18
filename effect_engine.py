@@ -195,9 +195,318 @@ HERO_EFFECTS = {
 }
 
 
-# ============================================================
-# 引擎核心
-# ============================================================
+# ═══════════════ 装备效果数据库 ═══════════════
+# 结构化装备效果, 按eid索引
+# 事件类型: passive(常驻) | battle_start(战斗开始) | on_skill(技能释放) | on_hit(受击)
+# 条件: exclusive限制只在专属英雄生效
+EQUIP_EFFECTS = {
+    # ── 良品 ──
+    "bronze_mirror": {"passive_buffs": [{"stat": "crit_resist", "pct": 0.20}]},  # 暴击减伤20%
+    # ── 极品 ──
+    "longquan_sword": {"passive_buffs": [{"stat": "crit", "pct": 0.05}]},  # 暴击率+5%
+    "mingguang_armor": {"passive_buffs": [{"stat": "dmg_reduce", "pct": 0.08}]},  # 减伤8%
+    "jade_pendant": {"battle_start": [{"type": "shield_self", "pct": 0.10}]},  # 开局10%护盾
+    # ── 绝品 ──
+    "halberd": {"exclusive": "luobu", "on_skill": [{"type": "basic_attack_again"}]},  # 技能后普攻翻倍
+    "qilin_armor": {"exclusive": "zhugeliang", "on_hit": [{"chance": 0.20, "type": "heal_self", "pct": 0.10}]},  # 受击20%回血10%
+    "pojun_bow": {"exclusive": "yangyouji", "passive_buffs": [{"stat": "crit_dmg", "pct": 0.50}]},  # 暴击伤害+50%
+    "bagua_mirror": {"passive_buffs": [{"stat": "crit", "pct": 0.10}, {"stat": "dodge", "pct": 0.10}]},  # 暴击+10%闪避+10%
+    # ── 传说 ──
+    "qinglian_sword": {"exclusive": "lihai", "on_skill": [{"type": "dmg_mult", "value": 2.0}],
+                       "passive_buffs": [{"stat": "atk_mult", "pct": 0.30}]},  # 技能伤害翻倍+攻击+30%
+    "zhangba_spear": {"exclusive": "zhangfei", "on_skill": [{"type": "taunt_all_enemies"}, {"type": "shield_team", "pct": 0.40}]},
+    "qinglong_blade": {"exclusive": "guanyu", "on_skill": [{"type": "true_damage", "pct": 1.0}]},  # 青龙偃月真实伤害
+    "chitu": {"battle_start": [{"type": "shield_team", "pct": 0.30}]},  # 开局全体30%护盾
+    "heshi_bi": {"passive_buffs": [{"stat": "all_stats_pct", "pct": 0.15}]},  # 全属性+15%
+    # ── 神卡 (金箍棒, 射日弓, 八卦炉, 刑天斧, 补天石, 蚩尤旗) ──
+    "golden_staff": {
+        "exclusive": "wukong",
+        "passive_buffs": [{"stat": "atk_mult", "pct": 0.40}],
+        "on_skill": [{"type": "extra_hits", "count": 2}],
+        "milestones": {
+            20: [{"type": "buff_self", "stat": "crit_dmg", "pct": 0.50, "dur": -1}],
+            40: [{"type": "buff_self", "stat": "guaranteed_skill_crit", "pct": 1.0, "dur": -1}],
+            60: [{"type": "buff_self", "stat": "execute_pct", "pct": 0.20, "dur": -1}],
+            80: [{"type": "buff_self", "stat": "true_dmg_pct", "pct": 0.20, "dur": -1}],
+            100: [{"type": "skill_upgrade", "hits": 5, "dmg_pct": 3.0}],
+        }
+    },
+    "she_sun_bow": {
+        "exclusive": "houyi",
+        "passive_buffs": [{"stat": "execute_pct", "pct": 0.20}, {"stat": "crit_dmg", "pct": 0.80}],
+        "milestones": {
+            20: [{"type": "buff_self", "stat": "atk_mult", "pct": 0.15, "dur": -1}],
+            40: [{"type": "buff_self", "stat": "guaranteed_crit", "pct": 1.0, "dur": -1}],
+            60: [{"type": "execute_double_threshold"}],
+            80: [{"type": "splash_damage"}],
+            100: [{"type": "true_damage_nuke", "dmg": 9999}],
+        }
+    },
+    "bagua_furnace": {
+        "exclusive": "qinshihuang",
+        "passive_buffs": [{"stat": "skill_dmg_pct", "pct": 0.50}],
+        "on_skill": [{"type": "extend_burn", "dur": 2}],
+        "milestones": {
+            20: [{"type": "buff_self", "stat": "dmg_reduce", "pct": 0.10, "dur": -1}],
+            40: [{"type": "skill_lifesteal", "pct": 0.30}],
+            60: [{"type": "burn_aoe"}],
+            80: [{"type": "aoe_dot", "pct": 0.05}],
+            100: [{"type": "skill_upgrade", "dmg_pct": 5.0, "aoe": True, "extra_effect": "silence"}],
+        }
+    },
+    "xingtian_axe": {
+        "exclusive": "xingtian",
+        "passive_buffs": [{"stat": "skill_dmg_pct", "pct": 0.60}, {"stat": "lifesteal", "pct": 0.20}],
+        "milestones": {
+            20: [{"type": "buff_self", "stat": "hp_mult", "pct": 0.20, "dur": -1}],
+            40: [{"type": "aoe_expand"}],
+            60: [{"type": "buff_self", "stat": "reflect", "pct": 0.20, "dur": -1}],
+            80: [{"type": "reset_on_kill"}],
+            100: [{"type": "skill_upgrade", "dmg_pct": 6.0, "aoe": True, "extra_effect": "armor_break"}],
+        }
+    },
+    "nuwa_stone": {
+        "exclusive": "nuwa",
+        "passive_buffs": [{"stat": "heal_pct", "pct": 0.40}, {"stat": "shield_pct", "pct": 0.30}],
+        "milestones": {
+            20: [{"type": "buff_self", "stat": "immune_dur", "pct": 1.0, "dur": -1}],  # 免疫+1回合
+            40: [{"type": "heal_crit"}],
+            60: [{"type": "revive_ally", "pct": 0.50}],
+            80: [{"type": "battle_start_shield", "pct": 0.60}],
+            100: [{"type": "team_invincible", "dur": 2}],
+        }
+    },
+    "chiyou_flag": {
+        "exclusive": "chiyou",
+        "passive_buffs": [{"stat": "dmg_reduce", "pct": 0.25}, {"stat": "shield_pct", "pct": 0.40}],
+        "milestones": {
+            20: [{"type": "buff_self", "stat": "hp_mult", "pct": 0.30, "dur": -1}],
+            40: [{"type": "taunt_heal_team", "pct": 0.10}],
+            60: [{"type": "buff_self", "stat": "reflect", "pct": 0.30, "dur": -1}],
+            80: [{"type": "team_dmg_reduce", "pct": 0.20}],
+            100: [{"type": "team_invincible_and_atk_double"}],
+        }
+    },
+}
+
+
+def get_equip_effects(eid, upgrade_lv):
+    """获取装备生效效果，含里程碑升级检测"""
+    base = EQUIP_EFFECTS.get(eid, {})
+    result = dict(base)  # 浅拷贝
+    # 里程碑效果
+    ml = {}
+    for lv, effects in base.get("milestones", {}).items():
+        if upgrade_lv >= lv:
+            ml[lv] = effects
+    result["_active_milestones"] = ml
+    return result
+
+
+def apply_equip_passive_buffs(unit, allies=None, enemies=None, context=None):
+    """将装备的常驻被动buff注入到战斗单位。
+    
+    处理 passive_buffs 和里程碑中已激活的 buff_self / hp_mult 效果。
+    检查 exclusive 条件，非专属英雄跳过专属效果。
+    
+    Args:
+        unit: 战斗单位（会原地修改 unit["buffs"] 和 unit["skill_dmg_pct"]）
+        allies: 我方所有单位（可选，用于 battle_start 中的 shield_team 等）
+        enemies: 敌方所有单位（可选）
+        context: 战斗上下文（可选）
+    """
+    eq = unit.get("_equipped", {})
+    eq_bag = unit.get("_equip_bag", [])
+    hid = unit.get("_hd", {}).get("id")
+    
+    for slot, eid in eq.items():
+        if not eid:
+            continue
+        ed = EQUIP_EFFECTS.get(eid, {})
+        if not ed:
+            continue
+        
+        # 检查专属
+        exclusive = ed.get("exclusive")
+        if exclusive and exclusive != hid:
+            continue
+        
+        ulv = 0
+        if eq_bag:
+            eb = next((x for x in eq_bag if isinstance(x, dict) and x.get("id") == eid), None)
+            if eb:
+                ulv = eb.get("upgrade_lv", 0)
+        
+        # 从 get_equip_effects 获取完整效果（含里程碑）
+        full_eff = get_equip_effects(eid, ulv)
+        
+        # 1) passive_buffs
+        for pb in full_eff.get("passive_buffs", []):
+            stat = pb.get("stat", "")
+            pct = pb.get("pct", 0)
+            
+            if stat == "all_stats_pct":
+                # 和氏璧: 全属性+15% → 拆为 atk/hp/spd
+                unit["atk"] = int(unit["atk"] * (1 + pct))
+                unit["hp"] = int(unit["hp"] * (1 + pct))
+                unit["max_hp"] = int(unit["max_hp"] * (1 + pct))
+                if "spd" in unit:
+                    unit["spd"] = int(unit["spd"] * (1 + pct))
+            elif stat == "skill_dmg_pct":
+                # 技能伤害百分比直接设 unit 属性
+                unit["skill_dmg_pct"] = unit.get("skill_dmg_pct", 1.0) * (1 + pct)
+            else:
+                unit["buffs"].append({"stat": stat, "pct": pct, "dur": -1})
+        
+        # 2) 里程碑中已激活的 buff_self 效果
+        for lv, actions in full_eff.get("_active_milestones", {}).items():
+            for action in actions:
+                atype = action.get("type", "")
+                if atype == "buff_self":
+                    stat = action.get("stat", "")
+                    pct = action.get("pct", 0)
+                    dur = action.get("dur", -1)
+                    unit["buffs"].append({"stat": stat, "pct": pct, "dur": dur})
+                elif atype == "hp_mult":
+                    pct = action.get("pct", 0)
+                    unit["hp"] = int(unit["hp"] * (1 + pct))
+                    unit["max_hp"] = int(unit["max_hp"] * (1 + pct))
+                elif atype in ("heal_pct", "shield_pct", "execute_pct", "dmg_reduce", "lifesteal", 
+                              "reflect", "true_dmg_pct", "dodge", "crit_dmg", "crit_resist",
+                              "guaranteed_crit", "guaranteed_skill_crit"):
+                    # 将这些也作为常驻 buff 注入
+                    pct = action.get("pct", 0)
+                    dur = action.get("dur", -1)
+                    stat = action.get("stat", atype)
+                    unit["buffs"].append({"stat": stat, "pct": pct, "dur": dur})
+
+
+def process_equip_battle_start(unit, allies, enemies, context):
+    """触发装备的战斗开始效果"""
+    eq = unit.get("_equipped", {})
+    eq_bag = unit.get("_equip_bag", [])
+    hid = unit.get("_hd", {}).get("id")
+    results = []
+    
+    for slot, eid in eq.items():
+        if not eid:
+            continue
+        ed = EQUIP_EFFECTS.get(eid, {})
+        if not ed:
+            continue
+        
+        # 检查专属
+        exclusive = ed.get("exclusive")
+        if exclusive and exclusive != hid:
+            continue
+        
+        ulv = 0
+        if eq_bag:
+            eb = next((x for x in eq_bag if isinstance(x, dict) and x.get("id") == eid), None)
+            if eb:
+                ulv = eb.get("upgrade_lv", 0)
+        
+        # battle_start 效果
+        for action in ed.get("battle_start", []):
+            r = _execute_equip_action(action, unit, allies, enemies, context)
+            if r:
+                results.append(r)
+        
+        # 里程碑 effect（跳过已由 apply_equip_passive_buffs 处理的常驻类型）
+        for lv, actions in ed.get("milestones", {}).items():
+            if ulv >= lv:
+                for action in actions:
+                    atype = action.get("type", "")
+                    if atype in ("buff_self", "hp_mult",
+                                 "heal_pct", "shield_pct", "execute_pct",
+                                 "dmg_reduce", "lifesteal", "reflect",
+                                 "true_dmg_pct", "dodge", "crit_dmg", "crit_resist",
+                                 "guaranteed_crit", "guaranteed_skill_crit"):
+                        continue  # 已由 apply_equip_passive_buffs 处理
+                    r = _execute_equip_action(action, unit, allies, enemies, context)
+                    if r:
+                        results.append(r)
+    
+    return results if results else None
+
+
+def _execute_equip_action(action, unit, allies, enemies, context):
+    """执行单个装备效果动作"""
+    atype = action.get("type")
+    if not atype:
+        return None
+    
+    # shield_self
+    if atype == "shield_self":
+        pct = action.get("pct", 0.1)
+        unit["shield"] = int(unit["max_hp"] * pct)
+        context.setdefault("all_actions", []).append({
+            "side": "ally", "type": "passive", "attacker_name": unit["name"],
+            "skill": "装备", "aoe": False, "target_name": unit["name"],
+            "msg": f"装备护盾{int(pct*100)}%"
+        })
+    
+    # shield_team
+    elif atype == "shield_team":
+        pct = action.get("pct", 0.3)
+        for a in allies:
+            if a.get("alive", True):
+                a["shield"] = int(a["max_hp"] * pct)
+        context.setdefault("all_actions", []).append({
+            "side": "ally", "type": "passive", "attacker_name": unit["name"],
+            "skill": "装备", "aoe": True,
+            "msg": f"全体护盾{int(pct*100)}%"
+        })
+    
+    # team_invincible
+    elif atype == "team_invincible":
+        dur = action.get("dur", 2)
+        for a in allies:
+            if a.get("alive", True):
+                a["buffs"].append({"stat": "immune", "pct": 1.0, "dur": dur})
+        context.setdefault("all_actions", []).append({
+            "side": "ally", "type": "passive", "attacker_name": unit["name"],
+            "skill": "装备", "aoe": True,
+            "msg": f"全体无敌{dur}回合"
+        })
+    
+    # team_dmg_reduce
+    elif atype == "team_dmg_reduce":
+        pct = action.get("pct", 0.2)
+        for a in allies:
+            if a.get("alive", True):
+                a["buffs"].append({"stat": "dmg_reduce", "pct": pct, "dur": -1})
+        context.setdefault("all_actions", []).append({
+            "side": "ally", "type": "passive", "attacker_name": unit["name"],
+            "skill": "装备", "aoe": True,
+            "msg": f"全体减伤{int(pct*100)}%"
+        })
+    
+    # battle_start_shield → 同 shield_team
+    elif atype == "battle_start_shield":
+        pct = action.get("pct", 0.3)
+        for a in allies:
+            if a.get("alive", True):
+                a["shield"] = int(a["max_hp"] * pct)
+        context.setdefault("all_actions", []).append({
+            "side": "ally", "type": "passive", "attacker_name": unit["name"],
+            "skill": "装备", "aoe": True,
+            "msg": f"全体护盾{int(pct*100)}%"
+        })
+    
+    # team_invincible_and_atk_double: 全体无敌 + 攻击翻倍
+    elif atype == "team_invincible_and_atk_double":
+        for a in allies:
+            if a.get("alive", True):
+                a["buffs"].append({"stat": "immune", "pct": 1.0, "dur": 2})
+                a["buffs"].append({"stat": "atk_mult", "pct": 1.0, "dur": -1})
+        context.setdefault("all_actions", []).append({
+            "side": "ally", "type": "passive", "attacker_name": unit["name"],
+            "skill": "装备", "aoe": True,
+            "msg": "全体无敌+攻击翻倍"
+        })
+    
+    return None
 
 def process_effects(event, unit, hd, sk_lv, allies, enemies, context):
     """处理所有匹配event的英雄被动效果。
@@ -362,7 +671,6 @@ def _execute_action(action, unit, sk_lv, allies, enemies, context, hid):
         for e in enemies:
             if e.get("alive", True):
                 found = False
-                # 如果已存在, 更新
                 for d in e.get("debuffs", []):
                     if d["stat"] == stat:
                         d["pct"] = min(d.get("pct", 0), pct) if pct < 0 else max(d.get("pct", 0), pct)
@@ -370,6 +678,13 @@ def _execute_action(action, unit, sk_lv, allies, enemies, context, hid):
                         break
                 if not found:
                     e["debuffs"].append({"stat": stat, "pct": pct, "dur": dur})
+        label = {"atk":"⚔️攻击","crit":"💥暴击","dmg_reduce":"🛡️减伤"}.get(stat, stat)
+        dir_str = "↓" if pct < 0 else "↑"
+        context.setdefault("all_actions", []).append({
+            "side": "enemy", "type": "passive", "attacker_name": unit["name"],
+            "skill": "被动", "aoe": True,
+            "msg": f"敌人全体{label}{dir_str}{int(abs(pct)*100)}%"
+        })
 
     # --- 魅惑敌人 ---
     elif atype == "charm_enemy":
@@ -396,6 +711,12 @@ def _execute_action(action, unit, sk_lv, allies, enemies, context, hid):
         pct = effective_action.get("pct", 0.05)
         counter_key = context.get("passive_counters", {}).get(f"{hid}_stacks")
         unit["buffs"].append({"stat": stat, "pct": pct, "dur": -1})
+        ctx_all = context.setdefault("all_actions", [])
+        ctx_all.append({
+            "side": "ally", "type": "passive", "attacker_name": unit["name"],
+            "skill": "被动", "aoe": False, "target_name": unit["name"],
+            "msg": f"{unit['name']}{'⚔️攻击' if stat=='atk' else '💥暴击' if stat=='crit' else stat}+{int(pct*100)}%"
+        })
 
     # --- HP损失攻击加成 ---
     elif atype == "atk_per_hp_lost":
@@ -427,6 +748,14 @@ def _execute_action(action, unit, sk_lv, allies, enemies, context, hid):
         pct = effective_action.get("pct", 1.0)
         dur = action.get("dur", -1)
         unit["buffs"].append({"stat": stat, "pct": pct, "dur": dur})
+        label = {"atk":"⚔️攻击","crit":"💥暴击","crit_dmg":"🎯爆伤","dmg_reduce":"🛡️减伤",
+                 "immune":"🛡️免疫","dodge":"👻闪避","speed":"👟速度","lifesteal":"🩸吸血"}.get(stat, stat)
+        dur_str = f"×{dur}回合" if dur > 0 else "永久"
+        context.setdefault("all_actions", []).append({
+            "side": "ally", "type": "passive", "attacker_name": unit["name"],
+            "skill": "被动", "aoe": False, "target_name": unit["name"],
+            "msg": f"{unit['name']}{label}+{int(pct*100)}%{dur_str}"
+        })
 
     elif atype == "buff_team":
         stat = action.get("stat", "atk")
@@ -435,6 +764,14 @@ def _execute_action(action, unit, sk_lv, allies, enemies, context, hid):
         for a in allies:
             if a.get("alive", True):
                 a["buffs"].append({"stat": stat, "pct": pct, "dur": dur})
+        label = {"atk":"⚔️攻击","crit":"💥暴击","crit_dmg":"🎯爆伤","dmg_reduce":"🛡️减伤",
+                 "immune":"🛡️免疫","dodge":"👻闪避"}.get(stat, stat)
+        dur_str = f"×{dur}回合" if dur > 0 else "永久"
+        context.setdefault("all_actions", []).append({
+            "side": "ally", "type": "passive", "attacker_name": unit["name"],
+            "skill": "被动", "aoe": True,
+            "msg": f"全体{label}+{int(pct*100)}%{dur_str}"
+        })
 
     elif atype == "buff_self_if_hp_above":
         hp_pct = action.get("hp_pct", 0.5)
@@ -471,6 +808,11 @@ def _execute_action(action, unit, sk_lv, allies, enemies, context, hid):
         for a in allies:
             if a.get("alive", True):
                 a["shield"] = int(a["max_hp"] * pct)
+        context.setdefault("all_actions", []).append({
+            "side": "ally", "type": "passive", "attacker_name": unit["name"],
+            "skill": "被动", "aoe": True,
+            "msg": f"全体护盾{int(pct*100)}%"
+        })
 
     elif atype == "debuff_highest_hp_enemy":
         hp_reduce = effective_action.get("hp_reduce_pct", 0.5)
@@ -493,7 +835,72 @@ def _execute_action(action, unit, sk_lv, allies, enemies, context, hid):
         heal = int(unit["max_hp"] * pct)
         unit["hp"] = min(unit["max_hp"], unit["hp"] + heal)
 
+    # --- 复活 ---
+    elif atype == "revive_ally_on_death":
+        # 女娲lv5被动: 队友死亡时复活一次
+        mx = action.get("max_per_battle", 1)
+        context.setdefault("_revive_ally", {"count": 0, "max": mx, "unit_name": unit["name"]})
+    
+    elif atype == "revive_team_invincible":
+        # 女娲lv7被动: 复活时全队无敌1回合
+        context.setdefault("_revive_team_invincible", True)
+    
+    elif atype == "revive_on_death":
+        # 刑天lv7被动: 首次死亡复活
+        pct = effective_action.get("pct", 0.60)
+        unit["_revive_on_death"] = pct
+
     return None
+
+
+def check_death_revive(target_unit, allies, enemies, context):
+    """检查单位死亡时是否有复活效果，有则复活并返回True。
+    
+    支持:
+    - 女娲被动 revive_ally_on_death (队友死亡时复活)
+    - 刑天被动 revive_on_death (自身死亡时复活)
+    """
+    hid = target_unit.get("_hd", {}).get("id")
+    
+    # 刑天自身复活
+    rpct = target_unit.pop("_revive_on_death", None)
+    if rpct:
+        target_unit["alive"] = True
+        target_unit["hp"] = int(target_unit["max_hp"] * rpct)
+        target_unit["buffs"] = []
+        target_unit["debuffs"] = []
+        target_unit["stunned"] = False
+        target_unit["frozen"] = False
+        context.setdefault("all_actions", []).append({
+            "side": "heal", "type": "passive", "attacker_name": target_unit["name"],
+            "skill": "不屈", "aoe": False,
+            "msg": f"{target_unit['name']}复活{int(rpct*100)}%!"
+        })
+        return True
+    
+    # 女娲队友复活
+    ra = context.get("_revive_ally")
+    if ra and ra["count"] < ra["max"]:
+        ra["count"] += 1
+        target_unit["alive"] = True
+        target_unit["hp"] = int(target_unit["max_hp"] * 0.30)
+        target_unit["buffs"] = []
+        target_unit["debuffs"] = []
+        target_unit["stunned"] = False
+        target_unit["frozen"] = False
+        # lv7: 复活时全队无敌
+        if context.get("_revive_team_invincible"):
+            for a in allies:
+                if a.get("alive", True):
+                    a["buffs"].append({"stat": "immune", "pct": 1.0, "dur": 1})
+        context.setdefault("all_actions", []).append({
+            "side": "heal", "type": "passive", "attacker_name": ra["unit_name"],
+            "skill": "创世", "aoe": False,
+            "msg": f"{ra['unit_name']}复活了{target_unit['name']}!"
+        })
+        return True
+    
+    return False
 
 
 # ============================================================
