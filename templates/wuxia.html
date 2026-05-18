@@ -2,6 +2,18 @@
 <style>*{margin:0;padding:0;box-sizing:border-box}
 body{font-family:-apple-system,"PingFang SC","Noto Serif SC",serif;background:#0a0a12;color:#d4c9a8;min-height:100vh;overflow-x:hidden}
 .header{background:linear-gradient(135deg,#1a1410,#0f0d0a);border-bottom:1px solid #3a3020;padding:8px 14px;position:sticky;top:0;z-index:20}
+.leaderboard-btn{padding:2px 10px;border-radius:4px;border:1px solid #8a6a20;background:rgba(255,215,0,.08);color:#ffd700;font-size:11px;cursor:pointer;font-family:inherit;transition:all .2s}
+.leaderboard-btn:hover{background:rgba(255,215,0,.2)}
+.lb-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:200;display:flex;align-items:center;justify-content:center}
+.lb-panel{background:#12100e;border:1px solid #3a3020;border-radius:12px;padding:20px 16px;max-width:400px;width:90%;max-height:80vh;overflow-y:auto}
+.lb-title{text-align:center;font-size:18px;font-weight:700;color:#ffd700;margin-bottom:12px}
+.lb-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #1a1814;font-size:12px}
+.lb-rank{width:28px;text-align:center;font-weight:700;font-size:14px}
+.lb-rank.r1{color:#ffd700;font-size:18px}.lb-rank.r2{color:#c0c0c0}.lb-rank.r3{color:#cd7f32}
+.lb-name{flex:1;color:#d4c9a8;font-weight:600}
+.lb-power{color:#ffd700;font-weight:600;font-family:monospace}
+.lb-stage{color:#5a4a3a;font-size:10px;width:40px;text-align:right}
+.lb-me{background:rgba(255,215,0,.1)}
 .header-row{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px}
 .game-title{font-size:15px;font-weight:700;color:#e8d5a3;letter-spacing:1px}
 .res-bar{display:flex;align-items:center;gap:10px;font-size:12px;color:#6a5a4a;flex-wrap:wrap}
@@ -334,6 +346,9 @@ body{font-family:-apple-system,"PingFang SC","Noto Serif SC",serif;background:#0
 <div class="header">
   <div class="header-row">
     <div><span class="game-title">🏯 江湖经营</span> <span id="userDisplay" style="font-size:11px;color:#6a5a4a"></span></div>
+    <div style="display:flex;gap:6px;align-items:center">
+      <button class="leaderboard-btn" onclick="showLeaderboard()">🏆 排行</button>
+    </div>
     <div class="res-bar">
       <span>💎<span id="jadeDisplay">0</span> <span id="jadeRate" style="font-size:10px;color:#5adb7a"></span></span>
       <span style="font-size:10px;color:#b84aff">💠<span id="expPoolDisplay">0</span></span>
@@ -397,6 +412,9 @@ body{font-family:-apple-system,"PingFang SC","Noto Serif SC",serif;background:#0
     <div class="inv-grid" id="invGrid"></div>
   </div>
 </div>
+<div style="text-align:center;padding:12px 0 20px;font-size:11px;color:#3a2a3a">
+  <a href="https://beian.miit.gov.cn/" target="_blank" rel="nofollow" style="color:#3a2a3a;text-decoration:none">京ICP备2021036660号</a>
+</div>
 <script>
 let game=null;
 let battleSpeed=1; // 1=正常, 2=二倍速
@@ -433,13 +451,57 @@ function render(g){
   if(g.lineup.length){!async function(){try{
     const ab=window.location.pathname.startsWith('/wuxia')?'/wuxia':'';const r=await fetch(ab+"/api/inventory_heroes");const all=await r.json();
     lg.innerHTML="";
-    for(let hid of g.lineup){const h=all.find(x=>x.hero_id===hid);if(!h)continue;
+    for(let i=0;i<g.lineup.length;i++){const hid=g.lineup[i];const h=all.find(x=>x.hero_id===hid);if(!h)continue;
       const col=h.color||QC[h.quality],ci=CI[h.class]||"❓";
       const card=document.createElement("div");card.className="hero-card";card.style.borderColor=col;
+      card.draggable=true;card.dataset.heroId=hid;card.dataset.index=i;
       card.innerHTML=`<div class="h-lv" style="color:${col}">${qs(h.quality)}</div><div class="h-class" style="color:${col}">${ci} ${h.class}</div><div class="h-name">${h.name} <span class="h-level">Lv.${h.level||1}</span></div><div class="h-power" style="color:${col}">⚔️${h.power.toLocaleString()}</div><div style="font-size:9px;color:#5a4a3a;margin-top:2px">💥${h.atk||0} ❤️${h.hp||0} ⚡${h.crit||0}% 🎯${Math.round((h.crit_dmg||1.5)*100)}% 🛡️${Math.round((h.dmg_reduce||0)*100)}%</div>`;
+      card.ondragstart=e=>{e.dataTransfer.setData("text/plain",hid);card.style.opacity="0.5"};
+      card.ondragend=e=>{card.style.opacity="1"};
+      card.ondragover=e=>{e.preventDefault();card.style.borderColor="#ffd700"};
+      card.ondragleave=e=>{card.style.borderColor=col};
+      card.ondrop=async e=>{
+        e.preventDefault();card.style.borderColor=col;
+        const fromHid=e.dataTransfer.getData("text/plain");
+        const toHid=hid;
+        if(fromHid===toHid)return;
+        const newLineup=[...g.lineup];
+        const fi=newLineup.indexOf(fromHid),ti=newLineup.indexOf(toHid);
+        if(fi<0||ti<0)return;
+        [newLineup[fi],newLineup[ti]]=[newLineup[ti],newLineup[fi]];
+        g.lineup=newLineup;
+        try{
+          const ab=window.location.pathname.startsWith('/wuxia')?'/wuxia':'';
+          const d=await (await fetch(ab+"/api/lineup/reorder",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({lineup:newLineup})})).json();
+          if(d.error){showError(d.error);return}
+          render(d);
+        }catch(e){}
+      };
       card.onclick=(()=>showHeroDetail(hid));lg.appendChild(card);
     }}catch(e){}}()}
   }catch(e){showError("渲染:"+e.message)}
+}
+
+// ═══ 排行榜 ═══
+async function showLeaderboard(){
+  document.getElementById("loading").style.display="flex";
+  try{
+    const ab=window.location.pathname.startsWith('/wuxia')?'/wuxia':'';
+    const d=await (await fetch(ab+"/api/leaderboard")).json();
+    const me=game?game.username:"";
+    const m=document.getElementById("modal");m.style.display="flex";
+    m.innerHTML=`<div class="lb-overlay" onclick="closeModal()"><div class="lb-panel" onclick="event.stopPropagation()">
+      <div class="lb-title">🏆 全服战力排行</div>
+      ${d.length===0?'<div style="text-align:center;color:#6a5a4a;padding:20px">暂无数据</div>':
+      d.map(r=>{
+        const rc=r.rank<=3?' r'+r.rank:'';
+        const isMe=r.name===me;
+        return `<div class="lb-row${isMe?' lb-me':''}"><span class="lb-rank${rc}">${r.rank<=3?['','🥇','🥈','🥉'][r.rank]:'#'+r.rank}</span><span class="lb-name">${r.name}</span><span class="lb-power">⚔️${r.power.toLocaleString()}</span><span class="lb-stage">${r.stage}关</span></div>`;
+      }).join("")}
+      <div style="text-align:center;margin-top:10px"><button class="pull-btn" onclick="closeModal()">关闭</button></div>
+    </div></div>`;
+  }catch(e){}
+  document.getElementById("loading").style.display="none";
 }
 
 // ═══ Battle ═══
@@ -1676,7 +1738,7 @@ async function doSweep(){
 
 // ═══ Auto tick & startup ═══
 setInterval(async()=>{try{const d=await apiFetch("/api/tick");if(d.tick_gain){document.getElementById("jadeDisplay").textContent=d.jade;if(d.jade_per_min)document.getElementById("jadeRate").textContent=`+${d.jade_per_min}/分`;if(d.dupe_exp_total!==undefined)document.getElementById("expPoolDisplay").textContent=d.dupe_exp_total}}catch(e){}},30000);
-(async()=>{const ab=window.location.pathname.startsWith('/wuxia')?'/wuxia':'';try{const r=await fetch(ab+"/api/load");if(r.redirected||r.status===401){window.location.href=ab+"/login";return}const d=await r.json();if(d.need_login){window.location.href=ab+"/login";return}render(d)}catch(e){window.location.href=ab+"/login"}document.getElementById("loading").style.display="none"})();
+(async()=>{const ab=window.location.pathname.startsWith('/wuxia')?'/wuxia':'';try{const r=await fetch(ab+"/api/load");if(r.redirected||r.status===401){window.location.href=ab+"/login";return}const d=await r.json();if(d.need_login){window.location.href=ab+"/login";return}render(d)}catch(e){console.error(e)}finally{document.getElementById("loading").style.display="none"}})();
 </script>
 </body>
 </html>

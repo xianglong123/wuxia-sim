@@ -32,6 +32,9 @@ def get_db():
     conn.execute("PRAGMA journal_mode=WAL")
     conn.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE NOT NULL, password_hash TEXT NOT NULL, created_at TEXT DEFAULT (datetime('now','localtime')))")
     conn.execute("CREATE TABLE IF NOT EXISTS game_saves (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER UNIQUE NOT NULL, game_data TEXT NOT NULL, updated_at TEXT DEFAULT (datetime('now','localtime')), FOREIGN KEY (user_id) REFERENCES users(id))")
+    conn.execute("CREATE TABLE IF NOT EXISTS invite_codes (code TEXT PRIMARY KEY, max_uses INTEGER DEFAULT 10, used_count INTEGER DEFAULT 0, created_at TEXT DEFAULT (datetime('now','localtime')))")
+    for seed in ["WUXIA2026","JIANGHU","WANFA","LONGCHENG","YIJIAN"]:
+        conn.execute("INSERT OR IGNORE INTO invite_codes (code) VALUES (?)", (seed,))
     return conn
 
 def _prefix(path):
@@ -64,14 +67,22 @@ def api_register():
     password = data.get("password","")
     if len(username) < 2: return jsonify({"error":"用户名至少2个字符"})
     if len(password) < 4: return jsonify({"error":"密码至少4个字符"})
+    invite = data.get("invite","").strip().upper()
+    if not invite: return jsonify({"error":"请输入邀请码"})
     conn = get_db()
+    ic=conn.execute("SELECT used_count, max_uses FROM invite_codes WHERE code=?", (invite,)).fetchone()
+    if not ic:
+        conn.close(); return jsonify({"error":"邀请码无效"})
+    if ic["used_count"] >= ic["max_uses"]:
+        conn.close(); return jsonify({"error":"该邀请码已达使用上限"})
     if conn.execute("SELECT id FROM users WHERE username=?", (username,)).fetchone():
         conn.close(); return jsonify({"error":"用户名已存在"})
+    conn.execute("UPDATE invite_codes SET used_count=used_count+1 WHERE code=?", (invite,))
     conn.execute("INSERT INTO users (username, password_hash) VALUES (?,?)", (username, generate_password_hash(password)))
     conn.commit()
     uid = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
     g = new_game_inner()
-    conn.execute("INSERT INTO game_saves (user_id, game_data) VALUES (?,?) ON CONFLICT(user_id) DO UPDATE SET game_data=?", (uid, json.dumps(g, ensure_ascii=False), json.dumps(g, ensure_ascii=False)))
+    conn.execute("INSERT OR REPLACE INTO game_saves (user_id, game_data) VALUES (?,?)", (uid, json.dumps(g, ensure_ascii=False)))
     conn.commit(); conn.close()
     session["user_id"] = uid; session["username"] = username
     return jsonify({"ok":True, "username":username})
@@ -122,7 +133,7 @@ def save_game(g):
     if not uid: return
     conn = get_db()
     data = json.dumps(g, ensure_ascii=False)
-    conn.execute("INSERT INTO game_saves (user_id, game_data, updated_at) VALUES (?,?,datetime('now','localtime')) ON CONFLICT(user_id) DO UPDATE SET game_data=?, updated_at=datetime('now','localtime')", (uid, data, data))
+    conn.execute("INSERT OR REPLACE INTO game_saves (user_id, game_data, updated_at) VALUES (?,?,datetime('now','localtime'))", (uid, data))
     conn.commit(); conn.close()
 
 # ═══════════════════════════════════════════
@@ -693,17 +704,17 @@ def gen_enemy(name, ps, profession, boss=False, boss_skills=None, boss_passive=N
     pd = ENEMY_PROFESSIONS[profession]
     
     if boss:
-        base_hp = int(ps * random.uniform(150.0, 250.0))
-        hp = base_hp * 10
-        atk = int(ps * random.uniform(3.0, 6.0) * pd["atk_factor"])
+        base_hp = int(ps * random.uniform(2.0, 5.0))
+        hp = base_hp * 8
+        atk = int(ps * random.uniform(0.15, 0.35) * pd["atk_factor"])
         spd = int(100 * pd["spd_factor"] * random.uniform(1.0, 1.3))
         q = random.choices(["绝品","传说","神卡"], weights=[50,35,15])[0]
         crit = random.randint(20, 50)
         name = "【BOSS】" + name
         skill_cost = 120
     else:
-        hp = int(ps * random.uniform(150.0, 250.0) * pd["hp_factor"])
-        atk = int(ps * random.uniform(1.5, 3.0) * pd["atk_factor"])
+        hp = int(ps * random.uniform(1.0, 2.5) * pd["hp_factor"])
+        atk = int(ps * random.uniform(0.05, 0.12) * pd["atk_factor"])
         spd = int(100 * pd["spd_factor"] * random.uniform(0.9, 1.1))
         q = random.choices(["凡品","良品","极品","绝品","传说"],weights=[25,25,25,18,7])[0]
         crit = random.randint(5, 30)
@@ -2624,6 +2635,19 @@ def api_lineup_toggle(hero_id):
         if inv: inv["active"]=True
     save_game(g); return jsonify(to_client(g))
 
+@app.route("/api/lineup/reorder", methods=["POST"])
+@login_required
+def api_lineup_reorder():
+    g=load_game()
+    if not g: return api_new()
+    data=request.get_json()
+    new_lineup=data.get("lineup",[])
+    if not isinstance(new_lineup,list) or len(new_lineup)>6:
+        return jsonify({"error":"无效的阵容"})
+    g["lineup"]=new_lineup
+    save_game(g)
+    return jsonify({"ok":True,**to_client(g)})
+
 @app.route("/api/equip/<hero_id>/<slot>/<eq_id>")
 @login_required
 def api_equip(hero_id,slot,eq_id):
@@ -2951,6 +2975,30 @@ def api_hero_consume():
         **to_client(g)})
 
 app.jinja_env.auto_reload = True  # 模板修改后自动刷新
+
+# ═══ 排行榜 ═══
+@app.route("/api/leaderboard")
+def api_leaderboard():
+    conn=get_db()
+    rows=conn.execute("""
+        SELECT u.username, g.game_data FROM users u
+        JOIN game_saves g ON u.id=g.user_id
+        ORDER BY u.id
+    """).fetchall()
+    rankings=[]
+    for row in rows:
+        try:
+            gd=json.loads(row["game_data"])
+            power=calc_pow(HERO_DATA, gd.get("lineup",[]), gd.get("inventory",[]), gd.get("equip_bag",[]))
+            stage=gd.get("stage_index",0)
+            rankings.append({"name":row["username"],"power":power,"stage":stage})
+        except: pass
+    rankings.sort(key=lambda x:-x["power"])
+    rankings=rankings[:50]
+    for i,r in enumerate(rankings):
+        r["rank"]=i+1
+    conn.close()
+    return jsonify(rankings)
 
 if __name__ == "__main__":
     port=int(sys.argv[1]) if len(sys.argv)>1 else 5002

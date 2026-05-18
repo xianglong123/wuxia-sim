@@ -78,6 +78,10 @@ body{
         <label>密码</label>
         <input type="password" id="regPass" placeholder="4个字符以上" autocomplete="new-password">
       </div>
+      <div class="form-group">
+        <label>邀请码</label>
+        <input type="text" id="regInvite" placeholder="输入邀请码" autocomplete="off" style="text-transform:uppercase">
+      </div>
       <button class="submit-btn" onclick="doRegister()">⚔️ 创立门派</button>
     </div>
 
@@ -119,12 +123,13 @@ async function doLogin(){
 async function doRegister(){
   const user = document.getElementById("regUser").value.trim();
   const pass = document.getElementById("regPass").value;
-  if(!user||!pass){document.getElementById("errorMsg").textContent="请填写完整";return}
+  const invite = document.getElementById("regInvite").value.trim();
+  if(!user||!pass||!invite){document.getElementById("errorMsg").textContent="请填写完整";return}
   if(user.length<2){document.getElementById("errorMsg").textContent="用户名至少2个字符";return}
   if(pass.length<4){document.getElementById("errorMsg").textContent="密码至少4个字符";return}
   showLoading(true);
   try{
-    const ab=window.location.pathname.startsWith('/wuxia')?'/wuxia':'';const r = await fetch(ab+"/api/register",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username:user,password:pass})});
+    const ab=window.location.pathname.startsWith('/wuxia')?'/wuxia':'';const r = await fetch(ab+"/api/register",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username:user,password:pass,invite:invite})});
     const d = await r.json();
     if(d.ok) window.location.href=ab+"/";
     else document.getElementById("errorMsg").textContent=d.error;
