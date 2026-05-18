@@ -422,8 +422,8 @@ def gen_stage_name(si):
 
 def gen_stage(si):
     """根据关卡进度固定生成关卡，不依赖玩家战力"""
-    boss = si > 0 and si % 10 == 0  # 每10关一个BOSS(不含第0关)
-    ep = 1200 + si * 300  # 更高血量，更有挑战
+    boss = si > 0 and si % 5 == 0  # 每5关一个BOSS(不含第0关)
+    ep = 2000 + si * 500  # 更高血量，更有挑战
     if si < 3: pl=["wood_sword","cloth_armor","straw_sandal"]; jb=5; ec=0.2
     elif si < 8: pl=["iron_sword","chain_armor","bronze_mirror"]; jb=10; ec=0.3
     elif si < 15: pl=["longquan_sword","mingguang_armor","jade_pendant"]; jb=18; ec=0.4
@@ -516,17 +516,19 @@ def gen_enemy(name, ps, boss=False):
     c=random.choice(ECS)
     skill=random.choice(ENEMY_SKILLS)
     if boss:
-        hp=int(ps*random.uniform(10.0, 18.0))
-        atk=int(ps*random.uniform(0.05, 0.10))
-        q=random.choices(["极品","绝品","传说"],weights=[50,35,15])[0]
-        crit=random.randint(15,40)
-        spd=random.randint(100,160)
+        # BOSS: 血量是普通敌人的10倍
+        base_hp=int(ps*random.uniform(30.0, 50.0))
+        hp=base_hp * 10
+        atk=int(ps*random.uniform(0.06, 0.10))
+        q=random.choices(["绝品","传说","神卡"],weights=[55,35,10])[0]
+        crit=random.randint(20,50)
+        spd=random.randint(100,180)
         name="【BOSS】"+name
     else:
         # 血多才爽，让技能有地方打
-        hp=int(ps*random.uniform(4.0, 7.0))
-        atk=int(ps*random.uniform(0.025, 0.045))
-        q=random.choices(["凡品","良品","极品","绝品","传说"],weights=[30,30,25,12,3])[0]
+        hp=int(ps*random.uniform(30.0, 50.0))
+        atk=int(ps*random.uniform(0.03, 0.05))
+        q=random.choices(["凡品","良品","极品","绝品","传说"],weights=[25,25,25,18,7])[0]
         crit=random.randint(5,30)
         spd=random.randint(80,180)
     return {"name":name,"class":c,"quality":q,"color":RARITY_COLORS.get(q,"#888"),
@@ -1180,6 +1182,7 @@ def _apply_battle_rewards(result,uid):
     r2=to_client(g) if g else {}
     result["stage_name"]=r2.get("stage",{}).get("name","")
     result["new_stage"]=r2.get("stage",{}).get("name","")
+    result["game_state"]=r2  # 返回完整游戏状态供前端直接用
 
 def hero_basic_attack(unit, allies, enemies):
     hd = unit.get("_hd")
@@ -2267,7 +2270,7 @@ def api_tuji():
 
 def to_client(g):
     power=calc_pow(HERO_DATA,g["lineup"],g["inventory"],g["equip_bag"])
-    sp=1200+g["stage_index"]*300; sp=max(50,min(sp,99999))
+    sp=2000+g["stage_index"]*500; sp=max(50,min(sp,999999))
     sn=g.get("stage_name") or gen_stage_name(g["stage_index"])
     pi={"count":g["pity_counter"],"next_guaranteed":10-g["pity_counter"]}
     bl=[{"name":b["name"],"desc":b["desc"]} for b in get_bonds(g["lineup"])]

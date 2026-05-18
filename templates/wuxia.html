@@ -576,8 +576,13 @@ function showBattleResult(d){
   // Actually the result already includes all actions, so we need to play those too
   // But for simplicity, just show the final board state + render(game) to update
             
-  // Update game state for rewards
-  if(game){game.jade=(game.jade||0)+jr;if(win){game.stage_index=(game.stage_index||0)+1;if(game.stage)game.stage.index=game.stage_index;game.stage.name=d.stage_name||game.stage.name}}
+  // Update game state from server (权威数据源)
+  if(d.game_state){
+    game = d.game_state;
+  }else{
+    // fallback: 手动更新
+    if(game){game.jade=(game.jade||0)+jr;if(win){game.stage_index=(game.stage_index||0)+1;if(game.stage)game.stage.index=game.stage_index;}}
+  }
   render(game);
 }
 
