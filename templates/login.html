@@ -108,9 +108,9 @@ async function doLogin(){
   if(!user||!pass){document.getElementById("errorMsg").textContent="请填写完整";return}
   showLoading(true);
   try{
-    const r = await fetch("/api/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username:user,password:pass})});
+    const ab=window.location.pathname.startsWith('/wuxia')?'/wuxia':'';const r = await fetch(ab+"/api/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username:user,password:pass})});
     const d = await r.json();
-    if(d.ok) window.location.href="/";
+    if(d.ok) window.location.href=ab+"/";
     else document.getElementById("errorMsg").textContent=d.error;
   }catch(e){document.getElementById("errorMsg").textContent="网络错误"}
   showLoading(false);
@@ -124,9 +124,9 @@ async function doRegister(){
   if(pass.length<4){document.getElementById("errorMsg").textContent="密码至少4个字符";return}
   showLoading(true);
   try{
-    const r = await fetch("/api/register",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username:user,password:pass})});
+    const ab=window.location.pathname.startsWith('/wuxia')?'/wuxia':'';const r = await fetch(ab+"/api/register",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username:user,password:pass})});
     const d = await r.json();
-    if(d.ok) window.location.href="/";
+    if(d.ok) window.location.href=ab+"/";
     else document.getElementById("errorMsg").textContent=d.error;
   }catch(e){document.getElementById("errorMsg").textContent="网络错误"}
   showLoading(false);
@@ -142,8 +142,8 @@ document.addEventListener("keydown",e=>{
 // Check if already logged in
 (async()=>{
   try{
-    const r=await fetch("/api/me");const d=await r.json();
-    if(d.logged_in) window.location.href="/";
+    const ab=window.location.pathname.startsWith('/wuxia')?'/wuxia':'';const r=await fetch(ab+"/api/me");const d=await r.json();
+    if(d.logged_in) window.location.href=ab+"/";
   }catch(e){}
 })();
 </script>

@@ -6,6 +6,7 @@ from pathlib import Path
 from functools import wraps
 from flask import Flask, render_template, jsonify, session, redirect, request
 from werkzeug.security import generate_password_hash, check_password_hash
+from effect_engine import process_all_battle_start, process_all_post_action, process_effects
 
 app = Flask(__name__)
 app.secret_key = "wuxia-hero-online"
@@ -33,13 +34,20 @@ def get_db():
     conn.execute("CREATE TABLE IF NOT EXISTS game_saves (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER UNIQUE NOT NULL, game_data TEXT NOT NULL, updated_at TEXT DEFAULT (datetime('now','localtime')), FOREIGN KEY (user_id) REFERENCES users(id))")
     return conn
 
+def _prefix(path):
+    """如果请求通过 /wuxia 前缀进来，给重定向路径也加 /wuxia"""
+    p = request.path
+    if p.startswith("/wuxia/") or p == "/wuxia":
+        return "/wuxia" + path
+    return path
+
 def login_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         if "user_id" not in session:
             if request.path.startswith("/api/"):
                 return jsonify({"error":"未登录","need_login":True})
-            return redirect("/login")
+            return redirect(_prefix("/login"))
         return f(*args, **kwargs)
     return decorated
 
@@ -310,10 +318,65 @@ reg({"id":"guanyu","name":"关羽","class":"战士","quality":"传说","color":"
     "basic_aoe":False,"basic_target":"single","basic_special":[],
     "passive_name":"武圣","passive_desc":"开局第一刀必定暴击伤害+50%","passive_upgrades":{3:"第一刀伤害翻倍",5:"前三刀必定暴击",7:"武圣降临:第一次技能真实伤害"}})
 
+# ═══ 神卡 (红色) ═══
+reg({"id":"wukong","name":"孙悟空","class":"战士","quality":"神卡","color":"#ff3333",
+    "hp":6000,"atk":880,"crit":40,"spd":190,"skill_cost":150,
+    "skill_name":"大闹天宫","skill_desc":"金箍棒横扫全体3次，每次150%伤害+40%吸血，必定暴击",
+    "skill_aoe":True,"skill_target":"all_enemy","skill_dmg_pct":1.5,"skill_special":["multi_hit","lifesteal","guaranteed_crit"],
+    "skill_upgrades":{3:"每次伤害220%，吸血60%",5:"额外2次攻击(共5次)",7:"金箍棒:血量低于40%直接斩杀", 9:"#1攻击+60%+15%吸血"},
+    "basic_name":"如意棒","basic_desc":"金箍棒横扫，对全体敌人造成100%伤害","basic_dmg_pct":1.0,"basic_energy_gain":50,
+    "basic_aoe":True,"basic_target":"all_enemy","basic_special":[],
+    "passive_name":"齐天大圣","passive_desc":"每击败一个敌人攻击+20%(最多5层)","passive_upgrades":{3:"上限8层",5:"每层30%",7:"满层技能暴击伤害+200%"}})
+reg({"id":"qinshihuang","name":"秦始皇","class":"法师","quality":"神卡","color":"#ff3333",
+    "hp":4000,"atk":820,"crit":30,"spd":140,"skill_cost":150,
+    "skill_name":"焚书坑儒","skill_desc":"对全体敌人造成250%伤害+降低攻击40%×3回合+降低暴击20%×3回合",
+    "skill_aoe":True,"skill_target":"all_enemy","skill_dmg_pct":2.5,"skill_special":[],
+    "skill_debuffs":[{"stat":"atk","pct":-0.4,"dur":3},{"stat":"crit","pct":-0.2,"dur":3}],
+    "skill_upgrades":{3:"额外降低防御30%",5:"伤害350%+召唤陶俑护卫",7:"全体沉默+无法治疗×2回合", 9:"#5能量+80+受伤+40%"},
+    "basic_name":"法家术","basic_desc":"法家令行禁止，对全体敌人造成90%伤害","basic_dmg_pct":0.9,"basic_energy_gain":50,
+    "basic_aoe":True,"basic_target":"all_enemy","basic_special":[],
+    "passive_name":"千古一帝","passive_desc":"战斗开始全体敌人攻击-20%+自身攻击+30%","passive_upgrades":{3:"敌人攻击-30%",5:"自身攻击+50%",7:"自身开局满能量"}})
+reg({"id":"xingtian","name":"刑天","class":"战士","quality":"神卡","color":"#ff3333",
+    "hp":7000,"atk":750,"crit":20,"spd":120,"skill_cost":160,
+    "skill_name":"刑天舞干戚","skill_desc":"以乳为目自损30%当前血量，对全体敌人造成400%伤害+100%吸血",
+    "skill_aoe":True,"skill_target":"all_enemy","skill_dmg_pct":4.0,"skill_special":["lifesteal"],
+    "skill_upgrades":{3:"伤害600%+自损15%",5:"击杀后重置冷却",7:"血量低于30%时伤害翻倍", 9:"#2血量+60%+反伤"},
+    "basic_name":"巨斧横劈","basic_desc":"挥舞巨斧，对全体敌人造成120%伤害","basic_dmg_pct":1.2,"basic_energy_gain":40,
+    "basic_aoe":True,"basic_target":"all_enemy","basic_special":[],
+    "passive_name":"不屈","passive_desc":"血量低于30%时攻击翻倍+减伤50%","passive_upgrades":{3:"触发阈值50%",5:"低于30%无敌2秒",7:"首次死亡复活60%血量"}})
+reg({"id":"houyi","name":"后羿","class":"射手","quality":"神卡","color":"#ff3333",
+    "hp":3500,"atk":980,"crit":50,"spd":175,"skill_cost":130,
+    "skill_name":"射日","skill_desc":"对血量最低的敌人造成500%伤害+必定暴击+血量低于50%直接斩杀",
+    "skill_aoe":False,"skill_target":"lowest_hp","skill_dmg_pct":5.0,"skill_special":["guaranteed_crit","execute"],
+    "skill_upgrades":{3:"伤害800%+斩杀阈值70%",5:"击杀后溢出伤害溅射全体",7:"对BOSS也生效(伤害减半)", 9:"#4攻击+40%+首击必暴"},
+    "basic_name":"穿云箭","basic_desc":"一箭穿云，对单个敌人造成200%伤害","basic_dmg_pct":2.0,"basic_energy_gain":50,
+    "basic_aoe":False,"basic_target":"single","basic_special":[],
+    "passive_name":"射日神弓","passive_desc":"战斗开始锁定血量最高敌人，降低其50%血量上限","passive_upgrades":{3:"降低60%",5:"额外降低30%攻击",7:"锁定目标死亡时全体敌人眩晕1回合"}})
+reg({"id":"nuwa","name":"女娲","class":"奶妈","quality":"神卡","color":"#ff3333",
+    "hp":5000,"atk":300,"crit":10,"spd":130,"skill_cost":180,
+    "skill_name":"补天","skill_desc":"全体回复50%+免疫伤害3回合+攻击+50%×3回合+复活已死亡队友(20%血量)",
+    "skill_aoe":True,"skill_target":"all_ally","skill_heal_pct":0.5,"skill_special":["revive","immunity"],"skill_buffs":[{"stat":"atk","pct":0.5,"dur":3}],
+    "skill_upgrades":{3:"回复70%+免疫4回合",5:"复活血量40%+附加30%护盾",7:"补天:全队无敌+重置所有技能冷却", 9:"#3护盾50%+回血30%"},
+    "basic_name":"抟土造人","basic_desc":"造化之力，全体回复15%血量","basic_dmg_pct":0,"basic_energy_gain":50,
+    "basic_aoe":True,"basic_target":"all_ally","basic_special":[{"type":"heal","pct":0.15}],
+    "passive_name":"创世","passive_desc":"战斗开始全体获得30%护盾+回复10%","passive_upgrades":{3:"护盾50%+回复20%",5:"队友死亡时立即复活一次(每场1次)",7:"复活时全队无敌1回合"}})
+reg({"id":"chiyou","name":"蚩尤","class":"肉盾","quality":"神卡","color":"#ff3333",
+    "hp":9000,"atk":400,"crit":10,"spd":90,"skill_cost":140,
+    "skill_name":"兵主降临","skill_desc":"全体队友获得50%护盾+攻击+60%×3回合, 嘲讽全体敌人3回合, 自身减伤60%×3回合",
+    "skill_aoe":False,"skill_target":"self","skill_special":["taunt","shield_ally"],"skill_buffs":[{"stat":"atk","pct":0.6,"dur":3},{"stat":"dmg_reduce","pct":0.6,"dur":3}],
+    "skill_upgrades":{3:"护盾80%+嘲讽期间敌人受伤+30%",5:"兵主:全体队友免疫控制3回合",7:"兵主降世:全体队友无敌2回合", 9:"#2血量+60%+护盾40%"},
+    "basic_name":"蚩尤旗","basic_desc":"挥动蚩尤旗，对全体敌人造成100%伤害+降低攻击15%","basic_dmg_pct":1.0,"basic_energy_gain":40,
+    "basic_aoe":True,"basic_target":"all_enemy","basic_special":[],
+    "passive_name":"兵主","passive_desc":"战斗开始给全体队友+30%攻击+15%减伤","passive_upgrades":{3:"攻击+50%+减伤25%",5:"血量高于70%时全队无敌1回合",7:"触发无敌时自身永久免疫+30%攻击"}})
+
 HERO_IDS = list(HERO_DATA.keys())
-QUALITY_ORDER = {"凡品":0,"良品":1,"极品":2,"绝品":3,"传说":4}
+QUALITY_ORDER = {"凡品":0,"良品":1,"极品":2,"绝品":3,"传说":4,"神卡":5}
 QUALITY_WEIGHTS = {"凡品":40,"良品":30,"极品":20,"绝品":8,"传说":2}
-RARITY_COLORS = {"凡品":"#888","良品":"#5adb7a","极品":"#4a8eff","绝品":"#b84aff","传说":"#ffd700"}
+RARITY_COLORS = {"凡品":"#888","良品":"#5adb7a","极品":"#4a8eff","绝品":"#b84aff","传说":"#ffd700","神卡":"#ff3333"}
+# 重复英雄转换为经验池(抽到同名英雄时获得)
+DUPE_EXP = {"凡品":30,"良品":80,"极品":200,"绝品":500,"传说":1500,"神卡":5000}
+# 技能升级所需经验
+SKILL_UPGRADE_COST = {2:100, 3:200, 4:350, 5:550, 6:800, 7:1200, 8:1800, 9:2800}
 
 # ═══ 装备 ═══
 EQUIP_DATA = {}
@@ -374,7 +437,7 @@ def gen_stage(si):
 def new_game_inner():
     inv=[{"hero_id":sid,"skill_lv":1,"level":1,"exp":0,"equipped":{"武器":None,"防具":None,"饰品":None},"active":True} for sid in ["lisi","wangdazhuang","xiaocui"]]
     return {"jade":10,"inventory":inv,"equip_bag":[{"id":"wood_sword","count":1}],"lineup":["lisi","wangdazhuang","xiaocui"],
-            "pull_count":0,"pity_counter":0,"stage_index":0,"ticks":0,"msg":"☯ 欢迎来到江湖！",
+            "pull_count":0,"pity_counter":0,"stage_index":0,"ticks":0,"msg":"☯ 欢迎来到江湖！","dupe_exp_total":0,
             "selected_hero":None,"game_over":False,"won":False,"last_active_time":datetime.now().timestamp(),"offline_msg":""}
 
 def calc_pow(all_data, lineup, inventory, equip_bag):
@@ -419,7 +482,7 @@ def get_bonds(lineup):
     return [b for b in BONDS if all(m in lineup for m in b["members"])]
 
 def rq(pity):
-    if pity>=10: return random.choices(["极品","绝品","传说"],weights=[50,35,15])[0]
+    if pity>=10: return random.choices(["极品","绝品","传说","神卡"],weights=[40,28,18,14])[0]
     tw=sum(QUALITY_WEIGHTS.values()); rl=random.randint(1,tw); cum=0
     for q,w in sorted(QUALITY_WEIGHTS.items(),key=lambda x:QUALITY_ORDER[x[0]]):
         cum+=w
@@ -626,34 +689,8 @@ def run_speed_battle(my_heroes, enemies, stage):
     # 被动系统上下文
     passive_ctx = {"all_actions": all_actions, "passive_counters": {}, "triggered":set()}
 
-    # 战斗开始被动
-    for u in my_heroes:
-        hd=u.get("_hd")
-        if hd:
-            sk_lv=u.get("_skill_lv",1)
-            # 郭奉孝: 奇谋 - 战斗开始回复全体15%血量
-            if hd["id"]=="guojia":
-                heal_pct=0.15+(0.1 if sk_lv>=3 else 0)
-                for a in my_heroes:
-                    if a.get("alive",True):
-                        heal=int(a["max_hp"]*heal_pct)
-                        a["hp"]=min(a["max_hp"],a["hp"]+heal)
-                all_actions.append({"side":"heal","type":"passive","attacker_name":"郭奉孝",
-                    "skill":"奇谋","aoe":True,"targets":[{"name":a["name"],"heal":int(a["max_hp"]*heal_pct)} for a in my_heroes if a.get("alive",True)]})
-            # 甘宁: 铃铛 - 降低敌方全体10%攻击
-            if hd["id"]=="ganning":
-                atk_pct=-0.1-(0.1 if sk_lv>=3 else 0)
-                for e in enemies:
-                    if e.get("alive",True):
-                        e["debuffs"].append({"stat":"atk","pct":atk_pct,"dur":-1})
-            # 貂蝉: 离间 - 魅惑一个敌人3秒
-            if hd["id"]=="diaochan":
-                alive_e=[e for e in enemies if e.get("alive",True)]
-                if alive_e:
-                    target=random.choice(alive_e)
-                    target["debuffs"].append({"stat":"charm","pct":1.0,"dur":3})
-                    all_actions.append({"side":"enemy","type":"passive","attacker_name":"貂蝉",
-                        "skill":"离间","aoe":False,"target_name":target["name"],"msg":"魅惑!"})
+    # 战斗开始被动 (效果引擎统一处理)
+    process_all_battle_start(my_heroes, enemies, passive_ctx)
 
     # Lv9位置天赋（all_actions清零后，但initial_state快照前）
     lv9_msgs=apply_lv9_bonuses(my_heroes, enemies)
@@ -755,9 +792,8 @@ def run_speed_battle(my_heroes, enemies, stage):
                 if can_skill:
                     unit["energy"] -= sk_cost
                     act = hero_use_skill(unit, my_heroes, enemies)
-                    # 关羽武圣被动
-                    if unit.get("_hd") and unit["_hd"]["id"]=="guanyu":
-                        check_passives(unit, unit["_hd"], unit.get("_skill_lv",1), my_heroes, enemies, "on_skill", passive_ctx)
+                    # 武圣/on_skill被动 (效果引擎)
+                    process_effects("on_skill", unit, unit.get("_hd"), unit.get("_skill_lv",1), my_heroes, enemies, passive_ctx)
                 else:
                     eg = hd.get("basic_energy_gain", 25) if hd else 25
                     unit["energy"] += eg
@@ -815,30 +851,8 @@ def run_speed_battle(my_heroes, enemies, stage):
                             if uu: a2["target_hp_pct"]=max(0,uu["hp"]/max(1,uu["max_hp"])); a2["target_max_hp"]=uu["max_hp"]; a2["target_idx"]=next((i for i,uu2 in enumerate(tlist) if uu2.get("name")==a2["target_name"]),0)
                 # (card system removed)
 
-            # 被动触发检查(击杀/队友低血/队友死亡/受击)
-            for passive_unit in my_heroes:
-                phd=passive_unit.get("_hd")
-                if not phd or not passive_unit.get("alive",True): continue
-                psk_lv=passive_unit.get("_skill_lv",1)
-                # 检查刚被击杀的目标(吕布无双等)
-                if unit.get("side")=="ally" and act.get("killed") and act.get("target_name"):
-                    check_passives(passive_unit, phd, psk_lv, my_heroes, enemies, "on_kill", passive_ctx)
-                # 受击被动(张飞万人敌/赵云一身是胆)
-                if unit.get("side")=="enemy" and act.get("target_name"):
-                    if passive_unit["name"]==act.get("target_name"):
-                        check_passives(passive_unit, phd, psk_lv, my_heroes, enemies, "on_hit", passive_ctx)
-                    elif act.get("aoe") and act.get("targets"):
-                        for tg in act["targets"]:
-                            if passive_unit["name"]==tg.get("name"):
-                                check_passives(passive_unit, phd, psk_lv, my_heroes, enemies, "on_hit", passive_ctx)
-                # 华佗: 检查最低血量
-                if phd["id"]=="huatuo":
-                    lowest=min([a for a in my_heroes if a.get("alive",True)],key=lambda x:x["hp"]/max(1,x["max_hp"]),default=None)
-                    if lowest and lowest["hp"]/max(1,lowest["max_hp"])<0.3 and lowest!=passive_unit:
-                        check_passives(passive_unit, phd, psk_lv, my_heroes, enemies, "on_ally_low_hp", passive_ctx)
-                # 蔡文姬: 检查队友死亡
-                if phd["id"]=="caiwenji" and act.get("killed") and act.get("side")=="enemy" and act.get("target_name") and any(u.get("name")==act["target_name"] and u.get("alive")==False for u in my_heroes):
-                    check_passives(passive_unit, phd, psk_lv, my_heroes, enemies, "on_ally_die", passive_ctx)
+            # 被动触发检查(效果引擎统一处理)
+            process_all_post_action(my_heroes, enemies, passive_ctx, unit, act)
 
             # 检查战斗结束
             alive_h = [u for u in my_heroes if u.get("alive",True)]
@@ -927,30 +941,8 @@ class BattleSession:
         }
 
     def _init_passives(self):
-        for u in self.my_heroes:
-            hd=u.get("_hd")
-            if not hd: continue
-            sk_lv=u.get("_skill_lv",1)
-            if hd["id"]=="guojia":
-                heal_pct=0.15+(0.1 if sk_lv>=3 else 0)
-                for a in self.my_heroes:
-                    if a.get("alive",True):
-                        heal=int(a["max_hp"]*heal_pct)
-                        a["hp"]=min(a["max_hp"],a["hp"]+heal)
-                self.all_actions.append({"side":"heal","type":"passive","attacker_name":"郭奉孝",
-                    "skill":"奇谋","aoe":True,"targets":[{"name":a["name"],"heal":int(a["max_hp"]*heal_pct)} for a in self.my_heroes if a.get("alive",True)]})
-            if hd["id"]=="ganning":
-                atk_pct=-0.1-(0.1 if sk_lv>=3 else 0)
-                for e in self.enemies:
-                    if e.get("alive",True):
-                        e["debuffs"].append({"stat":"atk","pct":atk_pct,"dur":-1})
-            if hd["id"]=="diaochan":
-                alive_e=[e for e in self.enemies if e.get("alive",True)]
-                if alive_e:
-                    target=random.choice(alive_e)
-                    target["debuffs"].append({"stat":"charm","pct":1.0,"dur":3})
-                    self.all_actions.append({"side":"enemy","type":"passive","attacker_name":"貂蝉",
-                        "skill":"离间","aoe":False,"target_name":target["name"],"msg":"魅惑!"})
+        # 战斗开始被动 (效果引擎统一处理)
+        process_all_battle_start(self.my_heroes, self.enemies, self.passive_ctx)
 
         # Lv9位置天赋
         self._lv9_buffs=apply_lv9_bonuses(self.my_heroes, self.enemies)
@@ -1017,9 +1009,8 @@ class BattleSession:
             if can_skill:
                 unit["energy"]-=sk_cost
                 act=hero_use_skill(unit,self.my_heroes,self.enemies)
-                # 关羽武圣被动
-                if hd and hd["id"]=="guanyu":
-                    check_passives(unit,hd,unit.get("_skill_lv",1),self.my_heroes,self.enemies,"on_skill",self.passive_ctx)
+                # 武圣/on_skill被动 (效果引擎)
+                process_effects("on_skill", unit, hd, unit.get("_skill_lv",1), self.my_heroes, self.enemies, self.passive_ctx)
             else:
                 eg=hd.get("basic_energy_gain",25) if hd else 25
                 unit["energy"]+=eg
@@ -1032,27 +1023,8 @@ class BattleSession:
             for sa in sub_acts:
                 self.all_actions.append(sa)
                 self._inject_action_hp(sa)
-            # 被动触发检查
-            for pu in self.my_heroes:
-                phd=pu.get("_hd")
-                if not phd or not pu.get("alive",True): continue
-                psk_lv=pu.get("_skill_lv",1)
-                if unit.get("side")=="ally" and act.get("killed") and act.get("target_name"):
-                    check_passives(pu,phd,psk_lv,self.my_heroes,self.enemies,"on_kill",self.passive_ctx)
-                # 受击被动(张飞万人敌/赵云一身是胆)
-                if unit.get("side")=="enemy" and act.get("target_name"):
-                    if pu["name"]==act.get("target_name"):
-                        check_passives(pu,phd,psk_lv,self.my_heroes,self.enemies,"on_hit",self.passive_ctx)
-                    elif act.get("aoe") and act.get("targets"):
-                        for tg in act["targets"]:
-                            if pu["name"]==tg.get("name"):
-                                check_passives(pu,phd,psk_lv,self.my_heroes,self.enemies,"on_hit",self.passive_ctx)
-                if phd["id"]=="huatuo":
-                    lowest=min([a for a in self.my_heroes if a.get("alive",True)],key=lambda x:x["hp"]/max(1,x["max_hp"]),default=None)
-                    if lowest and lowest["hp"]/max(1,lowest["max_hp"])<0.3 and lowest!=pu:
-                        check_passives(pu,phd,psk_lv,self.my_heroes,self.enemies,"on_ally_low_hp",self.passive_ctx)
-                if phd["id"]=="caiwenji" and act.get("killed") and any(u.get("name")==act.get("target_name") and u.get("alive")==False for u in self.my_heroes):
-                    check_passives(pu,phd,psk_lv,self.my_heroes,self.enemies,"on_ally_die",self.passive_ctx)
+            # 被动触发检查 (效果引擎统一处理)
+            process_all_post_action(self.my_heroes, self.enemies, self.passive_ctx, unit, act)
 
     def step_until_card(self):
         """运行自动行动直到需要打牌或战斗结束。返回 {'phase':'card'|'done'|'continue', hand, card_energy, ...}"""
@@ -1382,6 +1354,9 @@ def apply_skill_upgrades(unit, hd, sk_lv, allies, enemies, sk_context):
             extra["quad_crit"]=True  # 养由基Lv5: 暴击4倍
         if hid=="luobu":
             pass  # 吕布Lv5: 单目标伤害翻倍(在_run_one_unit里处理)
+        # ─── 神卡 Lv5 ───
+        if hid=="wukong":
+            extra["extra_hits"]=2  # 孙悟空Lv5: 额外2次攻击
 
     # ─── Lv7 ───
     if sk_lv>=7:
@@ -1399,6 +1374,12 @@ def apply_skill_upgrades(unit, hd, sk_lv, allies, enemies, sk_context):
             pass  # 貂蝉Lv7: 溅射50%
         if hid=="huatuo":
             pass  # 华佗Lv7: 免疫结束重置冷却
+        # ─── 神卡 Lv7 ───
+        if hid=="wukong":
+            extra["execute_pct"]=0.4  # 孙悟空Lv7: 40%斩杀
+            extra["guaranteed_crit"]=True
+        if hid=="houyi":
+            extra["execute_pct"]=0.7  # 后羿Lv7: 70%斩杀(虽然数据写了50%基础，但Lv7升级)
     return extra
 
 # ═══ Lv9 位置天赋系统 ═══
@@ -1424,6 +1405,12 @@ HERO_LV9_EFFECTS = {
     "diaochan":     {"pos":6,"desc":"开局给6号位+15暴击+魅惑闪避","type":"combo","crit_val":15,"buff":"dodge"},
     "zhaoyun":      {"pos":1,"desc":"开局给1号位满能量","type":"full_energy"},
     "guanyu":       {"pos":1,"desc":"开局给1号位+30%攻击+武圣降临","type":"combo","atk_pct":0.30,"buff":"guaranteed_crit"},
+    "wukong":       {"pos":1,"desc":"开局给1号位+60%攻击+15%吸血","type":"combo","atk_pct":0.60,"buff":"lifesteal"},
+    "qinshihuang":  {"pos":5,"desc":"开局给5号位+80能量+受伤+40%","type":"combo","energy":80,"buff":"dmg_taken_up"},
+    "xingtian":     {"pos":2,"desc":"开局给2号位+60%血量+反伤","type":"combo","hp_pct":0.60,"buff":"reflect"},
+    "houyi":        {"pos":4,"desc":"开局给4号位+40%攻击+首击必暴","type":"combo","atk_pct":0.40,"buff":"guaranteed_crit"},
+    "nuwa":         {"pos":3,"desc":"开局给3号位50%护盾+回血30%","type":"combo","shield_pct":0.50,"heal_pct":0.30},
+    "chiyou":       {"pos":2,"desc":"开局给2号位+60%血量+40%护盾","type":"combo","hp_pct":0.60,"shield_pct":0.40},
 }
 
 def apply_lv9_bonuses(my_heroes, enemies):
@@ -1667,6 +1654,7 @@ def hero_use_skill(unit, allies, enemies):
     if "multi_hit" in specials:
         if hd["id"]=="zhaoyun": multi_hit_count=7
         elif hd["id"]=="lihai": multi_hit_count=3
+        elif hd["id"]=="wukong": multi_hit_count=3
     multi_hit_count+=up.get("extra_hits",0) if up else 0
 
     # === multi_hit提升(李白Lv5: 每剑120%) ===
@@ -1703,8 +1691,13 @@ def hero_use_skill(unit, allies, enemies):
         if cr: d=int(d*1.5)
         # 养由基Lv5: 暴击4倍
         if cr and up and up.get("quad_crit"): d*=4
-        # 赵云Lv7/关羽Lv7: 斩杀(HP低于阈值直接杀)
-        if up and up.get("execute_pct") and t["hp"]/max(1,t["max_hp"])<up["execute_pct"]:
+        # 斩杀(先查技能升级阈值，再查基础斩杀)
+        execute_threshold = None
+        if up and up.get("execute_pct"):
+            execute_threshold = up["execute_pct"]
+        elif "execute" in specials:
+            execute_threshold = 0.5  # 基础斩杀阈值50%
+        if execute_threshold and t["hp"]/max(1,t["max_hp"])<execute_threshold:
             d=t["hp"]
         # 减伤
         dr=get_dmg_reduce(t)
@@ -2077,7 +2070,11 @@ def api_pull():
     if QUALITY_ORDER.get(card["quality"],0)>=2: g["pity_counter"]=0
     else: g["pity_counter"]+=1
     ex=next((i for i in g["inventory"] if i["hero_id"]==card["hero_id"]),None)
-    if ex: ex["skill_lv"]=min(9,ex["skill_lv"]+1); g["msg"]=f"🎴 抽到{card['quality']}{HERO_DATA[card['hero_id']]['name']}！技能升级至Lv.{ex['skill_lv']}"
+    if ex:
+        gained = DUPE_EXP.get(card["quality"], 30)
+        g["dupe_exp_total"] = g.get("dupe_exp_total", 0) + gained
+        ex["skill_lv"] = min(9, ex["skill_lv"] + 1)
+        g["msg"]=f"🎴 抽到{card['quality']}{HERO_DATA[card['hero_id']]['name']}！技能Lv{ex['skill_lv']}+{gained}💠"
     else: g["inventory"].append(card); g["msg"]=f"🎴 抽到{card['quality']}{HERO_DATA[card['hero_id']]['name']}！"
     save_game(g)
     r=to_client(g); r["pull"]={"hero_id":card["hero_id"],"quality":card["quality"],"hero_name":HERO_DATA[card["hero_id"]]["name"],"hero_class":HERO_DATA[card["hero_id"]]["class"]}
@@ -2096,7 +2093,10 @@ def api_pull10():
         else: g["pity_counter"]+=1
         if QUALITY_ORDER.get(card["quality"],0)>QUALITY_ORDER.get(bq,0): bq=card["quality"]
         ex=next((i for i in g["inventory"] if i["hero_id"]==card["hero_id"]),None)
-        if ex: ex["skill_lv"]=min(9,ex["skill_lv"]+1)
+        if ex:
+            gained = DUPE_EXP.get(card["quality"], 30)
+            g["dupe_exp_total"] = g.get("dupe_exp_total", 0) + gained
+            ex["skill_lv"] = min(9, ex["skill_lv"] + 1)
         else: g["inventory"].append(card)
         cards.append(card)
     g["msg"]=f"🎴 十连最高{bq}"; save_game(g)
@@ -2110,7 +2110,7 @@ def api_pull100():
     if not g: return api_new()
     if g["jade"]<235: return jsonify({"error":"玉璧不足",**to_client(g)})
     g["jade"]-=235; g["pull_count"]+=100
-    pulls=[]; qcounts={q:0 for q in ["凡品","良品","极品","绝品","传说"]}
+    pulls=[]; qcounts={q:0 for q in ["凡品","良品","极品","绝品","传说","神卡"]}
     bq="凡品"
     for _ in range(100):
         card=pull_h(g["pity_counter"])
@@ -2119,14 +2119,37 @@ def api_pull100():
         qcounts[card["quality"]]=qcounts.get(card["quality"],0)+1
         if QUALITY_ORDER.get(card["quality"],0)>QUALITY_ORDER.get(bq,0): bq=card["quality"]
         ex=next((i for i in g["inventory"] if i["hero_id"]==card["hero_id"]),None)
-        if ex: ex["skill_lv"]=min(9,ex["skill_lv"]+1)
+        if ex:
+            gained = DUPE_EXP.get(card["quality"], 30)
+            g["dupe_exp_total"] = g.get("dupe_exp_total", 0) + gained
+            ex["skill_lv"] = min(9, ex["skill_lv"] + 1)
         else: g["inventory"].append(card)
         pulls.append(card)
-    g["msg"]=f"🎴 百抽最高{bq}! {qcounts['传说']}传说 {qcounts['绝品']}绝品 {qcounts['极品']}极品"
+    g["msg"]=f"🎴 百抽最高{bq}! {qcounts['传说']}传说 {qcounts['绝品']}绝品 {qcounts['极品']}极品 {qcounts['神卡']}神卡"
     save_game(g)
     highlights=[c for c in pulls if QUALITY_ORDER.get(c["quality"],0)>=2]
     r=to_client(g); r["pull"]={"qcounts":qcounts,"highlights":[{"hero_id":c["hero_id"],"quality":c["quality"],"hero_name":HERO_DATA[c["hero_id"]]["name"],"hero_class":HERO_DATA[c["hero_id"]]["class"]} for c in highlights],"count":100}
     return jsonify(r)
+
+# ═══ 英雄等级升级(消耗经验池) ═══
+@app.route("/api/level_up/<hero_id>", methods=["POST"])
+@login_required
+def api_level_up(hero_id):
+    g=load_game()
+    if not g: return api_new()
+    inv=next((i for i in g["inventory"] if i["hero_id"]==hero_id),None)
+    if not inv: return jsonify({"error":"未找到该英雄"})
+    lv=inv.get("level",1)
+    if lv>=100: return jsonify({"error":"已满级"})
+    cost=lv * 80  # Lv1→2=80, Lv2→3=160, Lv10→11=800
+    pool=g.get("dupe_exp_total",0)
+    if pool<cost: return jsonify({"error":f"💠不足，需要{cost}💠(当前{pool})"})
+    g["dupe_exp_total"]=pool-cost
+    inv["level"]=lv+1
+    save_game(g)
+    return jsonify({"ok":True,"hero_id":hero_id,"level":inv["level"],
+        "dupe_exp_total":g["dupe_exp_total"],"cost":cost,
+        "msg":f"⬆ {HERO_DATA.get(hero_id,{}).get('name','?')}升至Lv.{inv['level']}！",**to_client(g)})
 
 @app.route("/api/lineup/<hero_id>")
 @login_required
@@ -2175,6 +2198,9 @@ def api_hero_detail(hero_id):
     for s,eid in inv["equipped"].items():
         if eid and eid in EQUIP_DATA:
             e=EQUIP_DATA[eid]; eff_hp+=e.get("hp",0); eff_atk+=e.get("atk",0)
+    dupe_exp_total=g.get("dupe_exp_total",0)
+    level_up_cost=inv.get("level",1) * 80
+    next_skill_cost=SKILL_UPGRADE_COST.get(inv.get("skill_lv",1)+1, None)
     return jsonify({"hero_id":hero_id,"name":hd["name"],"class":hd["class"],"quality":hd["quality"],"color":hd["color"],
         "hp":eff_hp,"atk":eff_atk,"crit":eff_crit,"base_hp":hd["hp"],"base_atk":hd["atk"],"base_crit":hd.get("crit",0),"spd":hd.get("spd",100),"skill_cost":hd.get("skill_cost",100),
         "skill_name":hd["skill_name"],"skill_desc":hd["skill_desc"],
@@ -2184,6 +2210,7 @@ def api_hero_detail(hero_id):
         "passive_upgrades":hd["passive_upgrades"],"power":calc_hp(hero_id,inv["skill_lv"],inv["equipped"],inv),
         "basic_name":hd.get("basic_name","攻击"),"basic_desc":hd.get("basic_desc","普通攻击"),
         "basic_energy_gain":hd.get("basic_energy_gain",25),
+        "dupe_exp_total":dupe_exp_total,"level_up_cost":level_up_cost,"next_skill_cost":next_skill_cost,
         "equipped":eq,"bonds":bonds,"in_lineup":hero_id in g["lineup"]})
 
 @app.route("/api/inventory_heroes")
@@ -2249,7 +2276,8 @@ def to_client(g):
         "lineup":g["lineup"],"lineup_count":len(g["lineup"]),
         "bonds":bl,"msg":g.get("msg",""),"ticks":g["ticks"],
         "inventory_count":len(g["inventory"]),"username":session.get("username",""),
-        "offline_msg":g.get("offline_msg",""),"jade_per_min":round(max(0.3,power/5000),1)}
+        "offline_msg":g.get("offline_msg",""),"jade_per_min":round(max(0.3,power/5000),1),
+        "dupe_exp_total":g.get("dupe_exp_total",0)}
 
 @app.route("/api/equip/enhance/<eid>", methods=["POST"])
 @login_required

@@ -70,6 +70,39 @@ body{font-family:-apple-system,"PingFang SC","Noto Serif SC",serif;background:#0
 .pull10-item{text-align:center;padding:8px;border-radius:6px;border:1px solid #2a2218;animation:pullPop .3s ease backwards}
 @keyframes pullPop{0%{transform:scale(0)}100%{transform:scale(1)}}
 .pull-btn{margin-top:16px;padding:8px 28px;border-radius:8px;border:1px solid #3a3020;background:#1a1410;color:#d4c9a8;font-size:13px;cursor:pointer;font-family:inherit}
+/* ── 神卡特效 ── */
+.pull-god-overlay{position:fixed;inset:0;background:radial-gradient(ellipse at center,rgba(255,51,51,.15) 0%,rgba(0,0,0,.97) 70%);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:310;cursor:pointer}
+.pull-god-flash{position:fixed;inset:0;background:#fff;z-index:305;pointer-events:none}
+.pull-god-flash1{animation:godFlash1 .2s ease forwards}
+.pull-god-flash2{animation:godFlash2 .4s ease forwards}
+@keyframes godFlash1{0%{opacity:.9}100%{opacity:0}}
+@keyframes godFlash2{0%{opacity:.6}100%{opacity:0}}
+.pull-god-card{text-align:center;animation:godReveal .7s cubic-bezier(.17,.67,.43,1.15) forwards;filter:drop-shadow(0 0 40px rgba(255,51,51,.8)) drop-shadow(0 0 80px rgba(255,51,51,.4))}
+@keyframes godReveal{0%{transform:scale(0.1) rotate(-1080deg) translateY(-200px);opacity:0}30%{transform:scale(1.5) rotate(30deg) translateY(0);opacity:1}55%{transform:scale(.9) rotate(-8deg)}72%{transform:scale(1.1) rotate(3deg)}85%{transform:scale(.98) rotate(-1deg)}100%{transform:scale(1) rotate(0deg);opacity:1}}
+.pull-god-glow{position:absolute;width:250px;height:250px;border-radius:50%;background:radial-gradient(circle,rgba(255,51,51,.5),rgba(255,51,51,.1) 40%,transparent 70%);animation:godPulse 1.2s ease-in-out infinite;pointer-events:none}
+@keyframes godPulse{0%,100%{transform:scale(1);opacity:.6}50%{transform:scale(1.8);opacity:1}}
+.pull-god-rarity{font-size:36px;font-weight:900;letter-spacing:8px;animation:godShine .8s ease-in-out infinite;text-shadow:0 0 20px currentColor,0 0 40px currentColor,0 0 80px currentColor}
+@keyframes godShine{0%,100%{filter:brightness(1)}50%{filter:brightness(1.8)}}
+.pull-god-icon{font-size:96px;margin:4px 0;animation:godFloat 1.5s ease-in-out infinite}
+@keyframes godFloat{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-12px) scale(1.05)}}
+.pull-god-name{font-size:40px;font-weight:900;letter-spacing:4px;text-shadow:0 0 30px currentColor,0 0 60px currentColor,0 0 90px rgba(255,51,51,.5)}
+.pull-god-sub{font-size:14px;color:#8a7a5a;margin-top:8px;animation:godFadeIn 1s ease .6s both}
+@keyframes godFadeIn{0%{opacity:0}100%{opacity:1}}
+/* 神卡冲击波 */
+.pull-god-shockwave{position:fixed;top:50%;left:50%;width:20px;height:20px;border:3px solid rgba(255,51,51,.8);border-radius:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:308;animation:godShockwave .8s ease-out forwards}
+@keyframes godShockwave{0%{width:20px;height:20px;opacity:1;border-width:3px}100%{width:120vw;height:120vw;opacity:0;border-width:1px}}
+.pull-god-shockwave2{position:fixed;top:50%;left:50%;width:20px;height:20px;border:2px solid rgba(255,215,0,.6);border-radius:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:307;animation:godShockwave2 1s ease-out forwards}
+@keyframes godShockwave2{0%{width:20px;height:20px;opacity:1}100%{width:160vw;height:160vw;opacity:0}}
+/* 神卡星爆粒子 */
+.pull-god-burst{position:fixed;width:5px;height:5px;border-radius:50%;pointer-events:none;z-index:315;animation:godBurst 1.2s ease-out forwards}
+.pull-god-burst:nth-child(even){width:3px;height:3px}
+@keyframes godBurst{0%{opacity:1;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(var(--bx),var(--by)) scale(0)}}
+/* 神卡屏幕边缘光柱 */
+.pull-god-beam{position:fixed;background:linear-gradient(to top,transparent,rgba(255,51,51,.3),transparent);pointer-events:none;z-index:304;animation:godBeam .5s ease-out forwards}
+@keyframes godBeam{0%{opacity:0;transform:scaleY(0)}30%{opacity:1;transform:scaleY(1)}100%{opacity:0;transform:scaleY(1)}}
+/* 神卡旋转描边 */
+.pull-god-border{position:absolute;inset:-8px;border:2px solid transparent;border-radius:16px;background:conic-gradient(from 0deg,transparent,rgba(255,51,51,.6),rgba(255,215,0,.6),rgba(255,51,51,.6),transparent);-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 2px),#000 calc(100% - 1px));mask:radial-gradient(farthest-side,transparent calc(100% - 2px),#000 calc(100% - 1px));animation:godBorderSpin 2s linear infinite;pointer-events:none}
+@keyframes godBorderSpin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
 
 /* ── Battle ── */
 .battle-overlay{position:fixed;inset:0;background:rgba(5,5,10,.96);display:none;flex-direction:column;align-items:center;z-index:250;padding:8px;overflow-y:auto}
@@ -292,6 +325,7 @@ body{font-family:-apple-system,"PingFang SC","Noto Serif SC",serif;background:#0
     <div><span class="game-title">🏯 江湖经营</span> <span id="userDisplay" style="font-size:11px;color:#6a5a4a"></span></div>
     <div class="res-bar">
       <span>💎<span id="jadeDisplay">0</span> <span id="jadeRate" style="font-size:10px;color:#5adb7a"></span></span>
+      <span style="font-size:10px;color:#b84aff">💠<span id="expPoolDisplay">0</span></span>
       <span class="pity-bar" id="pityBar"></span>
       <span style="font-size:10px">抽<span id="pullCount">0</span></span>
       <span style="font-size:10px;color:#5adb7a;cursor:pointer;font-weight:600" onclick="openTuji()">📖 图鉴</span>
@@ -352,7 +386,7 @@ body{font-family:-apple-system,"PingFang SC","Noto Serif SC",serif;background:#0
 let game=null;
 let battleSpeed=1; // 1=正常, 2=二倍速
 function setBattleSpeed(s){battleSpeed=s;document.querySelectorAll(".speed-btn").forEach(b=>b.classList.remove("active"));document.getElementById("speed"+s+"x").classList.add("active")}
-const QO={"凡品":0,"良品":1,"极品":2,"绝品":3,"传说":4},QC={"凡品":"#888","良品":"#5adb7a","极品":"#4a8eff","绝品":"#b84aff","传说":"#ffd700"},CI={"战士":"🗡️","肉盾":"🛡️","刺客":"💀","法师":"🔥","射手":"🎯","奶妈":"💚"};
+const QO={"凡品":0,"良品":1,"极品":2,"绝品":3,"传说":4,"神卡":5},QC={"凡品":"#888","良品":"#5adb7a","极品":"#4a8eff","绝品":"#b84aff","传说":"#ffd700","神卡":"#ff3333"},CI={"战士":"🗡️","肉盾":"🛡️","刺客":"💀","法师":"🔥","射手":"🎯","奶妈":"💚"};
 const SI={"atk":"⚔️攻","crit":"💥暴","dmg_reduce":"🛡️减","crit_dmg":"🎯爆","immune":"🛡️免疫"};
 function qs(q){return "★".repeat(QO[q]+1)}
 
@@ -361,6 +395,7 @@ function render(g){
   try{
   const _=(id)=>document.getElementById(id);
   _("jadeDisplay")&&(_("jadeDisplay").textContent=g.jade||0);
+  _("expPoolDisplay")&&(_("expPoolDisplay").textContent=g.dupe_exp_total||0);
   _("pullCount")&&(_("pullCount").textContent=g.pull_count);
   _("invTotalCount")&&(_("invTotalCount").textContent=g.inventory_count||0);
   _("powerDisplay")&&(_("powerDisplay").textContent=(g.power||0).toLocaleString());
@@ -380,7 +415,7 @@ function render(g){
   if(!lg)return;
   lg.innerHTML=g.lineup.length===0?'<div class="hero-card" style="padding:30px;text-align:center"><div style="color:#3a2a3a">还没有上阵英雄</div></div>':'';
   if(g.lineup.length){!async function(){try{
-    const r=await fetch("/api/inventory_heroes");const all=await r.json();
+    const ab=window.location.pathname.startsWith('/wuxia')?'/wuxia':'';const r=await fetch(ab+"/api/inventory_heroes");const all=await r.json();
     lg.innerHTML="";
     for(let hid of g.lineup){const h=all.find(x=>x.hero_id===hid);if(!h)continue;
       const col=h.color||QC[h.quality],ci=CI[h.class]||"❓";
@@ -1103,9 +1138,16 @@ async function showHeroDetail(hid){
     const modal=document.getElementById("modal");modal.style.display="flex";
     modal.innerHTML=`<div class="modal-inner">
       <div style="font-size:18px;font-weight:700;color:${col}">${h.name} ${ci}${h.class} <span style="font-size:11px;color:#6a5a4a">Lv.${h.level}</span></div>
-      <div style="font-size:12px;color:${col};margin-bottom:8px">${qs(h.quality)}${h.quality}</div>
+      <div style="font-size:12px;color:${col};margin-bottom:8px">${qs(h.quality)}${h.quality} <span style="display:inline-block;padding:1px 6px;border-radius:4px;font-size:10px;background:${col};color:#000;font-weight:700">技能Lv${h.skill_lv}</span></div>
       <div class="hd-stats"><div class="hd-stat"><div>❤️血量</div><div class="sv">${h.hp.toLocaleString()}<span style="font-size:9px;color:#5a4a3a;font-weight:400">(${h.base_hp?.toLocaleString()})</span></div></div><div class="hd-stat"><div>💥攻击</div><div class="sv">${h.atk.toLocaleString()}<span style="font-size:9px;color:#5a4a3a;font-weight:400">(${h.base_atk?.toLocaleString()})</span></div></div><div class="hd-stat"><div>⚡暴击</div><div class="sv">${h.crit}%<span style="font-size:9px;color:#5a4a3a;font-weight:400">(${h.base_crit||0}%)</span></div></div><div class="hd-stat"><div>⚔️战力</div><div class="sv" style="color:${col}">${h.power.toLocaleString()}</div></div></div>
-      <div class="exp-bar"><div class="exp-fill" style="width:${Math.min(100,h.exp/h.exp_next*100)}%"></div><span class="exp-text">Lv.${h.level} ${h.exp}/${h.exp_next}</span></div>
+      <div style="margin:6px 0">
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:#b84aff;margin-bottom:2px">
+          <span>💠升级 ${h.level}→${h.level+1} (需要${h.level_up_cost}💠)</span>
+          <span>共${h.dupe_exp_total||0}💠</span>
+        </div>
+        <div class="exp-bar"><div class="exp-fill" style="width:${h.level>=100?100:Math.min(100,(h.dupe_exp_total||0)/h.level_up_cost*100)}%;background:linear-gradient(90deg,#b84aff,#e070ff)"></div><span class="exp-text">${h.level>=100?'MAX':(h.dupe_exp_total||0)+'/'+h.level_up_cost}</span></div>
+        ${h.level<100&&(h.dupe_exp_total||0)>=h.level_up_cost?`<div style="text-align:center;margin-top:4px"><button class="mini-btn consume-btn" onclick="doLevelUp('${h.hero_id}')">⬆升级至Lv.${h.level+1}</button></div>`:''}
+      </div>
       <div class="hd-section"><div class="hd-section-title">📜${h.skill_name}${aoeTag}<span style="display:inline-block;padding:1px 6px;border-radius:3px;font-size:10px;background:${col};color:#000;margin-left:4px">Lv${h.skill_lv}</span></div><div class="hd-skill">${h.skill_desc}</div>${skUp}</div>
       <div class="hd-section"><div class="hd-section-title">⭐${h.passive_name}</div><div class="hd-skill" style="color:#6a5a4a">${h.passive_desc}</div>${paUp}</div>
       <div class="hd-section"><div class="hd-section-title">🛡️装备</div><div class="equip-slots">${eqH}</div></div>
@@ -1128,6 +1170,19 @@ async function showEquipSel(hid,slot){document.getElementById("loading").style.d
   <div style="margin-top:4px"><div class="pull-btn" onclick="doEquip2('${hid}','${slot}','none')" style="display:inline-block">卸下</div></div>
   <div style="text-align:center;margin-top:8px"><button class="pull-btn" onclick="closeModal()">取消</button></div></div>`}catch(e){}document.getElementById("loading").style.display="none"}
 async function doEquip2(hid,slot,eid){document.getElementById("loading").style.display="flex";try{const d=await apiFetch(`/api/equip/${hid}/${slot}/${eid}`);closeModal();render(d)}catch(e){}document.getElementById("loading").style.display="none"}
+
+// ═══ 英雄等级升级(消耗经验池) ═══
+async function doLevelUp(hid){
+  document.getElementById("loading").style.display="flex";
+  try{
+    const d=await apiFetch("/api/level_up/"+hid,{method:"POST"});
+    if(d.error){showError(d.error);document.getElementById("loading").style.display="none";return}
+    showError(`⬆ ${d.msg}`);
+    render(d);
+    showHeroDetail(hid);
+  }catch(e){}
+  document.getElementById("loading").style.display="none";
+}
 
 async function enhanceEquip(eid){
   document.getElementById("loading").style.display="flex";
@@ -1221,23 +1276,96 @@ async function tenPull(){if(!game)return;document.getElementById("loading").styl
 async function hundredPull(){if(!game)return;document.getElementById("loading").style.display="flex";try{const d=await apiFetch("/api/pull100");render(d);if(d.pull)showHundredPullM(d.pull)}catch(e){}document.getElementById("loading").style.display="none"}
 function showPullM(pull,is10){const pm=document.getElementById("pullModal");pm.style.display="flex";
   if(is10&&Array.isArray(pull)){const s=[...pull].sort((a,b)=>QO[b.quality]-QO[a.quality]);
-    pm.innerHTML=`<div class="pull-overlay" onclick="closePull()"><div style="margin-bottom:8px;text-align:center"><span style="font-size:16px;font-weight:700;color:#ffd700">✨十连</span></div><div class="pull10-grid">${s.map((c,i)=>{const col=QC[c.quality]||"#888",ci=CI[c.hero_class]||"❓";return `<div class="pull10-item" style="border-color:${col};animation-delay:${i*0.06}s"><div class="p10-r" style="color:${col}">${c.quality}</div><span class="p10-i" style="color:${col}">${ci}</span><div class="p10-n">${c.hero_name}</div></div>`}).join("")}</div><button class="pull-btn" onclick="closePull()">继续</button></div>`}
-  else if(pull){const col=QC[pull.quality]||"#888",ci=CI[pull.hero_class]||"🎴";pm.innerHTML=`<div class="pull-overlay" style="cursor:pointer" onclick="closePull()"><div class="pull-card"><div class="pull-rarity" style="color:${col}">✦${pull.quality}✦</div><div class="pull-icon" style="color:${col}">${ci}</div><div class="pull-name" style="color:${col}">${pull.hero_name}</div></div><div style="margin-top:6px;font-size:11px;color:#5a4a3a">点击继续</div></div>`}}
+    const hasGod=s.some(c=>c.quality==="神卡");
+    if(hasGod){
+      // 十连出神卡→逐个播放神卡特效
+      const gods=s.filter(c=>c.quality==="神卡");
+      const rest=s.filter(c=>c.quality!=="神卡");
+      let godIdx=0;
+      function showNextGod(){
+        if(godIdx<gods.length){
+          showGodPullM(gods[godIdx],()=>{godIdx++;setTimeout(showNextGod,600)});
+        }else{
+          pm.style.display="flex";
+          pm.innerHTML=`<div class="pull-overlay" onclick="closePull()"><div style="margin-bottom:8px;text-align:center"><span style="font-size:16px;font-weight:700;color:#ff3333">🔥 十连神卡!</span></div><div class="pull10-grid">${s.map((c,i)=>{const col=QC[c.quality]||"#888",ci=CI[c.hero_class]||"❓";return `<div class="pull10-item" style="border-color:${col};animation-delay:${i*0.06}s"><div class="p10-r" style="color:${col}">${c.quality}</div><span class="p10-i" style="color:${col}">${ci}</span><div class="p10-n">${c.hero_name}</div></div>`}).join("")}</div><button class="pull-btn" onclick="closePull()">继续</button></div>`;
+        }
+      }
+      showNextGod();
+    }else{
+      pm.innerHTML=`<div class="pull-overlay" onclick="closePull()"><div style="margin-bottom:8px;text-align:center"><span style="font-size:16px;font-weight:700;color:#ffd700">✨十连</span></div><div class="pull10-grid">${s.map((c,i)=>{const col=QC[c.quality]||"#888",ci=CI[c.hero_class]||"❓";return `<div class="pull10-item" style="border-color:${col};animation-delay:${i*0.06}s"><div class="p10-r" style="color:${col}">${c.quality}</div><span class="p10-i" style="color:${col}">${ci}</span><div class="p10-n">${c.hero_name}</div></div>`}).join("")}</div><button class="pull-btn" onclick="closePull()">继续</button></div>`;
+    }
+  }
+  else if(pull){
+    if(pull.quality==="神卡"){
+      showGodPullM(pull);
+    }else{
+      const col=QC[pull.quality]||"#888",ci=CI[pull.hero_class]||"🎴";pm.innerHTML=`<div class="pull-overlay" style="cursor:pointer" onclick="closePull()"><div class="pull-card"><div class="pull-rarity" style="color:${col}">✦${pull.quality}✦</div><div class="pull-icon" style="color:${col}">${ci}</div><div class="pull-name" style="color:${col}">${pull.hero_name}</div></div><div style="margin-top:6px;font-size:11px;color:#5a4a3a">点击继续</div></div>`;
+    }
+  }
+}
+function showGodPullM(pull, onClose){
+  const pm=document.getElementById("pullModal");
+  const col="#ff3333",ci=CI[pull.hero_class]||"🔥";
+  // 第一次闪光
+  const f1=document.createElement("div");f1.className="pull-god-flash pull-god-flash1";
+  document.body.appendChild(f1);setTimeout(()=>f1.remove(),300);
+  // 冲击波×2
+  const sw1=document.createElement("div");sw1.className="pull-god-shockwave";
+  document.body.appendChild(sw1);setTimeout(()=>sw1.remove(),1000);
+  const sw2=document.createElement("div");sw2.className="pull-god-shockwave2";
+  setTimeout(()=>{document.body.appendChild(sw2);setTimeout(()=>sw2.remove(),1200)},200);
+  // 光柱（左右两边）
+  for(let side of["left:0;width:40px;height:100%","right:0;width:40px;height:100%"]){
+    const b=document.createElement("div");b.className="pull-god-beam";
+    b.style.cssText=side+";bottom:0;";document.body.appendChild(b);setTimeout(()=>b.remove(),600);
+  }
+  // 星爆粒子（50个，各方向飞出）
+  for(let i=0;i<50;i++){
+    const p=document.createElement("div");p.className="pull-god-burst";
+    const angle=Math.random()*360;const dist=80+Math.random()*200;
+    p.style.left="50%";p.style.top="50%";
+    p.style.setProperty("--bx",Math.cos(angle*Math.PI/180)*dist+"px");
+    p.style.setProperty("--by",Math.sin(angle*Math.PI/180)*dist+"px");
+    p.style.background=i%3===0?"#ff3333":i%3===1?"#ffd700":"#ff6b6b";
+    p.style.animationDuration=(0.6+Math.random()*0.8)+"s";
+    p.style.animationDelay=(Math.random()*0.3)+"s";
+    document.body.appendChild(p);setTimeout(()=>p.remove(),2000);
+  }
+  // 第二次闪光（延迟）
+  setTimeout(()=>{
+    const f2=document.createElement("div");f2.className="pull-god-flash pull-god-flash2";
+    document.body.appendChild(f2);setTimeout(()=>f2.remove(),500);
+  },400);
+  pm.style.display="flex";
+  pm.innerHTML=`<div class="pull-god-overlay" onclick="${onClose?'':"closePull()"}">
+    <div class="pull-god-card" style="position:relative">
+      <div class="pull-god-border"></div>
+      <div style="position:relative;display:flex;justify-content:center;margin-bottom:-20px"><div class="pull-god-glow"></div></div>
+      <div class="pull-god-rarity" style="color:${col}">✦神卡✦</div>
+      <div class="pull-god-icon" style="color:${col}">${ci}</div>
+      <div class="pull-god-name" style="color:${col}">${pull.hero_name}</div>
+      <div class="pull-god-sub">${onClose?'点击继续':'点击继续'}</div>
+    </div>
+  </div>`;
+  pm.onclick=()=>{if(onClose){onClose()}else{closePull()}};
+}
 function showHundredPullM(pull){
   const pm=document.getElementById("pullModal");pm.style.display="flex";
   const qc=pull.qcounts||{};
   const h=pull.highlights||[];
-  const QC={"凡品":"#888","良品":"#5adb7a","极品":"#4a8eff","绝品":"#b84aff","传说":"#ffd700"};
-  const qo={"凡品":0,"良品":1,"极品":2,"绝品":3,"传说":4};
+  const QC={"凡品":"#888","良品":"#5adb7a","极品":"#4a8eff","绝品":"#b84aff","传说":"#ffd700","神卡":"#ff3333"};
+  const qo={"凡品":0,"良品":1,"极品":2,"绝品":3,"传说":4,"神卡":5};
   h.sort((a,b)=>qo[b.quality]-qo[a.quality]);
+  const hasGod=qc.神卡>0||h.some(c=>c.quality==="神卡");
   pm.innerHTML=`<div class="pull-overlay" onclick="closePull()">
-    <div style="text-align:center;margin-bottom:6px"><span style="font-size:18px;font-weight:700;color:#b84aff">🎴 百抽总结</span></div>
+    <div style="text-align:center;margin-bottom:6px"><span style="font-size:18px;font-weight:700;color:${hasGod?"#ff3333":"#b84aff"}">🎴 百抽总结</span></div>
     <div style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap;margin-bottom:8px">
       <span style="font-size:12px;color:#888">凡品${qc.凡品||0}</span>
       <span style="font-size:12px;color:#5adb7a">良品${qc.良品||0}</span>
       <span style="font-size:12px;color:#4a8eff">极品${qc.极品||0}</span>
       <span style="font-size:12px;color:#b84aff">绝品${qc.绝品||0}</span>
       <span style="font-size:14px;font-weight:700;color:#ffd700">传说${qc.传说||0}</span>
+      ${qc.神卡?`<span style="font-size:18px;font-weight:900;color:#ff3333;text-shadow:0 0 10px #ff3333">神卡${qc.神卡}</span>`:""}
     </div>
     ${h.length?`<div style="font-size:10px;color:#6a5a4a;margin-bottom:4px">✨ 高品质英雄</div><div class="pull10-grid">${h.map((c,i)=>{const col=QC[c.quality]||"#888",ci=CI[c.hero_class]||"❓";return `<div class="pull10-item" style="border-color:${col};animation-delay:${i*0.1}s"><div class="p10-r" style="color:${col}">${c.quality}</div><span class="p10-i" style="color:${col}">${ci}</span><div class="p10-n" style="color:#d4c9a8">${c.hero_name}</div></div>`}).join("")}</div>`:`<div style="font-size:11px;color:#6a5a4a;text-align:center;padding:12px">没有高品质英雄</div>`}
     <button class="pull-btn" onclick="closePull()">继续</button>
@@ -1247,16 +1375,18 @@ function closePull(){document.getElementById("pullModal").style.display="none";i
 
 // ═══ Missing Functions ═══
 async function apiFetch(url, options){
+  const API_BASE = window.location.pathname.startsWith('/wuxia') ? '/wuxia' : '';
+  const fullUrl = API_BASE + url;
   if(!options)options={};
   if(options.method==="POST"){
     if(!options.headers)options.headers={"Content-Type":"application/json"};
     if(!options.body)options.body="{}";
   }
-  const r=await fetch(url, options);
-  if(r.redirected||r.status===401||r.status===302){window.location.href="/login";throw new Error("未登录")}
+  const r=await fetch(fullUrl, options);
+  if(r.redirected||r.status===401||r.status===302){window.location.href=API_BASE+"/login";throw new Error("未登录")}
   const txt=await r.text();
   try{const d=JSON.parse(txt);if(d.error){showError(d.error);throw new Error(d.error)};return d}
-  catch(e){if(txt.startsWith("<!doctype")){window.location.href="/login";throw new Error("未登录")};showError("请求失败");throw new Error("解析失败")}
+  catch(e){if(txt.startsWith("<!doctype")){window.location.href=API_BASE+"/login";throw new Error("未登录")};showError("请求失败");throw new Error("解析失败")}
 }
 function showError(msg){
   const el=document.getElementById("errorToast");if(!el)return;
@@ -1299,7 +1429,7 @@ async function openTuji(){
 function closeTuji(){document.getElementById("tujiOverlay").style.display="none"}
 function renderTujiHeroes(){
   if(!tujiData||!tujiData.heroes){document.getElementById("tujiContent").innerHTML='<div class="tuji-empty">暂无数据</div>';return}
-  const QO={"凡品":0,"良品":1,"极品":2,"绝品":3,"传说":4},QC={"凡品":"#888","良品":"#5adb7a","极品":"#4a8eff","绝品":"#b84aff","传说":"#ffd700"},CI={"战士":"🗡️","肉盾":"🛡️","刺客":"💀","法师":"🔥","射手":"🎯","奶妈":"💚"};
+  const QO={"凡品":0,"良品":1,"极品":2,"绝品":3,"传说":4,"神卡":5},QC={"凡品":"#888","良品":"#5adb7a","极品":"#4a8eff","绝品":"#b84aff","传说":"#ffd700","神卡":"#ff3333"},CI={"战士":"🗡️","肉盾":"🛡️","刺客":"💀","法师":"🔥","射手":"🎯","奶妈":"💚"};
   const grouped={};for(let h of tujiData.heroes){const q=h.quality;(grouped[q]=grouped[q]||[]).push(h)}
   const order=Object.keys(QC).filter(q=>grouped[q]);
   let h=`<div class="tuji-grid">`;
@@ -1322,7 +1452,7 @@ function showTujiHero(hid){
   if(!tujiData)return;
   const hero=tujiData.heroes.find(h=>h.id===hid);
   if(!hero)return;
-  const QC={"凡品":"#888","良品":"#5adb7a","极品":"#4a8eff","绝品":"#b84aff","传说":"#ffd700"},CI={"战士":"🗡️","肉盾":"🛡️","刺客":"💀","法师":"🔥","射手":"🎯","奶妈":"💚"};
+  const QC={"凡品":"#888","良品":"#5adb7a","极品":"#4a8eff","绝品":"#b84aff","传说":"#ffd700","神卡":"#ff3333"},CI={"战士":"🗡️","肉盾":"🛡️","刺客":"💀","法师":"🔥","射手":"🎯","奶妈":"💚"};
   const col=QC[hero.quality]||"#888",ci=CI[hero.class]||"❓";
   const skUp=Object.entries(hero.skill_upgrades||{}).map(([lv,desc])=>`<div class="hd-upgrade" style="color:#5adb7a">🔓Lv${lv}:${desc}</div>`).join("");
   const paUp=Object.entries(hero.passive_upgrades||{}).map(([lv,desc])=>`<div class="hd-upgrade" style="color:#5adb7a">🔓Lv${lv}:${desc}</div>`).join("");
@@ -1339,7 +1469,7 @@ function showTujiHero(hid){
   const modal=document.getElementById("modal");modal.style.display="flex";
   modal.innerHTML=`<div class="modal-inner">
     <div style="font-size:18px;font-weight:700;color:${col}">${hero.name} ${ci}${hero.class}</div>
-    <div style="font-size:12px;color:${col};margin-bottom:8px">${"★".repeat(Math.min(Object.keys(QC).indexOf(hero.quality)+1,5))}${hero.quality}</div>
+    <div style="font-size:12px;color:${col};margin-bottom:8px">${"★".repeat(Math.min(Object.keys(QC).indexOf(hero.quality)+1,6))}${hero.quality}</div>
     <div class="hd-stats"><div class="hd-stat"><div>❤️血量</div><div class="sv">${hero.hp.toLocaleString()}</div></div><div class="hd-stat"><div>💥攻击</div><div class="sv">${hero.atk.toLocaleString()}</div></div><div class="hd-stat"><div>⚡暴击</div><div class="sv">${hero.crit}%</div></div><div class="hd-stat"><div>👟速度</div><div class="sv" style="font-size:15px">${hero.spd||100}</div></div></div>
     <div class="hd-stats" style="margin-bottom:12px"><div class="hd-stat"><div>🗡️普攻</div><div style="font-size:12px;color:#8a7a5a">${hero.basic_name||""}</div><div style="font-size:10px;color:#5a4a3a">${hero.basic_desc||""} ⚡+${hero.basic_energy_gain||25}</div></div><div class="hd-stat"><div>⚡技能消耗</div><div class="sv" style="color:#4a8eff;font-size:16px">${hero.skill_cost||100}</div><div style="font-size:10px;color:#5a4a3a">满能:200</div></div></div>
     <div class="hd-section"><div class="hd-section-title">📜${hero.skill_name}${aoeTag}</div><div class="hd-skill">${hero.skill_desc}</div>${skUp}</div>
@@ -1392,7 +1522,8 @@ function switchTujiTab(tab){
 }
 function doLogout(){
   closeModal();closePull();
-  fetch("/api/logout").then(()=>{window.location.href="/login?nocache="+Date.now()}).catch(()=>{window.location.href="/login"});
+  const b=window.location.pathname.startsWith('/wuxia')?'/wuxia':'';
+  fetch(b+"/api/logout").then(()=>{window.location.href=b+"/login?nocache="+Date.now()}).catch(()=>{window.location.href=b+"/login"});
 }
 async function doSweep(){
   if(!game||!game.lineup||!game.lineup.length){showError("请先上阵英雄");return}
@@ -1402,8 +1533,8 @@ async function doSweep(){
 }
 
 // ═══ Auto tick & startup ═══
-setInterval(async()=>{try{const d=await apiFetch("/api/tick");if(d.tick_gain){document.getElementById("jadeDisplay").textContent=d.jade;if(d.jade_per_min)document.getElementById("jadeRate").textContent=`+${d.jade_per_min}/分`}}catch(e){}},30000);
-(async()=>{try{const r=await fetch("/api/load");if(r.redirected||r.status===401){window.location.href="/login";return}const d=await r.json();if(d.need_login){window.location.href="/login";return}render(d)}catch(e){window.location.href="/login"}document.getElementById("loading").style.display="none"})();
+setInterval(async()=>{try{const d=await apiFetch("/api/tick");if(d.tick_gain){document.getElementById("jadeDisplay").textContent=d.jade;if(d.jade_per_min)document.getElementById("jadeRate").textContent=`+${d.jade_per_min}/分`;if(d.dupe_exp_total!==undefined)document.getElementById("expPoolDisplay").textContent=d.dupe_exp_total}}catch(e){}},30000);
+(async()=>{const ab=window.location.pathname.startsWith('/wuxia')?'/wuxia':'';try{const r=await fetch(ab+"/api/load");if(r.redirected||r.status===401){window.location.href=ab+"/login";return}const d=await r.json();if(d.need_login){window.location.href=ab+"/login";return}render(d)}catch(e){window.location.href=ab+"/login"}document.getElementById("loading").style.display="none"})();
 </script>
 </body>
 </html>
