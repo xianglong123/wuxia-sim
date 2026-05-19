@@ -347,6 +347,9 @@ body{font-family:-apple-system,"PingFang SC","Noto Serif SC",serif;background:#0
   <div class="header-row">
     <div><span class="game-title">🏯 江湖经营</span> <span id="userDisplay" style="font-size:11px;color:#6a5a4a"></span></div>
     <div style="display:flex;gap:6px;align-items:center">
+      <button class="leaderboard-btn" onclick="showAnnouncements()">📢 公告</button>
+      <button class="leaderboard-btn" id="dailyBtn" onclick="dailyReward()">📅 领钻</button>
+      <span id="dailyCD" style="font-size:9px;color:#5a4a3a"></span>
       <button class="leaderboard-btn" onclick="showLeaderboard()">🏆 排行</button>
     </div>
     <div class="res-bar">
@@ -404,8 +407,7 @@ body{font-family:-apple-system,"PingFang SC","Noto Serif SC",serif;background:#0
     <button class="action-btn gacha" onclick="tenPull()"><span class="ab-icon">🎴</span><span class="ab-label">十连 25💎</span></button>
     <button class="action-btn gacha" onclick="hundredPull()" style="background:linear-gradient(135deg,#8a2be2,#b84aff)"><span class="ab-icon">🎴</span><span class="ab-label">百抽 235💎</span></button>
     <button class="action-btn battle" onclick="startBattle()"><span class="ab-icon">⚔️</span><span class="ab-label">挑战</span></button>
-    <button class="action-btn auto-battle" onclick="startAutoBattle()"><span class="ab-icon">⚡</span><span class="ab-label">托管</span></button>
-    <button class="action-btn" onclick="doSweep()"><span class="ab-icon">⚡</span><span class="ab-label">一键收菜</span></button>
+
   </div>
   <div class="inv-section">
     <div class="inv-toggle" onclick="toggleInv()">📦 全部英雄 (<span id="invTotalCount">0</span>)</div>
@@ -433,6 +435,12 @@ function render(g){
   _("pullCount")&&(_("pullCount").textContent=g.pull_count);
   _("invTotalCount")&&(_("invTotalCount").textContent=g.inventory_count||0);
   _("powerDisplay")&&(_("powerDisplay").textContent=(g.power||0).toLocaleString());
+  const cdEl=document.getElementById("dailyCD");
+  if(cdEl){const last=g.last_reward_time||0;
+    if(!last){cdEl.textContent="可领"}
+    else{const now=Date.now()/1000,next=last+2*3600,remain=Math.max(0,Math.ceil(next-now));
+    if(remain>0){const h=Math.floor(remain/3600),m=Math.floor((remain%3600)/60);cdEl.textContent=h>0?`${h}时${m}分`:`${m}分`}
+    else{cdEl.textContent="可领"}}}
   _("stageDisplay")&&(_("stageDisplay").textContent=g.stage?.name||"-");
   if(_("stageIndexDisplay"))_("stageIndexDisplay").textContent=g.stage?.index!==undefined?`第${g.stage.index}关${g.stage.boss?' 👑':''}`:"0";
   _("lineupCount")&&(_("lineupCount").textContent=g.lineup_count+"/6");
@@ -480,6 +488,31 @@ function render(g){
       card.onclick=(()=>showHeroDetail(hid));lg.appendChild(card);
     }}catch(e){}}()}
   }catch(e){showError("渲染:"+e.message)}
+}
+
+async function dailyReward(){
+  document.getElementById("loading").style.display="flex";
+  try{
+    const d=await apiFetch("/api/daily_reward",{method:"POST"});
+    if(d.ok){showError(`📅 +${d.reward}💎！`)}else{showError(d.msg||"已领取")}
+    render(d);
+  }catch(e){}
+  document.getElementById("loading").style.display="none";
+}
+
+async function showAnnouncements(){
+  document.getElementById("loading").style.display="flex";
+  try{
+    const ab=window.location.pathname.startsWith('/wuxia')?'/wuxia':'';
+    const d=await (await fetch(ab+"/api/announcements")).json();
+    const m=document.getElementById("modal");m.style.display="flex";
+    m.innerHTML=`<div class="lb-overlay" onclick="closeModal()"><div class="lb-panel" onclick="event.stopPropagation()">
+      <div class="lb-title">📢 江湖公告</div>
+      ${d.map((a,i)=>`<div class="lb-row"><span style="font-size:10px;color:#5a4a3a;width:70px">${a.date}</span><span style="color:#c4b89a">${a.content}</span></div>`).join("")}
+      <div style="text-align:center;margin-top:10px"><button class="pull-btn" onclick="closeModal()">关闭</button></div>
+    </div></div>`;
+  }catch(e){}
+  document.getElementById("loading").style.display="none";
 }
 
 // ═══ 排行榜 ═══

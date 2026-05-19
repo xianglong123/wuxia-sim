@@ -35,6 +35,7 @@ def get_db():
     conn.execute("CREATE TABLE IF NOT EXISTS invite_codes (code TEXT PRIMARY KEY, max_uses INTEGER DEFAULT 10, used_count INTEGER DEFAULT 0, created_at TEXT DEFAULT (datetime('now','localtime')))")
     for seed in ["WUXIA2026","JIANGHU","WANFA","LONGCHENG","YIJIAN"]:
         conn.execute("INSERT OR IGNORE INTO invite_codes (code) VALUES (?)", (seed,))
+    conn.execute("CREATE TABLE IF NOT EXISTS announcements (id INTEGER PRIMARY KEY AUTOINCREMENT, content TEXT NOT NULL, date TEXT NOT NULL, created_at TEXT DEFAULT (datetime('now','localtime')))")
     return conn
 
 def _prefix(path):
@@ -444,8 +445,9 @@ def gen_stage_name(si):
 
 def gen_stage(si):
     """根据关卡进度固定生成关卡，不依赖玩家战力"""
-    boss = si > 0 and si % 5 == 0  # 每5关一个BOSS(不含第0关)
-    ep = 2000 + si * 500  # 更高血量，更有挑战
+    boss = si > 0 and si % 5 == 0
+    # 三次方曲线: 前期平缓, 50关加速, 100关百万血
+    ep = 2000 + int(si ** 3 * 3.5)
     if si < 3: pl=["wood_sword","cloth_armor","straw_sandal"]; jb=5; ec=0.2
     elif si < 8: pl=["iron_sword","chain_armor","bronze_mirror"]; jb=10; ec=0.3
     elif si < 15: pl=["longquan_sword","mingguang_armor","jade_pendant"]; jb=18; ec=0.4
@@ -1483,6 +1485,7 @@ def _apply_battle_rewards(result,uid):
     if not g: return
     if result["win"]:
         jr=result.get("jade_reward",3)
+        g["jade"]+=jr
         si=g["stage_index"]
         g["stage_index"]+=1
         if result.get("equip_reward"):
@@ -2777,7 +2780,9 @@ def api_tuji():
 
 def to_client(g):
     power=calc_pow(HERO_DATA,g["lineup"],g["inventory"],g["equip_bag"])
-    sp=2000+g["stage_index"]*500; sp=max(50,min(sp,999999))
+    si=g["stage_index"]
+    sp=2000+int(si**3*3.5)
+    sp=max(50,min(sp,999999))
     sn=g.get("stage_name") or gen_stage_name(g["stage_index"])
     stage_info = gen_stage(g["stage_index"])
     pi={"count":g["pity_counter"],"next_guaranteed":10-g["pity_counter"]}
@@ -2790,7 +2795,8 @@ def to_client(g):
         "offline_msg":g.get("offline_msg",""),"jade_per_min":round(max(0.3,power/5000),1),
         "dupe_exp_total":g.get("dupe_exp_total",0),
         "equip_exp_total":g.get("equip_exp_total",0),
-        "equip_pity":g.get("equip_pity_counter",0)}
+        "equip_pity":g.get("equip_pity_counter",0),
+        "last_reward_time":g.get("last_reward_time",0)}
 
 # ═══ 铸魂池API ═══
 @app.route("/api/equip_pull")
@@ -2976,7 +2982,38 @@ def api_hero_consume():
 
 app.jinja_env.auto_reload = True  # 模板修改后自动刷新
 
+# ═══ 公告 ═══
+@app.route("/api/announcements")
+def api_announcements():
+    conn=get_db()
+    if conn.execute("SELECT COUNT(*) as c FROM announcements").fetchone()["c"]==0:
+        conn.execute("INSERT INTO announcements (date, content) VALUES (?,?)",
+            (datetime.now().strftime("%Y-%m-%d"), "🎉 江湖经营上线！右上角每8小时领取1000钻石，祝游戏愉快！"))
+        conn.commit()
+    rows=conn.execute("SELECT date,content FROM announcements WHERE date >= date('now','-7 days') ORDER BY date DESC,id DESC").fetchall()
+    result=[{"date":r["date"],"content":r["content"]} for r in rows]
+    conn.close()
+    return jsonify(result)
+
 # ═══ 排行榜 ═══
+@app.route("/api/daily_reward", methods=["POST"])
+@login_required
+def api_daily_reward():
+    g=load_game()
+    if not g: return api_new()
+    now=datetime.now().timestamp()
+    last=g.get("last_reward_time",0)
+    if now-last<2*3600:
+        remaining=int(2*3600-(now-last))
+        res=to_client(g); res.update({"ok":False,"msg":"已领取","remaining":remaining})
+        return jsonify(res)
+    g["last_reward_time"]=now
+    g["jade"]+=5000
+    g["msg"]="📅 领取+5000💎！"
+    save_game(g)
+    res=to_client(g); res.update({"ok":True,"reward":5000,"next_time":now+2*3600})
+    return jsonify(res)
+
 @app.route("/api/leaderboard")
 def api_leaderboard():
     conn=get_db()
