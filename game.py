@@ -374,19 +374,71 @@ reg({"id":"nuwa","name":"女娲","class":"奶妈","quality":"神卡","color":"#f
     "passive_name":"创世","passive_desc":"战斗开始全体获得30%护盾+回复10%","passive_upgrades":{3:"护盾50%+回复20%",5:"队友死亡时立即复活一次(每场1次)",7:"复活时全队无敌1回合"}})
 reg({"id":"chiyou","name":"蚩尤","class":"肉盾","quality":"神卡","color":"#ff3333",
     "hp":9000,"atk":400,"crit":10,"spd":90,"skill_cost":140,
-    "skill_name":"兵主降临","skill_desc":"全体队友获得50%护盾+攻击+60%×3回合, 嘲讽全体敌人3回合, 自身减伤60%×3回合",
-    "skill_aoe":False,"skill_target":"self","skill_special":["taunt","shield_ally"],"skill_buffs":[{"stat":"atk","pct":0.6,"dur":3},{"stat":"dmg_reduce","pct":0.6,"dur":3}],
-    "skill_upgrades":{3:"护盾80%+嘲讽期间敌人受伤+30%",5:"兵主:全体队友免疫控制3回合",7:"兵主降世:全体队友无敌2回合", 9:"#2血量+60%+护盾40%"},
+    "skill_name":"兵主降临","skill_desc":"自身200%HP护盾+减伤60%×3回合+嘲讽全体3回合+全队减伤30%×3回合",
+    "skill_aoe":False,"skill_target":"self","skill_special":["taunt","shield_ally","self_shield"],
+    "skill_buffs":[{"stat":"dmg_reduce","pct":0.60,"dur":3},{"stat":"dmg_reduce","pct":0.30,"dur":3}],
+    "skill_upgrades":{3:"护盾300%+嘲讽期间敌人易伤30%",5:"兵主:全队免疫控制3回合",7:"兵主降世:全队无敌2回合", 9:"#2血量+60%+护盾40%"},
     "basic_name":"蚩尤旗","basic_desc":"挥动蚩尤旗，对全体敌人造成100%伤害+降低攻击15%","basic_dmg_pct":1.0,"basic_energy_gain":40,
     "basic_aoe":True,"basic_target":"all_enemy","basic_special":[],
     "passive_name":"兵主","passive_desc":"战斗开始给全体队友+30%攻击+15%减伤","passive_upgrades":{3:"攻击+50%+减伤25%",5:"血量高于70%时全队无敌1回合",7:"触发无敌时自身永久免疫+30%攻击"}})
 
+# ═══ 至尊卡 (里程碑解锁) ═══
+MILESTONE_HEROES = {100:"yangjian",200:"taiyizhenren",300:"nezha",400:"zhenyuanzi",500:"tongtianjiaozhu"}
+
+reg({"id":"yangjian","name":"杨戬","class":"战士","quality":"至尊","color":"#ff6600",
+    "hp":7000,"atk":850,"crit":45,"spd":155,"skill_cost":140,
+    "skill_name":"天眼","skill_desc":"攻击血量最高敌人，造成350%真实伤害，对BOSS伤害翻倍",
+    "skill_aoe":False,"skill_target":"highest_hp","skill_dmg_pct":3.5,"skill_special":["true_damage"],
+    "skill_upgrades":{3:"伤害500%",5:"BOSS额外+200%",7:"击杀后刷新技能冷却",9:"#1攻击+50%"},
+    "basic_name":"三尖两刃","basic_desc":"对单个敌人造成120%伤害","basic_dmg_pct":1.2,"basic_energy_gain":45,
+    "basic_aoe":False,"basic_target":"single","basic_special":[],
+    "passive_name":"天眼通","passive_desc":"普攻附带目标最大生命5%真伤","passive_upgrades":{3:"真伤8%",5:"暴击时15%",7:"对BOSS真伤翻倍"}})
+
+reg({"id":"taiyizhenren","name":"太乙真人","class":"肉盾","quality":"至尊","color":"#ff6600",
+    "hp":12000,"atk":300,"crit":10,"spd":95,"skill_cost":130,
+    "skill_name":"乾坤护体","skill_desc":"全体队友50%护盾，自身100%护盾+反伤80%×3回合",
+    "skill_aoe":True,"skill_target":"all_ally","skill_heal_pct":0,"skill_special":["shield_ally"],
+    "skill_buffs":[{"stat":"dmg_reduce","pct":0.5,"dur":3}],
+    "skill_upgrades":{3:"全队护盾70%",5:"反伤转为真实伤害",7:"死亡时全队无敌2回合",9:"#2血量+60%"},
+    "basic_name":"丹鼎术","basic_desc":"横鼎格挡，造成60%伤害+自身减伤15%×2回合","basic_dmg_pct":0.6,"basic_energy_gain":40,
+    "basic_aoe":False,"basic_target":"single","basic_special":[],
+    "passive_name":"金丹不灭","passive_desc":"受伤时将30%伤害转为治疗给最低血量队友","passive_upgrades":{3:"治疗40%",5:"治疗全体20%",7:"死亡时复活80%血量(每场1次)"}})
+
+reg({"id":"nezha","name":"哪吒","class":"刺客","quality":"至尊","color":"#ff6600",
+    "hp":5000,"atk":600,"crit":25,"spd":180,"skill_cost":120,
+    "skill_name":"三头六臂","skill_desc":"对单个敌人攻击6次每次80%，自身损30%当前血量，全队攻击+40%×3回合",
+    "skill_aoe":False,"skill_target":"single","skill_dmg_pct":0.8,"skill_special":["multi_hit"],
+    "skill_buffs":[{"stat":"atk","pct":0.4,"dur":3}],
+    "skill_upgrades":{3:"攻击8次",5:"自损降至15%",7:"阵亡触发全队无敌1回合",9:"#6攻击+40%"},
+    "basic_name":"火尖枪","basic_desc":"烈焰突刺，对单个敌人造成130%伤害","basic_dmg_pct":1.3,"basic_energy_gain":50,
+    "basic_aoe":False,"basic_target":"single","basic_special":[],
+    "passive_name":"莲花化身","passive_desc":"阵亡时全队回复50%血量+攻击翻倍×2回合(每场1次)","passive_upgrades":{3:"回复70%",5:"攻击+150%",7:"附加全队无敌1回合"}})
+
+reg({"id":"zhenyuanzi","name":"镇元子","class":"法师","quality":"至尊","color":"#ff6600",
+    "hp":9000,"atk":500,"crit":20,"spd":120,"skill_cost":150,
+    "skill_name":"袖里乾坤","skill_desc":"锁定敌方攻击最高单位，无法行动2回合+每秒受到攻击力×2伤害",
+    "skill_aoe":False,"skill_target":"highest_atk","skill_dmg_pct":2.0,"skill_special":["stun"],
+    "skill_upgrades":{3:"锁定3回合",5:"连锁传递至相邻敌人",7:"被动断技率80%",9:"#5能量+80"},
+    "basic_name":"地书","basic_desc":"翻开地书，对单个敌人造成110%伤害","basic_dmg_pct":1.1,"basic_energy_gain":40,
+    "basic_aoe":False,"basic_target":"single","basic_special":[],
+    "passive_name":"地仙之祖","passive_desc":"敌方释放技能时50%打断+受到100%攻击反噬","passive_upgrades":{3:"反噬150%",5:"断技率70%",7:"打断后敌方晕眩1回合"}})
+
+reg({"id":"tongtianjiaozhu","name":"通天教主","class":"法师","quality":"至尊","color":"#ff6600",
+    "hp":15000,"atk":800,"crit":35,"spd":110,"skill_cost":180,
+    "skill_name":"诛仙剑阵","skill_desc":"3回合内敌人行动前受到攻击力×150%反噬+治疗降低80%",
+    "skill_aoe":True,"skill_target":"all_enemy","skill_dmg_pct":0,"skill_special":[],
+    "skill_debuffs":[{"stat":"heal_reduce","pct":-0.8,"dur":3}],
+    "skill_upgrades":{3:"反噬250%",5:"治疗降为0",7:"敌方无法暴击",9:"#5全队攻击+30%"},
+    "basic_name":"诛仙剑气","basic_desc":"剑气纵横，对全体敌人造成80%伤害","basic_dmg_pct":0.8,"basic_energy_gain":40,
+    "basic_aoe":True,"basic_target":"all_enemy","basic_special":[],
+    "passive_name":"万仙来朝","passive_desc":"每有一个敌人阵亡，永久攻击+25%+暴击+10%(无上限)","passive_upgrades":{3:"攻击+35%",5:"暴击+15%",7:"阵亡时额外回复全队20%"}})
+
 HERO_IDS = list(HERO_DATA.keys())
-QUALITY_ORDER = {"凡品":0,"良品":1,"极品":2,"绝品":3,"传说":4,"神卡":5}
+QUALITY_ORDER = {"凡品":0,"良品":1,"极品":2,"绝品":3,"传说":4,"神卡":5,"至尊":6}
 QUALITY_WEIGHTS = {"凡品":40,"良品":30,"极品":20,"绝品":8,"传说":2}
-RARITY_COLORS = {"凡品":"#888","良品":"#5adb7a","极品":"#4a8eff","绝品":"#b84aff","传说":"#ffd700","神卡":"#ff3333"}
+RARITY_COLORS = {"凡品":"#888","良品":"#5adb7a","极品":"#4a8eff","绝品":"#b84aff","传说":"#ffd700","神卡":"#ff3333","至尊":"#ff6600"}
 # 重复英雄转换为经验池(抽到同名英雄时获得)
-DUPE_EXP = {"凡品":30,"良品":80,"极品":200,"绝品":500,"传说":1500,"神卡":5000}
+DUPE_EXP = {"凡品":30,"良品":80,"极品":200,"绝品":500,"传说":1500,"神卡":5000,"至尊":8000}
 # 技能升级所需经验
 SKILL_UPGRADE_COST = {2:100, 3:200, 4:350, 5:550, 6:800, 7:1200, 8:1800, 9:2800}
 # ═══ 铸魂池常量 ═══
@@ -422,6 +474,16 @@ req({"id":"bagua_furnace","name":"八卦炉","type":"防具","quality":"神卡",
 req({"id":"xingtian_axe","name":"刑天斧","type":"武器","quality":"神卡","color":"#ff3333","atk":2500,"hp":1000,"crit":10,"desc":"干戚神斧","exclusive":"xingtian","special":"技能伤害+60%，吸血+20%","lv20":"血量+20%","lv40":"技能AOE扩大","lv60":"反伤+20%","lv80":"击杀后重置技能","lv100":"开天:全屏600%+破甲"})
 req({"id":"nuwa_stone","name":"补天石","type":"饰品","quality":"神卡","color":"#ff3333","atk":300,"hp":2000,"crit":25,"desc":"五色补天石","exclusive":"nuwa","special":"治疗+40%，护盾+30%","lv20":"免疫+1回合","lv40":"治疗暴击","lv60":"复活队友+50%血","lv80":"全队开局60%护盾","lv100":"创世:全队无敌2回合"})
 req({"id":"chiyou_flag","name":"蚩尤旗","type":"防具","quality":"神卡","color":"#ff3333","atk":500,"hp":4000,"crit":5,"desc":"兵主战旗","exclusive":"chiyou","special":"减伤+25%，护盾+40%","lv20":"血量+30%","lv40":"嘲讽时全队回血10%","lv60":"受击反弹30%","lv80":"全体队友减伤+20%","lv100":"兵主:全队无敌+攻击翻倍"})
+# 新装备（特效型）
+req({"id":"da_shen_bian","name":"打神鞭","type":"武器","quality":"绝品","color":"#b84aff","atk":350,"hp":0,"crit":8,"desc":"元始天尊法器","exclusive":None,"special":"每次攻击降低目标攻击5%(可叠3层)","lv20":"降低7%","lv40":"可叠5层","lv60":"降低防御同时","lv80":"叠加刷新持续时间","lv100":"降攻转全队增益"})
+# 肉盾装备
+req({"id":"tianming_dun","name":"天命盾","type":"防具","quality":"极品","color":"#4a8eff","atk":0,"hp":500,"crit":0,"desc":"天命所归","exclusive":None,"special":"血量+20%，减伤+10%"})
+req({"id":"xuanwu_jia","name":"玄武甲","type":"防具","quality":"绝品","color":"#b84aff","atk":0,"hp":1200,"crit":0,"desc":"玄武神兽之甲","exclusive":None,"special":"血量+40%，减伤+20%"})
+req({"id":"bumie_jinshen","name":"不灭金身","type":"防具","quality":"神卡","color":"#ff3333","atk":0,"hp":3000,"crit":0,"desc":"万法不侵","exclusive":None,"special":"血量+70%，减伤+35%，每回合回复5%血量"})
+req({"id":"shanhe_sheji","name":"山河社稷图","type":"饰品","quality":"传说","color":"#ffd700","atk":100,"hp":800,"crit":15,"desc":"女娲法宝","exclusive":None,"special":"战斗开始随机封印1个敌人2回合","lv20":"封印2个敌人","lv40":"封印时降低50%攻击","lv60":"封印结束造成200%伤害","lv80":"封印延长至3回合","lv100":"山河:全图封印"})
+req({"id":"zhanxian_feidao","name":"斩仙飞刀","type":"武器","quality":"传说","color":"#ffd700","atk":600,"hp":0,"crit":20,"desc":"陆压道人之宝","exclusive":None,"special":"普攻后对血量最低敌人追加40%伤害","lv20":"追加60%","lv40":"暴击时追加翻倍","lv60":"斩杀15%以下","lv80":"追加变为真实伤害","lv100":"飞刀:即死15%"})
+req({"id":"liuhun_fan","name":"六魂幡","type":"饰品","quality":"神卡","color":"#ff3333","atk":200,"hp":1500,"crit":10,"desc":"通天教主至宝","exclusive":None,"special":"每击杀敌人全队回复12%血量","lv20":"回复18%","lv40":"击杀后全队攻击+10%×2回合","lv60":"回复+10%护盾","lv80":"击杀回复全队能量+30","lv100":"魂灭:全队满血满能"})
+req({"id":"xinghuang_qi","name":"杏黄旗","type":"防具","quality":"神卡","color":"#ff3333","atk":0,"hp":2500,"crit":5,"desc":"玉虚宫镇宫之宝","exclusive":None,"special":"受击30%反弹50%伤害为真伤","lv20":"反弹60%","lv40":"反弹率40%","lv60":"反弹后回血15%","lv80":"反弹伤害溅射全体","lv100":"万法不侵:无敌1回合"})
 EQ_QUALITY_ORDER = {"凡品":0,"良品":1,"极品":2,"绝品":3,"传说":4,"神卡":5}
 
 # ═══ 羁绊 ═══
@@ -432,6 +494,11 @@ BONDS = [
     {"id":"beauty","name":"国色天香","members":["diaochan","caiwenji"],"desc":"闪避+15%","effect":{"dodge":15}},
     {"id":"sharpshooter","name":"百步穿杨","members":["yangyouji","huangzhong"],"desc":"暴击+15%爆伤+30%","effect":{"crit":15,"crit_dmg":30}},
     {"id":"rivalry","name":"宿命对决","members":["luobu","guanyu"],"desc":"攻击+20%","effect":{"atk_pct":20}},
+    {"id":"tiangang_disha","name":"天罡地煞","members":["wukong","nezha"],"desc":"每击杀永久攻击+10%","effect":{"on_kill_atk_pct":10}},
+    {"id":"fengshen_zhan","name":"封神之战","members":["yangjian","nezha"],"desc":"对BOSS伤害+40%","effect":{"boss_dmg_pct":40}},
+    {"id":"daofaziran","name":"道法自然","members":["taiyizhenren","zhenyuanzi"],"desc":"护盾+25%+反伤+15%","effect":{"shield_pct":25,"reflect_pct":15}},
+    {"id":"wanxian_laichao","name":"万仙来朝","members":["tongtianjiaozhu","zhenyuanzi"],"desc":"每回合敌方受攻击×20%伤害","effect":{"enemy_tick_dmg":20}},
+    {"id":"fodao_zheng","name":"佛道之争","members":["wukong","tongtianjiaozhu"],"desc":"暴击率+10%+爆伤+30%","effect":{"crit":10,"crit_dmg":30}},
 ]
 
 # ═══ 无限关卡 ═══
@@ -514,17 +581,29 @@ def calc_hp(hid, sl, eq, inv=None, equip_bag=None):
 def get_bonds(lineup):
     return [b for b in BONDS if all(m in lineup for m in b["members"])]
 
-def rq(pity):
-    if pity>=10: return random.choices(["极品","绝品","传说","神卡"],weights=[40,28,18,14])[0]
+def rq(pity, has_unlocked_milestone=False):
+    if pity>=10: 
+        pool=["极品","绝品","传说","神卡"]
+        weights=[40,28,18,14]
+        if has_unlocked_milestone:
+            pool.append("至尊"); weights=[35,24,15,12,14]
+        return random.choices(pool,weights=weights)[0]
     tw=sum(QUALITY_WEIGHTS.values()); rl=random.randint(1,tw); cum=0
     for q,w in sorted(QUALITY_WEIGHTS.items(),key=lambda x:QUALITY_ORDER[x[0]]):
         cum+=w
         if rl<=cum: return q
     return "凡品"
 
-def pull_h(pity):
-    q=rq(pity)
-    pl=[hid for hid,h in HERO_DATA.items() if h["quality"]==q]
+def pull_h(pity, unlocked_milestones=None):
+    has_ms = bool(unlocked_milestones)
+    q=rq(pity, has_ms)
+    if q=="至尊" and unlocked_milestones:
+        ids=[hid for ms,hid in MILESTONE_HEROES.items() if ms in unlocked_milestones]
+        if ids: q="至尊"
+        else: q="神卡"
+    pl=[hid for hid,h in HERO_DATA.items() if h["quality"]==q and h["quality"]!="至尊"]
+    if q=="至尊" and unlocked_milestones:
+        pl=[hid for ms,hid in MILESTONE_HEROES.items() if ms in unlocked_milestones]
     hid=random.choice(pl) if pl else "lisi"
     return {"hero_id":hid,"quality":q,"skill_lv":1,"level":1,"exp":0,"equipped":{"武器":None,"防具":None,"饰品":None},"active":False}
 
@@ -665,7 +744,7 @@ BOSS_PASSIVES = [
 ENEMY_PROF_KEYS = list(ENEMY_PROFESSIONS.keys())
 ENEMY_ICONS = {p: d["icon"] for p, d in ENEMY_PROFESSIONS.items()}
 
-def gen_enemy_formation(ps, boss=False):
+def gen_enemy_formation(ps, boss=False, si=0):
     """生成6个敌人，每种职业各一个"""
     used_names = set()
     enemies = []
@@ -680,7 +759,7 @@ def gen_enemy_formation(ps, boss=False):
         
         name = random.choice([x for x in ENEMY_NAMES if x not in used_names] or ENEMY_NAMES)
         used_names.add(name)
-        boss_unit = gen_enemy(name, ps, profession=boss_prof, boss=True, boss_skills=bs, boss_passive=bp)
+        boss_unit = gen_enemy(name, ps, profession=boss_prof, boss=True, boss_skills=bs, boss_passive=bp, si=si)
         enemies.append(boss_unit)
         
         # 5个小弟，剩下的职业
@@ -690,7 +769,7 @@ def gen_enemy_formation(ps, boss=False):
             prof = remaining_profs[i % len(remaining_profs)]
             n = random.choice([x for x in ENEMY_NAMES if x not in used_names] or ENEMY_NAMES)
             used_names.add(n)
-            enemies.append(gen_enemy(n, ps * 0.8, profession=prof, boss=False))
+            enemies.append(gen_enemy(n, ps * 0.8, profession=prof, boss=False, si=si))
     else:
         # 普通关: 每种职业各一个
         shuffled_profs = list(ENEMY_PROF_KEYS)
@@ -698,13 +777,19 @@ def gen_enemy_formation(ps, boss=False):
         for prof in shuffled_profs:
             n = random.choice([x for x in ENEMY_NAMES if x not in used_names] or ENEMY_NAMES)
             used_names.add(n)
-            enemies.append(gen_enemy(n, ps, profession=prof, boss=False))
+            enemies.append(gen_enemy(n, ps, profession=prof, boss=False, si=si))
     
     return enemies
 
-def gen_enemy(name, ps, profession, boss=False, boss_skills=None, boss_passive=None):
+def gen_enemy(name, ps, profession, boss=False, boss_skills=None, boss_passive=None, si=0):
     pd = ENEMY_PROFESSIONS[profession]
-    
+    # 小兵增强: 血量大幅提升，攻击小幅提升
+    hp_mult = 1.0; atk_mult = 1.0
+    if not boss:
+        if si >= 200: hp_mult = 15.0; atk_mult = 2.2
+        elif si >= 150: hp_mult = 8.0; atk_mult = 1.8
+        elif si >= 100: hp_mult = 4.0; atk_mult = 1.5
+        elif si >= 50: hp_mult = 2.0; atk_mult = 1.2
     if boss:
         base_hp = int(ps * random.uniform(2.0, 5.0))
         hp = base_hp * 8
@@ -715,8 +800,8 @@ def gen_enemy(name, ps, profession, boss=False, boss_skills=None, boss_passive=N
         name = "【BOSS】" + name
         skill_cost = 120
     else:
-        hp = int(ps * random.uniform(1.0, 2.5) * pd["hp_factor"])
-        atk = int(ps * random.uniform(0.05, 0.12) * pd["atk_factor"])
+        hp = int(ps * random.uniform(1.0, 2.5) * pd["hp_factor"] * hp_mult)
+        atk = int(ps * random.uniform(0.05, 0.12) * pd["atk_factor"] * atk_mult)
         spd = int(100 * pd["spd_factor"] * random.uniform(0.9, 1.1))
         q = random.choices(["凡品","良品","极品","绝品","传说"],weights=[25,25,25,18,7])[0]
         crit = random.randint(5, 30)
@@ -752,8 +837,12 @@ def h2f(hid, inv, equip_bag=None):
     hd=HERO_DATA.get(hid)
     if not hd: return None
     lv=inv.get("level",1)
-    # 基础属性
-    hp=int(hd["hp"]*hero_level_bonus(lv)); atk=int(hd["atk"]*hero_level_bonus(lv))
+    # 基础属性（肉盾重点加血，减攻）
+    bonus = hero_level_bonus(lv)
+    hp=int(hd["hp"]*bonus); atk=int(hd["atk"]*bonus)
+    if hd.get("class") == "肉盾":
+        hp = int(hp * 1.8)
+        atk = int(atk * 0.5)
     crit=calc_level_crit(hd, lv)  # 等级暴击率(500级达60%)
     crit=min(crit, 100)  # 暴击率上限100%
     crit_dmg=hd.get("crit_dmg", 1.5)  # 基础爆伤150%
@@ -770,9 +859,12 @@ def h2f(hid, inv, equip_bag=None):
             elif ulv>=5: mult+=0.25
             hp+=int(e.get("hp",0)*mult); atk+=int(e.get("atk",0)*mult)
             crit+=e.get("crit",0)  # 装备暴击
+    spd = hd.get("spd",100)
+    if hd.get("class") in ("奶妈","法师"):
+        spd = int(spd * 1.4)
     unit = {"id":hid,"name":hd["name"],"class":hd["class"],"quality":hd["quality"],"color":hd["color"],
             "hp":hp,"max_hp":hp,"atk":atk,"crit":crit,"crit_dmg":crit_dmg,"dmg_reduce":dmg_reduce,
-            "spd":hd.get("spd",100),"_skill_cost":hd.get("skill_cost",100),
+            "spd":spd,"_skill_cost":hd.get("skill_cost",100),
             "alive":True,"shield":0,"buffs":[],"debuffs":[],"stunned":False,"frozen":False,"reflect":False,
             "energy":0,"action_bar":random.randint(0,400),
             "_hd":hd,"_skill_lv":inv.get("skill_lv",1),"side":"ally",
@@ -879,6 +971,14 @@ def cstat(u, stat, base):
                 v+=int(base*d.get("pct",0))
     return max(1 if stat in ("atk","hp","spd","crit") else 0, int(v))
 
+def get_buff_bonus(unit, stat):
+    """获取unit身上指定buff的总加成倍率"""
+    bonus = 1.0
+    for b in unit.get("buffs", []):
+        if b["stat"] == stat:
+            bonus += b["pct"]
+    return bonus
+
 def get_effective_crit_dmg(unit):
     """计算有效爆伤倍率: 基础+ buff/debuff 中的 crit_dmg"""
     cd = unit.get("crit_dmg", 1.5)
@@ -891,13 +991,13 @@ def get_effective_crit_dmg(unit):
     return max(1.0, cd)  # 最低1.0倍
 
 def get_dmg_reduce(t):
-    """独立计算减伤(0~0.8): dmg_reduce直接从buff累加pct, 含基础值"""
+    """独立计算减伤(0~0.9): dmg_reduce直接从buff累加pct, 含基础值"""
     dr = t.get("dmg_reduce", 0.0)
     for b in t.get("buffs",[]):
         if b["stat"]=="dmg_reduce": dr+=b["pct"]
     for d in t.get("debuffs",[]):
         if d["stat"]=="dmg_reduce": dr+=d["pct"]
-    return max(-0.5, min(0.8, dr))
+    return max(-0.5, min(0.9, dr))
 
 def get_targets(units, mode):
     alive=[u for u in units if u.get("alive",True)]
@@ -944,11 +1044,11 @@ def run_speed_battle(my_heroes, enemies, stage):
         u["action_bar"] = u.get("action_bar", random.randint(0, 400))
         u["energy"] = 0
         u.setdefault("side","ally") if u in my_heroes else u.setdefault("side","enemy")
-    # 神卡初始能量100（女娲满能量200）
+    # 神卡/至尊初始能量150
     for h in my_heroes:
         hd = h.get("_hd", {})
-        if hd.get("quality") == "神卡":
-            h["energy"] = 200 if hd.get("id") == "nuwa" else 100
+        if hd.get("quality") in ("神卡","至尊"):
+            h["energy"] = 150
     # 位置系统
     for i, h in enumerate(my_heroes):
         h["position"] = i + 1
@@ -983,6 +1083,7 @@ def run_speed_battle(my_heroes, enemies, stage):
             "hp_pct":max(0,f["hp"]/max(1,f["max_hp"])),"alive":f.get("alive",True),
             "energy":f.get("energy",0),"spd":f.get("spd",100),"position":f.get("position",0),
             "buffs":[b["stat"] for b in f.get("buffs",[])],
+            "dmg_reduce":int(get_dmg_reduce(f)*100),
             "debuffs":[d["stat"] for d in f.get("debuffs",[])]} for f in my_heroes],
         "enemies": [{"name":e["name"],"class":e["class"],"quality":e["quality"],"color":e["color"],
             "max_hp":e["max_hp"],"atk":e["atk"],
@@ -1178,6 +1279,7 @@ def run_speed_battle(my_heroes, enemies, stage):
         "shield_pct":f.get("shield",0)/max(1,f["max_hp"]),
         "energy":f.get("energy",0),"spd":f.get("spd",100),"position":f.get("position",0),
         "buffs":[b["stat"] for b in f.get("buffs",[])],
+        "dmg_reduce":int(get_dmg_reduce(f)*100),
         "debuffs":[d["stat"] for d in f.get("debuffs",[])]} for f in my_heroes]
     r["enemies"]=[{"name":e["name"],"class":e["class"],"quality":e["quality"],"color":e["color"],
         "max_hp":e["max_hp"],"atk":e["atk"],
@@ -1231,11 +1333,11 @@ class BattleSession:
             e["position"] = 7 + i
         for u in self.all_u:
             u["action_bar"] = u.get("action_bar", random.randint(0, 400))
-        # 神卡初始能量100（女娲满能量200）
+        # 神卡/至尊初始能量150
         for h in self.my_heroes:
             hd = h.get("_hd", {})
-            if hd.get("quality") == "神卡":
-                h["energy"] = 200 if hd.get("id") == "nuwa" else 100
+            if hd.get("quality") in ("神卡","至尊"):
+                h["energy"] = 150
         self._init_passives()
         # 保存初始状态（用于前端第一帧渲染）
         self._initial_state = {
@@ -1396,8 +1498,10 @@ class BattleSession:
             "max_hp":f["max_hp"],"atk":f["atk"],"crit":f["crit"],
             "eff_atk":cstat(f,"atk",f["atk"]),"eff_crit":cstat(f,"crit",f["crit"]),
             "hp_pct":max(0,f["hp"]/max(1,f["max_hp"])),"alive":f.get("alive",True),
+            "shield_pct":f.get("shield",0)/max(1,f["max_hp"]),
             "energy":f.get("energy",0),"spd":f.get("spd",100),"position":f.get("position",0),
             "buffs":[b["stat"] for b in f.get("buffs",[])],
+            "dmg_reduce":int(get_dmg_reduce(f)*100),
             "debuffs":[d["stat"] for d in f.get("debuffs",[])]} for f in self.my_heroes]
 
     def _get_enemies_state(self):
@@ -1458,7 +1562,7 @@ def init_battle_session(g):
         if not inv: continue
         f=h2f(hid,inv,g.get("equip_bag",[]))
         if f: my_heroes.append(f)
-    enemies=gen_enemy_formation(stage["power"]/6.0, boss=stage["boss"])
+    enemies=gen_enemy_formation(stage["power"]/6.0, boss=stage["boss"], si=stage.get("_index",0))
     return BattleSession(my_heroes, enemies, stage)
 
 # ═══ 交互式战斗API ═══
@@ -1477,6 +1581,20 @@ def api_battle_start():
         _apply_battle_rewards(result, uid)
     return jsonify(result)
 
+def _check_and_grant_milestone(g):
+    si=g.get("stage_index",0)
+    unlocked=g.get("unlocked_milestones",[])
+    for ms,hid in sorted(MILESTONE_HEROES.items()):
+        if si>=ms and ms not in unlocked:
+            card={"hero_id":hid,"quality":"至尊","skill_lv":1,"level":1,"exp":0,
+                  "equipped":{"武器":None,"防具":None,"饰品":None},"active":False}
+            ex=next((i for i in g["inventory"] if i["hero_id"]==hid),None)
+            if not ex:
+                g["inventory"].append(card)
+                g["msg"]=f"🎉 达成{ms}关里程碑！获得至尊：{HERO_DATA[hid]['name']}！"
+            unlocked.append(ms)
+    g["unlocked_milestones"]=unlocked
+
 def _apply_battle_rewards(result,uid):
     """战斗结束: 保存奖励+经验"""
     if result.get("phase")!="done": return
@@ -1488,6 +1606,8 @@ def _apply_battle_rewards(result,uid):
         g["jade"]+=jr
         si=g["stage_index"]
         g["stage_index"]+=1
+        # 自动检查里程碑
+        _check_and_grant_milestone(g)
         if result.get("equip_reward"):
             ex=next((e for e in g["equip_bag"] if isinstance(e,dict) and e.get("id")==result["equip_reward"]),None)
             if ex: ex["count"]+=1
@@ -1554,7 +1674,7 @@ def hero_basic_attack(unit, allies, enemies):
             r = apply_dmg(t, d)
             killed = t["hp"] <= 0
             if killed: t["alive"] = False
-            targets_data.append({"name":t["name"],"damage":r["damage"],"crit":cr,"killed":killed})
+            targets_data.append({"name":t["name"],"damage":r["damage"],"crit":cr,"killed":killed,"shield_damage":r.get("shield_damage",0),"immune":r.get("immune",False),"max_hp":t["max_hp"],"hp_pct":max(0,t["hp"]/max(1,t["max_hp"]))})
         # 应用普攻特殊效果
         apply_basic_specials(unit, hd, tars)
         return {"side":"ally","type":"basic","attacker_name":unit["name"],"skill":skill_name,
@@ -1587,7 +1707,7 @@ def hero_basic_attack(unit, allies, enemies):
                 if t["hp"] <= 0: t["alive"]=False; break
         apply_basic_specials(unit, hd, [t])
         return {"side":"ally","type":"basic","attacker_name":unit["name"],"skill":skill_name,
-                "aoe":False,"target_name":t["name"],"damage":d,"crit":cr,"killed":killed}
+                "aoe":False,"target_name":t["name"],"damage":d,"crit":cr,"killed":killed,"shield_damage":r.get("shield_damage",0)}
 
 def apply_basic_specials(unit, hd, targets):
     for sp in hd.get("basic_special", []):
@@ -1657,6 +1777,10 @@ def apply_skill_upgrades(unit, hd, sk_lv, allies, enemies, sk_context):
         # ─── 神卡 Lv3 ───
         if hid=="wukong":
             extra["lifesteal_pct"]=0.6  # 孙悟空Lv3: 吸血60%
+        # ─── 肉盾 Lv3 ───
+        if hd.get("class")=="肉盾":
+            if not extra.get("extra_buffs"): extra["extra_buffs"]=[]
+            extra["extra_buffs"].append({"stat":"dmg_reduce","pct":0.10,"dur":-1})
 
     # ─── Lv5 ───
     if sk_lv>=5:
@@ -1681,6 +1805,10 @@ def apply_skill_upgrades(unit, hd, sk_lv, allies, enemies, sk_context):
         # ─── 神卡 Lv5 ───
         if hid=="wukong":
             extra["extra_hits"]=2  # 孙悟空Lv5: 额外2次攻击
+        # ─── 肉盾 Lv5 ───
+        if hd.get("class")=="肉盾":
+            unit["hp"] = int(unit["hp"] * 1.30)
+            unit["max_hp"] = int(unit["max_hp"] * 1.30)
 
     # ─── Lv7 ───
     if sk_lv>=7:
@@ -1698,6 +1826,10 @@ def apply_skill_upgrades(unit, hd, sk_lv, allies, enemies, sk_context):
             pass  # 貂蝉Lv7: 溅射50%
         if hid=="huatuo":
             pass  # 华佗Lv7: 免疫结束重置冷却
+        # ─── 肉盾 Lv7 ───
+        if hd.get("class")=="肉盾":
+            if not extra.get("extra_buffs"): extra["extra_buffs"]=[]
+            extra["extra_buffs"].append({"stat":"dmg_reduce","pct":0.15,"dur":-1})
         # ─── 神卡 Lv7 ───
         if hid=="wukong":
             extra["execute_pct"]=0.15  # 孙悟空Lv7: 15%斩杀
@@ -1910,17 +2042,22 @@ def hero_use_skill(unit, allies, enemies):
         if target_mode == "all_ally":
             targets = [a for a in allies if a.get("alive",True)]
             for t in targets:
-                heal = int(t["max_hp"] * hd["skill_heal_pct"])
+                heal_mult = get_buff_bonus(unit, "heal_pct")
+                heal = int(t["max_hp"] * hd["skill_heal_pct"] * heal_mult)
                 t["hp"] = min(t["max_hp"], t["hp"] + heal)
             buff_tags=[]
+            # 免疫持续回合（女娲Lv3: 4回合, 否则默认3）
+            immune_dur = 3
+            if "immunity" in specials:
+                if hd.get("id","") == "nuwa" and sk_lv >= 3:
+                    immune_dur = 4
+                for t in targets:
+                    t["buffs"].append({"stat":"immune","pct":1.0,"dur":immune_dur})
+                buff_tags.append("immune")
             for b in hd.get("skill_buffs",[]):
                 for t in targets:
                     t["buffs"].append({"stat":b["stat"],"pct":b["pct"],"dur":b["dur"]})
                 buff_tags.append(b["stat"])
-            if "immunity" in specials:
-                for t in targets:
-                    t["buffs"].append({"stat":"immune","pct":1.0,"dur":2})
-                buff_tags.append("immune")
             if "revive" in specials:
                 # 女娲补天: 复活已死亡队友
                 rpct = 0.20  # 基础复活血量20%
@@ -1938,8 +2075,23 @@ def hero_use_skill(unit, allies, enemies):
                         revived.append(a["name"])
                         if sk_lv >= 5:
                             a["shield"] = int(a["max_hp"] * 0.30)
+                        # 复活后获得技能buff（免疫、攻击加成等）
+                        for b in hd.get("skill_buffs",[]):
+                            a["buffs"].append({"stat":b["stat"],"pct":b["pct"],"dur":b["dur"]})
+                        if "immunity" in specials:
+                            a["buffs"].append({"stat":"immune","pct":1.0,"dur":immune_dur})
                 if revived:
                     buff_tags.append(f"复活:{','.join(revived)}")
+            # 女娲Lv7: 全队无敌 + 重置所有技能冷却
+            if hd.get("id","") == "nuwa" and sk_lv >= 7 and "immunity" in specials:
+                for a in allies:
+                    if a.get("alive", True):
+                        has_immune = any(b["stat"] == "immune" for b in a["buffs"])
+                        if not has_immune:
+                            a["buffs"].append({"stat":"immune","pct":1.0,"dur":immune_dur})
+                        a["energy"] = 200
+                if "immune" not in buff_tags:
+                    buff_tags.append("immune")
             # 技能升级效果
             up=apply_skill_upgrades(unit, hd, sk_lv, allies, enemies, {})
             if up and up.get("extra_buffs"):
@@ -1947,13 +2099,24 @@ def hero_use_skill(unit, allies, enemies):
                     for t in targets:
                         t["buffs"].append({"stat":b["stat"],"pct":b["pct"],"dur":b["dur"]})
                     buff_tags.append(b["stat"])
+            heal_targets = [{"name":t["name"],"heal":int(t["max_hp"]*hd["skill_heal_pct"]),
+                             "idx":next((i for i,a in enumerate(allies) if a.get("name")==t["name"]),0),
+                             "max_hp":t["max_hp"],"hp_pct":t["hp"]/max(1,t["max_hp"])} for t in targets]
+            # 复活队友也加入targets（供前端恢复卡片+特效）
+            if "revive" in specials:
+                for a in allies:
+                    if a.get("alive", True) and not any(t["name"]==a["name"] for t in targets):
+                        heal_targets.append({"name":a["name"],"heal":0,"revived":True,
+                            "idx":next((i for i,aa in enumerate(allies) if aa.get("name")==a["name"]),0),
+                            "max_hp":a["max_hp"],"hp_pct":a["hp"]/max(1,a["max_hp"])})
             return {"side":"heal","type":"skill","attacker_name":unit["name"],"skill":sk_name,
-                    "aoe":True,"targets":[{"name":t["name"],"heal":int(t["max_hp"]*hd["skill_heal_pct"])} for t in targets],
+                    "aoe":True,"targets":heal_targets,
                     "buff_effects":buff_tags}
         else:
             targets = [min([a for a in allies if a.get("alive",True)], key=lambda x: x["hp"])] if [a for a in allies if a.get("alive",True)] else []
             if targets:
-                heal = int(targets[0]["max_hp"] * hd["skill_heal_pct"])
+                heal_mult = get_buff_bonus(unit, "heal_pct")
+                heal = int(targets[0]["max_hp"] * hd["skill_heal_pct"] * heal_mult)
                 targets[0]["hp"] = min(targets[0]["max_hp"], targets[0]["hp"] + heal)
                 return {"side":"heal","type":"skill","attacker_name":unit["name"],"skill":sk_name,
                         "aoe":False,"target_name":targets[0]["name"],"heal":heal}
@@ -1974,6 +2137,16 @@ def hero_use_skill(unit, allies, enemies):
         if "reflect" in specials:
             unit["buffs"].append({"stat":"reflect","pct":0.5,"dur":3})
             buff_tags.append("reflect")
+        if "self_shield" in specials:
+            shield_pct = 2.0 if sk_lv < 3 else 3.0
+            shield_amt = int(unit["max_hp"] * shield_pct)
+            unit["shield"] = shield_amt
+            buff_tags.append(f"护盾+{shield_amt}")
+        if "shield_ally" in specials:
+            sp = 0.25
+            for a in allies:
+                if a.get("alive",True):
+                    a["shield"] = int(a["max_hp"] * sp)
         up=apply_skill_upgrades(unit, hd, sk_lv, allies, enemies, {})
         if up and up.get("extra_buffs"):
             for b in up["extra_buffs"]:
@@ -2013,6 +2186,8 @@ def hero_use_skill(unit, allies, enemies):
     # === 护盾(张飞: shield_ally) ===
     if "shield_ally" in specials:
         shield_pct=0.25+(0.15 if up and up.get("extra_shield_pct") else 0)
+        shield_bonus=get_buff_bonus(unit,"shield_pct")
+        shield_pct*=shield_bonus
         for a in allies:
             if a.get("alive",True):
                 a["shield"]=int(a["max_hp"]*shield_pct)
@@ -2060,6 +2235,7 @@ def hero_use_skill(unit, allies, enemies):
             unit["hp"]=min(unit["max_hp"],unit["hp"]+ls_heal)
         return {"name":t["name"],"damage":r["damage"],"crit":cr,"killed":killed,"immune":r.get("immune",False),
                 "max_hp":t["max_hp"],"hp_pct":max(0,t["hp"]/max(1,t["max_hp"])),
+                "shield_damage":r.get("shield_damage",0),
                 "lifesteal_heal":ls_heal,
                 "idx":next((i for i,e in enumerate(enemies) if e.get("name")==t["name"]),0)}
 
@@ -2254,7 +2430,7 @@ def enemy_basic_attack(unit, allies, enemies):
     killed = t["hp"] <= 0
     if killed: t["alive"] = False
     return {"side":"enemy","type":"basic","attacker_name":unit["name"],"skill":unit.get("skill_name","攻击"),
-            "aoe":False,"target_name":t["name"],"damage":r["damage"],"crit":cr,"killed":killed}
+            "aoe":False,"target_name":t["name"],"damage":r["damage"],"crit":cr,"killed":killed,"shield_damage":r.get("shield_damage",0),"immune":r.get("immune",False),"max_hp":t["max_hp"],"hp_pct":max(0,t["hp"]/max(1,t["max_hp"]))}
 
 def enemy_use_skill(unit, allies, enemies):
     alive_h = [a for a in allies if a.get("alive", True)]
@@ -2328,7 +2504,7 @@ def enemy_use_skill(unit, allies, enemies):
         total_dmg += r["damage"]
         killed = t["hp"] <= 0
         if killed: t["alive"] = False
-        targets_data.append({"name":t["name"],"damage":r["damage"],"crit":cr,"killed":killed,"max_hp":t["max_hp"],"hp_pct":max(0,t["hp"]/max(1,t["max_hp"]))})
+        targets_data.append({"name":t["name"],"damage":r["damage"],"crit":cr,"killed":killed,"immune":r.get("immune",False),"max_hp":t["max_hp"],"hp_pct":max(0,t["hp"]/max(1,t["max_hp"])),"shield_damage":r.get("shield_damage",0)})
         
         # 技能debuff
         for deb in unit.get("skill_debuffs", []):
@@ -2403,7 +2579,7 @@ def _apply_boss_skill(unit, bs, allies, enemies):
         total_dmg += r["damage"]
         killed = t["hp"] <= 0
         if killed: t["alive"] = False
-        targets_data.append({"name":t["name"],"damage":r["damage"],"crit":cr,"killed":killed})
+        targets_data.append({"name":t["name"],"damage":r["damage"],"crit":cr,"killed":killed,"immune":r.get("immune",False),"shield_damage":r.get("shield_damage",0)})
     
     # BOSS技能debuff
     for deb in bs.get("debuffs", []):
@@ -2439,7 +2615,7 @@ def api_speed_battle():
         f = h2f(hid, inv)
         if f: my_heroes.append(f)
 
-    enemies = gen_enemy_formation(stage["power"] / 6.0, boss=stage["boss"])
+    enemies = gen_enemy_formation(stage["power"] / 6.0, boss=stage["boss"], si=stage.get("_index",0))
 
     result = run_speed_battle(my_heroes, enemies, stage)
 
@@ -2448,6 +2624,7 @@ def api_speed_battle():
         jr = result.get("jade_reward", 3)
         g["jade"] += jr
         g["stage_index"] += 1
+        _check_and_grant_milestone(g)
         if result.get("equip_reward"):
             equip_bag = g.get("equip_bag", [])
             ex = next((e for e in equip_bag if isinstance(e, dict) and e.get("id") == result["equip_reward"]), None)
@@ -2483,7 +2660,7 @@ def api_load():
         power=calc_pow(HERO_DATA,g["lineup"],g["inventory"],g["equip_bag"])
         jpm=max(0.3,power/5000); mins=min(secs/60,480); oj=int(mins*jpm)
         if oj>0: g["jade"]+=oj; g["offline_msg"]=f"⏰ 离线{int(mins)}分钟，获得💎{oj}玉璧" if mins<120 else f"⏰ 离线{int(mins/60)}小时，获得💎{oj}玉璧"
-    g["last_active_time"]=now; save_game(g)
+    g["last_active_time"]=now; _check_and_grant_milestone(g); save_game(g)
     r=to_client(g)
     if g.get("offline_msg"): g["offline_msg"]=""
     return jsonify(r)
@@ -2514,12 +2691,13 @@ def api_sweep():
             if not inv: continue
             f=h2f(hid,inv)
             if f: my_heroes.append(f)
-        enemies=gen_enemy_formation(stage["power"]/6.0, boss=stage["boss"])
+        enemies=gen_enemy_formation(stage["power"]/6.0, boss=stage["boss"], si=stage.get("_index",0))
         result=run_speed_battle(my_heroes, enemies, stage)
         g["ticks"]+=1; tj+=result.get("jade_reward",0)
         if result.get("equip_reward"): te.append(result["equip_reward"])
         if result.get("win",False):
             g["stage_index"] += 1
+            _check_and_grant_milestone(g)
         else:
             break
     save_game(g)
@@ -2538,7 +2716,7 @@ def api_pull():
     if not g: return api_new()
     if g["jade"]<3: return jsonify({"error":"玉璧不足",**to_client(g)})
     g["jade"]-=3; g["pull_count"]+=1
-    card=pull_h(g["pity_counter"])
+    card=pull_h(g["pity_counter"], g.get("unlocked_milestones",[]))
     if QUALITY_ORDER.get(card["quality"],0)>=2: g["pity_counter"]=0
     else: g["pity_counter"]+=1
     ex=next((i for i in g["inventory"] if i["hero_id"]==card["hero_id"]),None)
@@ -2560,7 +2738,7 @@ def api_pull10():
     if g["jade"]<25: return jsonify({"error":"玉璧不足",**to_client(g)})
     g["jade"]-=25; g["pull_count"]+=10; cards=[]; bq="凡品"
     for _ in range(10):
-        card=pull_h(g["pity_counter"])
+        card=pull_h(g["pity_counter"], g.get("unlocked_milestones",[]))
         if QUALITY_ORDER.get(card["quality"],0)>=2: g["pity_counter"]=0
         else: g["pity_counter"]+=1
         if QUALITY_ORDER.get(card["quality"],0)>QUALITY_ORDER.get(bq,0): bq=card["quality"]
@@ -2585,7 +2763,7 @@ def api_pull100():
     pulls=[]; qcounts={q:0 for q in ["凡品","良品","极品","绝品","传说","神卡"]}
     bq="凡品"
     for _ in range(100):
-        card=pull_h(g["pity_counter"])
+        card=pull_h(g["pity_counter"], g.get("unlocked_milestones",[]))
         if QUALITY_ORDER.get(card["quality"],0)>=2: g["pity_counter"]=0
         else: g["pity_counter"]+=1
         qcounts[card["quality"]]=qcounts.get(card["quality"],0)+1
@@ -2658,8 +2836,22 @@ def api_equip(hero_id,slot,eq_id):
     if not g: return api_new()
     inv=next((i for i in g["inventory"] if i["hero_id"]==hero_id),None)
     if not inv: return jsonify(to_client(g))
-    if eq_id=="none": inv["equipped"][slot]=None
-    elif eq_id in EQUIP_DATA and EQUIP_DATA[eq_id]["type"]==slot: inv["equipped"][slot]=eq_id
+    if eq_id=="none":
+        inv["equipped"][slot]=None
+    elif eq_id in EQUIP_DATA and EQUIP_DATA[eq_id]["type"]==slot:
+        eb=next((e for e in g["equip_bag"] if isinstance(e,dict) and e.get("id")==eq_id),None)
+        max_wear = eb["count"] if eb else 1
+        wearers = sum(1 for i in g["inventory"] if any(e==eq_id for e in i["equipped"].values()))
+        if wearers >= max_wear:
+            for other in g["inventory"]:
+                if other["hero_id"]==hero_id: continue
+                for s,eid in other["equipped"].items():
+                    if eid==eq_id:
+                        other["equipped"][s]=None
+                        wearers-=1
+                        break
+                if wearers<max_wear: break
+        inv["equipped"][slot]=eq_id
     save_game(g); return jsonify(to_client(g))
 
 @app.route("/api/hero_detail/<hero_id>")
@@ -2697,6 +2889,11 @@ def api_hero_detail(hero_id):
     level_up_cost=inv.get("level",1) * 80
     next_skill_cost=SKILL_UPGRADE_COST.get(inv.get("skill_lv",1)+1, None)
     effective = get_eff_stats(hd, inv, g.get("equip_bag",[]))
+    # 肉盾技能等级加成
+    if hd.get("class")=="肉盾":
+        sl=inv.get("skill_lv",1)
+        if sl>=3: effective["dmg_reduce"]+=0.10
+        if sl>=7: effective["dmg_reduce"]+=0.15
     return jsonify({"hero_id":hero_id,"name":hd["name"],"class":hd["class"],"quality":hd["quality"],"color":hd["color"],
         "hp":effective["hp"],"atk":effective["atk"],"crit":effective["crit"],
         "base_hp":hd["hp"],"base_atk":hd["atk"],"base_crit":hd.get("crit",0),
@@ -2705,7 +2902,9 @@ def api_hero_detail(hero_id):
         "skill_name":hd["skill_name"],"skill_desc":hd["skill_desc"],
         "skill_aoe":hd.get("skill_aoe",False),"skill_lv":inv["skill_lv"],
         "level":inv.get("level",1),"exp":inv.get("exp",0),"exp_next":inv.get("level",1)*100,
-        "skill_upgrades":hd["skill_upgrades"],"passive_name":hd["passive_name"],"passive_desc":hd["passive_desc"],
+        "skill_upgrades":hd["skill_upgrades"],
+        "tank_upgrades": ({"3":"🛡️通用:减伤+10%","5":"🛡️通用:血量+30%","7":"🛡️通用:减伤+15%"} if hd.get("class")=="肉盾" else {}),
+        "passive_name":hd["passive_name"],"passive_desc":hd["passive_desc"],
         "passive_upgrades":hd["passive_upgrades"],"power":calc_hp(hero_id,inv["skill_lv"],inv["equipped"],inv,g.get("equip_bag",[])),
         "basic_name":hd.get("basic_name","攻击"),"basic_desc":hd.get("basic_desc","普通攻击"),
         "basic_energy_gain":hd.get("basic_energy_gain",25),
@@ -2752,8 +2951,18 @@ def api_equip_bag():
 @app.route("/api/tuji")
 @login_required
 def api_tuji():
+    g=load_game()
+    _check_and_grant_milestone(g)
+    unlocked=g.get("unlocked_milestones",[])
+    owned=set(i["hero_id"] for i in g["inventory"])
     heroes=[]
     for hid,hd in HERO_DATA.items():
+        lock_info=None
+        if hd["quality"]=="至尊":
+            for ms,mhid in MILESTONE_HEROES.items():
+                if mhid==hid:
+                    lock_info="已解锁" if (ms in unlocked or hid in owned) else f"第{ms}关解锁"
+                    break
         heroes.append({"id":hid,"name":hd["name"],"class":hd["class"],"quality":hd["quality"],"color":hd["color"],
             "hp":hd["hp"],"atk":hd["atk"],"crit":hd["crit"],"spd":hd.get("spd",100),
             "skill_name":hd["skill_name"],"skill_desc":hd["skill_desc"],"skill_aoe":hd.get("skill_aoe",False),
@@ -2762,18 +2971,23 @@ def api_tuji():
             "basic_name":hd.get("basic_name",""),"basic_desc":hd.get("basic_desc",""),
             "basic_energy_gain":hd.get("basic_energy_gain",25),
             "passive_name":hd["passive_name"],"passive_desc":hd["passive_desc"],
-            "passive_upgrades":hd["passive_upgrades"]})
+            "passive_upgrades":hd["passive_upgrades"],
+            "owned":hid in owned,"lock_info":lock_info})
     equips=[]
+    equip_owned=set()
+    for eb in g.get("equip_bag",[]):
+        if isinstance(eb,dict): equip_owned.add(eb.get("id"))
     for eid,ed in EQUIP_DATA.items():
-        excl_name = ""
+        excl_name=""
         if ed.get("exclusive") and ed["exclusive"] in HERO_DATA:
-            excl_name = HERO_DATA[ed["exclusive"]]["name"]
+            excl_name=HERO_DATA[ed["exclusive"]]["name"]
         equips.append({"id":eid,"name":ed["name"],"type":ed["type"],"quality":ed["quality"],"color":ed["color"],
             "atk":ed.get("atk",0),"hp":ed.get("hp",0),"crit":ed.get("crit",0),
             "desc":ed.get("desc",""),"special":ed.get("special",""),"exclusive":ed["exclusive"],
             "exclusive_name":excl_name,
             "lv20":ed.get("lv20",""),"lv40":ed.get("lv40",""),"lv60":ed.get("lv60",""),
-            "lv80":ed.get("lv80",""),"lv100":ed.get("lv100","")})
+            "lv80":ed.get("lv80",""),"lv100":ed.get("lv100",""),
+            "owned":eid in equip_owned})
     bonds=[{"id":b["id"],"name":b["name"],"members":[HERO_DATA.get(m,{}).get("name",m) for m in b["members"]],
         "desc":b["desc"],"effect":b["effect"]} for b in BONDS]
     return jsonify({"heroes":heroes,"equips":equips,"bonds":bonds})
@@ -2796,7 +3010,9 @@ def to_client(g):
         "dupe_exp_total":g.get("dupe_exp_total",0),
         "equip_exp_total":g.get("equip_exp_total",0),
         "equip_pity":g.get("equip_pity_counter",0),
-        "last_reward_time":g.get("last_reward_time",0)}
+        "last_reward_time":g.get("last_reward_time",0),
+        "unlocked_milestones":g.get("unlocked_milestones",[]),
+        "stage_index":g.get("stage_index",0)}
 
 # ═══ 铸魂池API ═══
 @app.route("/api/equip_pull")
@@ -2990,12 +3206,42 @@ def api_announcements():
         conn.execute("INSERT INTO announcements (date, content) VALUES (?,?)",
             (datetime.now().strftime("%Y-%m-%d"), "🎉 江湖经营上线！右上角每8小时领取1000钻石，祝游戏愉快！"))
         conn.commit()
+    # 今日更新公告（幂等）
+    today = datetime.now().strftime("%Y-%m-%d")
+    today_ann = "📢 5/19更新：女娲补天技能重做——免疫伤害随等级提升(Lv3:4回合)、Lv7全队无敌+重置冷却、复活队友获得免疫与攻击buff、免疫/复活增加UI特效与卡片动画✨"
+    existing = conn.execute("SELECT id FROM announcements WHERE date=? AND content=?", (today, today_ann)).fetchone()
+    if not existing:
+        conn.execute("INSERT INTO announcements (date, content) VALUES (?,?)", (today, today_ann))
+        conn.commit()
     rows=conn.execute("SELECT date,content FROM announcements WHERE date >= date('now','-7 days') ORDER BY date DESC,id DESC").fetchall()
     result=[{"date":r["date"],"content":r["content"]} for r in rows]
     conn.close()
     return jsonify(result)
 
 # ═══ 排行榜 ═══
+@app.route("/api/milestone_check")
+@login_required
+def api_milestone_check():
+    g=load_game()
+    if not g: return api_new()
+    si=g.get("stage_index",0)
+    unlocked=g.get("unlocked_milestones",[])
+    for ms,hid in sorted(MILESTONE_HEROES.items()):
+        if si>=ms and ms not in unlocked:
+            # 发放至尊英雄
+            card={"hero_id":hid,"quality":"至尊","skill_lv":1,"level":1,"exp":0,
+                  "equipped":{"武器":None,"防具":None,"饰品":None},"active":False}
+            ex=next((i for i in g["inventory"] if i["hero_id"]==hid),None)
+            if not ex:
+                g["inventory"].append(card)
+                g["msg"]=f"🎉 达成{ms}关里程碑！获得至尊英雄：{HERO_DATA[hid]['name']}！"
+            unlocked.append(ms)
+    g["unlocked_milestones"]=unlocked
+    save_game(g)
+    # 允许已解锁的至尊英雄进入卡池
+    g["_unlocked_milestones"]=unlocked
+    return jsonify(to_client(g))
+
 @app.route("/api/daily_reward", methods=["POST"])
 @login_required
 def api_daily_reward():

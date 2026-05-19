@@ -184,11 +184,12 @@ HERO_EFFECTS = {
         "lv5_extra": {"type": "revive_ally_on_death", "max_per_battle": 1},
         "lv7_extra": {"type": "revive_team_invincible"}
     }],
-    # 蚩尤: 兵主 — 战斗开始全体+30%攻击+15%减伤
+    # 蚩尤: 兵主 — 战斗开始全体+30%攻击+15%减伤+自身HP50%护盾
     "chiyou": [{
         "event": "on_battle_start",
         "actions": [{"type": "buff_team", "stat": "atk", "pct": 0.30, "dur": -1, "per_lv": {3: 0.50}},
-                     {"type": "buff_team", "stat": "dmg_reduce", "pct": 0.15, "dur": -1, "per_lv": {3: 0.25}}],
+                     {"type": "buff_team", "stat": "dmg_reduce", "pct": 0.15, "dur": -1, "per_lv": {3: 0.25}},
+                     {"type": "shield_team_from_self", "pct": 0.50, "per_lv": {3: 0.70}}],
         "lv5_extra": {"type": "team_invincible_if_hp_above", "pct": 0.70},
         "lv7_extra": {"type": "self_buff_on_invincible_tigger"}
     }],
@@ -287,6 +288,14 @@ EQUIP_EFFECTS = {
             100: [{"type": "team_invincible_and_atk_double"}],
         }
     },
+    "da_shen_bian": {"on_hit": [{"type": "debuff_target_atk", "pct": -0.05, "max_stacks": 3}]},
+    "shanhe_sheji": {"battle_start": [{"type": "seal_random_enemy", "dur": 2}]},
+    "zhanxian_feidao": {"passive_buffs": [{"stat": "crit", "pct": 0.05}], "on_hit": [{"chance": 0.30, "type": "extra_dmg_lowest", "pct": 0.40}]},
+    "liuhun_fan": {"on_kill": [{"type": "heal_team_pct", "pct": 0.12}]},
+    "xinghuang_qi": {"passive_buffs": [{"stat": "dmg_reduce", "pct": 0.08}], "on_hit": [{"chance": 0.30, "type": "reflect_true_dmg", "pct": 0.50}]},
+    "tianming_dun": {"passive_buffs": [{"stat": "dmg_reduce", "pct": 0.10}]},
+    "xuanwu_jia": {"passive_buffs": [{"stat": "dmg_reduce", "pct": 0.20}]},
+    "bumie_jinshen": {"passive_buffs": [{"stat": "dmg_reduce", "pct": 0.35}, {"stat": "hp_mult", "pct": 0.70}], "battle_start": [{"type": "regen_per_turn", "pct": 0.05}]},
 }
 
 
@@ -346,12 +355,14 @@ def apply_equip_passive_buffs(unit, allies=None, enemies=None, context=None):
             pct = pb.get("pct", 0)
             
             if stat == "all_stats_pct":
-                # 和氏璧: 全属性+15% → 拆为 atk/hp/spd
                 unit["atk"] = int(unit["atk"] * (1 + pct))
                 unit["hp"] = int(unit["hp"] * (1 + pct))
                 unit["max_hp"] = int(unit["max_hp"] * (1 + pct))
                 if "spd" in unit:
                     unit["spd"] = int(unit["spd"] * (1 + pct))
+            elif stat == "hp_mult":
+                unit["hp"] = int(unit["hp"] * (1 + pct))
+                unit["max_hp"] = int(unit["max_hp"] * (1 + pct))
             elif stat == "skill_dmg_pct":
                 # 技能伤害百分比直接设 unit 属性
                 unit["skill_dmg_pct"] = unit.get("skill_dmg_pct", 1.0) * (1 + pct)
@@ -805,6 +816,9 @@ def _execute_action(action, unit, sk_lv, allies, enemies, context, hid):
     # --- 神卡效果 ---
     elif atype == "shield_team":
         pct = effective_action.get("pct", 0.3)
+        for b in unit.get("buffs", []):
+            if b["stat"] == "shield_pct":
+                pct += b["pct"]
         for a in allies:
             if a.get("alive", True):
                 a["shield"] = int(a["max_hp"] * pct)
@@ -812,6 +826,22 @@ def _execute_action(action, unit, sk_lv, allies, enemies, context, hid):
             "side": "ally", "type": "passive", "attacker_name": unit["name"],
             "skill": "被动", "aoe": True,
             "msg": f"全体护盾{int(pct*100)}%"
+        })
+
+    elif atype == "shield_team_from_self":
+        # 基于自身血量给队友护盾(蚩尤)
+        pct = effective_action.get("pct", 0.5)
+        for b in unit.get("buffs", []):
+            if b["stat"] == "shield_pct":
+                pct += b["pct"]
+        shield_val = int(unit["max_hp"] * pct)
+        for a in allies:
+            if a.get("alive", True):
+                a["shield"] = shield_val
+        context.setdefault("all_actions", []).append({
+            "side": "ally", "type": "passive", "attacker_name": unit["name"],
+            "skill": "兵主", "aoe": True,
+            "msg": f"蚩尤之力！全体护盾{shield_val}"
         })
 
     elif atype == "debuff_highest_hp_enemy":
