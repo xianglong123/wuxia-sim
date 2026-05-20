@@ -389,7 +389,7 @@ reg({"id":"yangjian","name":"杨戬","class":"战士","quality":"至尊","color"
     "hp":7000,"atk":850,"crit":45,"spd":155,"skill_cost":140,
     "skill_name":"天眼","skill_desc":"攻击血量最高敌人，造成800%真实伤害，HP<20%直接斩杀，对BOSS+300%",
     "skill_aoe":False,"skill_target":"highest_hp","skill_dmg_pct":8.0,"skill_special":["true_damage","execute"],
-    "skill_upgrades":{3:"伤害1000%",5:"对BOSS+300%",7:"击杀后追击(重复行动)",9:"#1攻击+50%"},
+    "skill_upgrades":{3:"伤害1000%",5:"首刀附带20%目标最大生命真伤",7:"击杀后追击(重复行动)",9:"#1攻击+100%+暴伤+100%"},
     "basic_name":"三尖两刃","basic_desc":"对单个敌人造成120%伤害","basic_dmg_pct":1.2,"basic_energy_gain":45,
     "basic_aoe":False,"basic_target":"single","basic_special":[],
     "passive_name":"天眼通","passive_desc":"普攻附带目标最大生命5%真伤","passive_upgrades":{3:"真伤8%",5:"暴击时15%",7:"对BOSS真伤翻倍"}})
@@ -1930,7 +1930,7 @@ HERO_LV9_EFFECTS = {
     "diaochan":     {"pos":6,"desc":"开局给6号位+15暴击+魅惑闪避","type":"combo","crit_val":15,"buff":"dodge"},
     "zhaoyun":      {"pos":1,"desc":"开局给1号位满能量","type":"full_energy"},
     "guanyu":       {"pos":1,"desc":"开局给1号位+30%攻击+武圣降临","type":"combo","atk_pct":0.30,"buff":"guaranteed_crit"},
-    "yangjian":     {"pos":1,"desc":"开局给1号位+50%攻击","type":"stat","stat":"atk","pct":0.50},
+    "yangjian":     {"pos":1,"desc":"开局给1号位+100%攻击+暴伤+100%","type":"combo","atk_pct":1.0,"crit_dmg_pct":1.0},
     "wukong":       {"pos":1,"desc":"开局给1号位+60%攻击+15%吸血","type":"combo","atk_pct":0.60,"buff":"lifesteal"},
     "qinshihuang":  {"pos":5,"desc":"开局给5号位+80能量+受伤+40%","type":"combo","energy":80,"buff":"dmg_taken_up"},
     "xingtian":     {"pos":2,"desc":"开局给2号位+60%血量+反伤","type":"combo","hp_pct":0.60,"buff":"reflect"},
@@ -2002,6 +2002,8 @@ def apply_lv9_bonuses(my_heroes, enemies):
             elif b == "lifesteal": target["buffs"].append({"stat":"lifesteal","pct":0.15,"dur":-1})
             elif b == "dodge": target["buffs"].append({"stat":"dodge","pct":1.0,"dur":-1})
             elif b == "skill_dmg": target["buffs"].append({"stat":"atk_mult","pct":0.25,"dur":-1})
+            if ef.get("crit_dmg_pct"):
+                target["crit_dmg"] = target.get("crit_dmg", 1.5) + ef["crit_dmg_pct"]
             applied.append({"pos":target_pos,"desc":ef["desc"]})
 
         elif etype == "debuff_aura":
@@ -2303,6 +2305,11 @@ def hero_use_skill(unit, allies, enemies):
             bond_boss_pct = unit.get("_boss_dmg_pct", 0)
             if bond_boss_pct:
                 d = int(d * (1 + bond_boss_pct))
+        # Lv5: 首刀附带20%对面最大生命值的真实伤害
+        if is_yangjian and unit.get("_skill_lv", 1) >= 5:
+            extra_hp_d = int(t["max_hp"] * 0.20)
+            apply_dmg(t, extra_hp_d, True)
+            d += extra_hp_d
         # 减伤
         dr=0 if "true_damage" in specials else get_dmg_reduce(t)
         d=int(d*(1-dr)) if dr>0 else d
