@@ -387,9 +387,9 @@ MILESTONE_HEROES = {100:"yangjian",200:"taiyizhenren",300:"nezha",400:"zhenyuanz
 
 reg({"id":"yangjian","name":"杨戬","class":"战士","quality":"至尊","color":"#ff6600",
     "hp":7000,"atk":850,"crit":45,"spd":155,"skill_cost":140,
-    "skill_name":"天眼","skill_desc":"攻击血量最高敌人，造成350%真实伤害，对BOSS伤害翻倍",
-    "skill_aoe":False,"skill_target":"highest_hp","skill_dmg_pct":3.5,"skill_special":["true_damage"],
-    "skill_upgrades":{3:"伤害500%",5:"BOSS额外+200%",7:"击杀后刷新技能冷却",9:"#1攻击+50%"},
+    "skill_name":"天眼","skill_desc":"攻击血量最高敌人，造成600%真实伤害，HP<20%直接斩杀，对BOSS伤害翻倍",
+    "skill_aoe":False,"skill_target":"highest_hp","skill_dmg_pct":6.0,"skill_special":["true_damage","execute"],
+    "skill_upgrades":{3:"伤害800%",5:"BOSS额外+300%",7:"击杀后刷新技能冷却",9:"#1攻击+50%"},
     "basic_name":"三尖两刃","basic_desc":"对单个敌人造成120%伤害","basic_dmg_pct":1.2,"basic_energy_gain":45,
     "basic_aoe":False,"basic_target":"single","basic_special":[],
     "passive_name":"天眼通","passive_desc":"普攻附带目标最大生命5%真伤","passive_upgrades":{3:"真伤8%",5:"暴击时15%",7:"对BOSS真伤翻倍"}})
@@ -1835,7 +1835,7 @@ def apply_skill_upgrades(unit, hd, sk_lv, allies, enemies, sk_context):
             extra["lifesteal_pct"]=0.6  # 孙悟空Lv3: 吸血60%
         # ─── 至尊 Lv3 ───
         if hid=="yangjian":
-            extra["hit_dmg_pct"]=5.0  # 杨戬Lv3: 伤害500%
+            extra["hit_dmg_pct"]=8.0  # 杨戬Lv3: 伤害800%
         # ─── 肉盾 Lv3 ───
         if hd.get("class")=="肉盾":
             if not extra.get("extra_buffs"): extra["extra_buffs"]=[]
@@ -1866,7 +1866,7 @@ def apply_skill_upgrades(unit, hd, sk_lv, allies, enemies, sk_context):
             extra["extra_hits"]=2  # 孙悟空Lv5: 额外2次攻击
         # ─── 至尊 Lv5 ───
         if hid=="yangjian":
-            extra["boss_dmg_pct"]=2.0  # 杨戬Lv5: BOSS额外+200%
+            extra["boss_dmg_pct"]=3.0  # 杨戬Lv5: BOSS额外+300%
         # ─── 肉盾 Lv5 ───
         if hd.get("class")=="肉盾":
             unit["hp"] = int(unit["hp"] * 1.30)
@@ -2275,6 +2275,9 @@ def hero_use_skill(unit, allies, enemies):
         if cr: d=int(d*get_effective_crit_dmg(unit))
         # 养由基Lv5: 暴击4倍
         if cr and up and up.get("quad_crit"): d*=4
+        # 杨戬天眼: HP<20%直接斩杀
+        if unit.get("_hd",{}).get("id","") == "yangjian" and t["hp"]/max(1,t["max_hp"]) < 0.20:
+            d = t["hp"]
         # 斩杀(先查技能升级阈值，再查基础斩杀)
         execute_threshold = None
         if up and up.get("execute_pct"):
