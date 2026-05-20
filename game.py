@@ -2282,8 +2282,10 @@ def hero_use_skill(unit, allies, enemies):
         # 养由基Lv5: 暴击4倍
         if cr and up and up.get("quad_crit"): d*=4
         # 杨戬天眼: HP<20%直接斩杀
+        execute_kill = False
         if unit.get("_hd",{}).get("id","") == "yangjian" and t["hp"]/max(1,t["max_hp"]) < 0.20:
             d = t["hp"]
+            execute_kill = True
         # 斩杀(先查技能升级阈值，再查基础斩杀)
         execute_threshold = None
         if up and up.get("execute_pct"):
@@ -2292,6 +2294,7 @@ def hero_use_skill(unit, allies, enemies):
             execute_threshold = 0.5  # 基础斩杀阈值50%
         if execute_threshold and t["hp"]/max(1,t["max_hp"])<execute_threshold:
             d=t["hp"]
+            execute_kill = True
         # 杨戬天眼: 对BOSS伤害+300% + 追击叠加
         is_yangjian = unit.get("_hd",{}).get("id","") == "yangjian"
         is_boss_target = t.get("_boss", False)
@@ -2327,7 +2330,7 @@ def hero_use_skill(unit, allies, enemies):
             ls_heal = int(r["damage"]*ls_pct)
             unit["hp"]=min(unit["max_hp"],unit["hp"]+ls_heal)
         return {"name":t["name"],"damage":r["damage"],"crit":cr,"killed":killed,"immune":r.get("immune",False),
-                "death_immune":r.get("death_immune",False),
+                "death_immune":r.get("death_immune",False),"execute_kill":execute_kill,
                 "max_hp":t["max_hp"],"hp_pct":max(0,t["hp"]/max(1,t["max_hp"])),
                 "shield_damage":r.get("shield_damage",0),
                 "lifesteal_heal":ls_heal,
