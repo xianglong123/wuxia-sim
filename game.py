@@ -811,7 +811,7 @@ def gen_enemy(name, ps, profession, boss=False, boss_skills=None, boss_passive=N
         "name": name, "class": profession, "quality": q, "color": RARITY_COLORS.get(q, "#888"),
         "hp": hp, "max_hp": hp, "atk": atk, "crit": crit, "crit_dmg": 1.5, "dmg_reduce": 0.0,
         "spd": spd, "alive": True, "shield": 0, "buffs": [], "debuffs": [],
-        "stunned": False, "frozen": False, "reflect": False,
+        "stunned": False, "frozen": False, "reflect": False, "_boss": boss,
         "skill_name": pd["skill_name"], "skill_desc": pd["skill_desc"],
         "skill_aoe": pd["skill_aoe"], "skill_target": pd["skill_target"],
         "skill_dmg_pct": pd.get("skill_dmg_pct", 1.0),
@@ -1004,6 +1004,7 @@ def get_targets(units, mode):
     if not alive: return []
     if mode=="single": return [random.choice(alive)]
     elif mode=="lowest_hp": return [min(alive,key=lambda x:x["hp"])]
+    elif mode=="highest_hp": return [max(alive,key=lambda x:x["hp"])]
     elif mode=="back_row": return alive[-max(1,len(alive)//2):]
     elif mode=="front_row": return alive[:max(1,len(alive)//2)]
     elif mode=="all_enemy" or mode=="all_ally": return alive
@@ -1068,6 +1069,17 @@ def run_speed_battle(my_heroes, enemies, stage):
         h["position"] = i + 1
     for i, e in enumerate(enemies):
         e["position"] = 7 + i
+
+    # 羁绊效果注入
+    hero_lineup_ids = [h.get("_hd",{}).get("id","") for h in my_heroes]
+    bonds = [b for b in BONDS if all(m in hero_lineup_ids for m in b["members"])]
+    for h in my_heroes:
+        for b in bonds:
+            eff = b.get("effect", {})
+            for k, v in eff.items():
+                if k == "boss_dmg_pct":
+                    h.setdefault("_boss_dmg_pct", 0)
+                    h["_boss_dmg_pct"] += v
 
     # 卡牌系统
     all_actions = []
@@ -1259,6 +1271,12 @@ def run_speed_battle(my_heroes, enemies, stage):
                 for h in my_heroes:
                     if not h.get("alive", True):
                         check_death_revive(h, my_heroes, enemies, passive_ctx)
+
+            # 杨戬Lv7: 击杀后刷新技能冷却
+            if act.get("killed") and unit.get("side") == "ally":
+                uhd = unit.get("_hd", {})
+                if uhd.get("id") == "yangjian" and unit.get("_skill_lv", 1) >= 7:
+                    unit["energy"] = 200
 
             # 被动触发检查(效果引擎统一处理)
             process_all_post_action(my_heroes, enemies, passive_ctx, unit, act)
@@ -1458,6 +1476,15 @@ class BattleSession:
                 for h in self.my_heroes:
                     if not h.get("alive", True):
                         check_death_revive(h, self.my_heroes, self.enemies, self.passive_ctx)
+
+            # 杨戬Lv7: 击杀后刷新技能冷却
+            if act.get("killed") and act.get("side") == "ally":
+                attacker_name = act.get("attacker_name")
+                attacker = next((h for h in self.my_heroes if h.get("name") == attacker_name), None)
+                if attacker:
+                    uhd = attacker.get("_hd", {})
+                    if uhd.get("id") == "yangjian" and attacker.get("_skill_lv", 1) >= 7:
+                        attacker["energy"] = 200
 
             # 被动触发检查 (效果引擎统一处理)
             process_all_post_action(self.my_heroes, self.enemies, self.passive_ctx, unit, act)
@@ -1720,6 +1747,20 @@ def hero_basic_attack(unit, allies, enemies):
                 r2 = apply_dmg(t, d2)
                 d += r2["damage"]
                 if t["hp"] <= 0: t["alive"]=False; break
+        # 杨戬被动天眼通: 普攻附带目标最大生命%真伤
+        hid = hd.get("id","")
+        if hid == "yangjian":
+            sk_lv = unit.get("_skill_lv", 1)
+            hp_pct = 0.05  # 基础 5%
+            if sk_lv >= 3: hp_pct = 0.08
+            if sk_lv >= 5 and cr: hp_pct = 0.15
+            if sk_lv >= 7 and t.get("_boss", False): hp_pct *= 2
+            extra_d = int(t["max_hp"] * hp_pct)
+            if extra_d > 0:
+                apply_dmg(t, extra_d, True)
+                d += extra_d
+                killed = t["hp"] <= 0
+                if killed: t["alive"] = False
         apply_basic_specials(unit, hd, [t])
         return {"side":"ally","type":"basic","attacker_name":unit["name"],"skill":skill_name,
                 "aoe":False,"target_name":t["name"],"damage":d,"crit":cr,"killed":killed,"shield_damage":r.get("shield_damage",0)}
@@ -1792,6 +1833,9 @@ def apply_skill_upgrades(unit, hd, sk_lv, allies, enemies, sk_context):
         # ─── 神卡 Lv3 ───
         if hid=="wukong":
             extra["lifesteal_pct"]=0.6  # 孙悟空Lv3: 吸血60%
+        # ─── 至尊 Lv3 ───
+        if hid=="yangjian":
+            extra["hit_dmg_pct"]=5.0  # 杨戬Lv3: 伤害500%
         # ─── 肉盾 Lv3 ───
         if hd.get("class")=="肉盾":
             if not extra.get("extra_buffs"): extra["extra_buffs"]=[]
@@ -1820,6 +1864,9 @@ def apply_skill_upgrades(unit, hd, sk_lv, allies, enemies, sk_context):
         # ─── 神卡 Lv5 ───
         if hid=="wukong":
             extra["extra_hits"]=2  # 孙悟空Lv5: 额外2次攻击
+        # ─── 至尊 Lv5 ───
+        if hid=="yangjian":
+            extra["boss_dmg_pct"]=2.0  # 杨戬Lv5: BOSS额外+200%
         # ─── 肉盾 Lv5 ───
         if hd.get("class")=="肉盾":
             unit["hp"] = int(unit["hp"] * 1.30)
@@ -1851,6 +1898,9 @@ def apply_skill_upgrades(unit, hd, sk_lv, allies, enemies, sk_context):
             extra["guaranteed_crit"]=True
         if hid=="houyi":
             extra["execute_pct"]=0.7  # 后羿Lv7: 70%斩杀(虽然数据写了50%基础，但Lv7升级)
+        # ─── 至尊 Lv7 ───
+        if hid=="yangjian":
+            extra["kill_refresh_cd"] = True  # 杨戬Lv7: 击杀后刷新技能冷却
     return extra
 
 # ═══ Lv9 位置天赋系统 ═══
@@ -1876,6 +1926,7 @@ HERO_LV9_EFFECTS = {
     "diaochan":     {"pos":6,"desc":"开局给6号位+15暴击+魅惑闪避","type":"combo","crit_val":15,"buff":"dodge"},
     "zhaoyun":      {"pos":1,"desc":"开局给1号位满能量","type":"full_energy"},
     "guanyu":       {"pos":1,"desc":"开局给1号位+30%攻击+武圣降临","type":"combo","atk_pct":0.30,"buff":"guaranteed_crit"},
+    "yangjian":     {"pos":1,"desc":"开局给1号位+50%攻击","type":"stat","stat":"atk","pct":0.50},
     "wukong":       {"pos":1,"desc":"开局给1号位+60%攻击+15%吸血","type":"combo","atk_pct":0.60,"buff":"lifesteal"},
     "qinshihuang":  {"pos":5,"desc":"开局给5号位+80能量+受伤+40%","type":"combo","energy":80,"buff":"dmg_taken_up"},
     "xingtian":     {"pos":2,"desc":"开局给2号位+60%血量+反伤","type":"combo","hp_pct":0.60,"buff":"reflect"},
@@ -2232,10 +2283,22 @@ def hero_use_skill(unit, allies, enemies):
             execute_threshold = 0.5  # 基础斩杀阈值50%
         if execute_threshold and t["hp"]/max(1,t["max_hp"])<execute_threshold:
             d=t["hp"]
+        # BOSS伤害翻倍（杨戬天眼 + 羁绊）
+        is_yangjian = unit.get("_hd",{}).get("id","") == "yangjian"
+        is_boss_target = t.get("_boss", False)
+        if is_boss_target:
+            bond_boss_pct = unit.get("_boss_dmg_pct", 0)
+            if bond_boss_pct:
+                d = int(d * (1 + bond_boss_pct))
+        if is_yangjian and is_boss_target:
+            d = int(d * 2)
+        # Lv5: BOSS额外+200%
+        if is_yangjian and is_boss_target and up and up.get("boss_dmg_pct"):
+            d = int(d * (1 + up["boss_dmg_pct"]))
         # 减伤
-        dr=get_dmg_reduce(t)
-        d=int(d*(1-dr))
-        ignore="ignore_shield" in specials
+        dr=0 if "true_damage" in specials else get_dmg_reduce(t)
+        d=int(d*(1-dr)) if dr>0 else d
+        ignore="ignore_shield" in specials or "true_damage" in specials
         r=apply_dmg(t,d,ignore)
         killed=t["hp"]<=0
         if killed: t["alive"]=False
