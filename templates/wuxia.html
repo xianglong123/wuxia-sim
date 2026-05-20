@@ -677,7 +677,7 @@ function playActionsBatch(acts,callback){
       document.getElementById("roundIndicator").textContent=act.side==="ally"?icon+" 我方":act.side==="heal"?"💚 治疗":"💀 敌方";
       const rd=document.getElementById("roundDisplay");if(rd)rd.textContent="回合"+(Math.floor(idx/6)+1);
       if(act.buff_effects&&act.buff_effects.length>0){
-        const bLabels={"atk":"⚔️+攻","immune":"🛡️免疫","dmg_reduce":"🛡️减伤","lifesteal":"💉吸血","reflect":"🔄反伤","spd":"👟加速","crit":"⚡暴击","reset_cd":"🔄重置CD"};
+        const bLabels={"atk":"⚔️+攻","immune":"🛡️免疫","dmg_reduce":"🛡️减伤","energy":"⚡满能量","lifesteal":"💉吸血","reflect":"🔄反伤","spd":"👟加速","crit":"⚡暴击","reset_cd":"🔄重置CD"};
         buffNotify(act.buff_effects.map(b=>bLabels[b]||b).join(" "),act.side==="heal"?"#5adb7a":"#ffd700");
       }
       animateAct(act,()=>{idx++;setTimeout(playNext,Math.round(50/Math.max(1,battleSpeed)))});
@@ -698,7 +698,7 @@ function handlePassiveAction(act){
   document.getElementById("battleLogT").appendChild(ld);
   document.getElementById("battleLogT").scrollTop=document.getElementById("battleLogT").scrollHeight;
   if(act.buff_effects&&act.buff_effects.length>0){
-    const bLabels={"atk":"⚔️+攻","immune":"🛡️免疫","dmg_reduce":"🛡️减伤","lifesteal":"💉吸血","reflect":"🔄反伤","spd":"👟加速","crit":"⚡暴击","reset_cd":"🔄重置CD"};
+    const bLabels={"atk":"⚔️+攻","immune":"🛡️免疫","dmg_reduce":"🛡️减伤","energy":"⚡满能量","lifesteal":"💉吸血","reflect":"🔄反伤","spd":"👟加速","crit":"⚡暴击","reset_cd":"🔄重置CD"};
     buffNotify(act.buff_effects.map(b=>bLabels[b]||b).join(" "),"#5adb7a");
   }
 }

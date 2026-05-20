@@ -366,9 +366,9 @@ reg({"id":"houyi","name":"后羿","class":"射手","quality":"神卡","color":"#
     "passive_name":"射日神弓","passive_desc":"战斗开始锁定血量最高敌人，降低其50%血量上限","passive_upgrades":{3:"降低60%",5:"额外降低30%攻击",7:"锁定目标死亡时全体敌人眩晕1回合"}})
 reg({"id":"nuwa","name":"女娲","class":"奶妈","quality":"神卡","color":"#ff3333",
     "hp":5000,"atk":300,"crit":10,"spd":130,"skill_cost":180,
-    "skill_name":"补天","skill_desc":"全体回复50%+免疫3次伤害+攻击+50%×3回合+复活已死亡队友(20%血量)",
-    "skill_aoe":True,"skill_target":"all_ally","skill_heal_pct":0.5,"skill_special":["revive","immunity"],"skill_buffs":[{"stat":"atk","pct":0.5,"dur":3}],
-    "skill_upgrades":{3:"回复70%+免疫4次伤害",5:"复活血量40%+附加30%护盾",7:"补天:全队无敌+重置所有技能冷却", 9:"#3护盾50%+回血30%"},
+    "skill_name":"补天","skill_desc":"回复队友50%+免疫1次+攻击+50%+复活队友(自身除外)",
+    "skill_aoe":True,"skill_target":"all_ally","skill_heal_pct":0.5,"skill_special":["revive"],"skill_buffs":[{"stat":"atk","pct":0.5,"dur":3}],
+    "skill_upgrades":{3:"队友+70%减伤×3回合",5:"复活血量40%+附加30%护盾",7:"所有队友能量充满", 9:"#3护盾50%+回血30%"},
     "basic_name":"抟土造人","basic_desc":"造化之力，全体回复15%血量","basic_dmg_pct":0,"basic_energy_gain":50,
     "basic_aoe":True,"basic_target":"all_ally","basic_special":[{"type":"heal","pct":0.15}],
     "passive_name":"创世","passive_desc":"开局全体30%护盾+回复10%+免疫1次死亡(锁血1点)","passive_upgrades":{3:"护盾50%+回复20%",5:"队友死亡时立即复活一次(每场1次)",7:"复活时全队无敌1次伤害"}})
@@ -2112,7 +2112,8 @@ def hero_use_skill(unit, allies, enemies):
     if hd.get("skill_heal_pct", 0) > 0:
         sk_lv=unit.get("_skill_lv",1)
         if target_mode == "all_ally":
-            targets = [a for a in allies if a.get("alive",True)]
+            is_nuwa = hd.get("id","") == "nuwa"
+            targets = [a for a in allies if a.get("alive",True) and (not is_nuwa or a != unit)]
             for t in targets:
                 heal_mult = get_buff_bonus(unit, "heal_pct")
                 heal = int(t["max_hp"] * hd["skill_heal_pct"] * heal_mult)
@@ -2120,12 +2121,23 @@ def hero_use_skill(unit, allies, enemies):
             buff_tags=[]
             # 免疫次数（女娲Lv3: 4次伤害, 否则默认3次）
             immune_dur = 3
-            if "immunity" in specials:
-                if hd.get("id","") == "nuwa" and sk_lv >= 3:
-                    immune_dur = 4
+            if "immunity" in specials and hd.get("id","") != "nuwa":
                 for t in targets:
                     t["buffs"].append({"stat":"immune","pct":1.0,"dur":immune_dur})
                 buff_tags.append("immune")
+            # 女娲补天: 队友免疫1次+Lv3减伤70%+Lv7全体满能量
+            if is_nuwa:
+                for t in targets:
+                    t["buffs"].append({"stat":"immune","pct":1.0,"dur":1})
+                buff_tags.append("immune")
+                if sk_lv >= 3:
+                    for t in targets:
+                        t["buffs"].append({"stat":"dmg_reduce","pct":0.70,"dur":3})
+                    buff_tags.append("dmg_reduce")
+                if sk_lv >= 7:
+                    for a in allies:
+                        if a.get("alive", True) and a != unit:
+                            a["energy"] = 200
             for b in hd.get("skill_buffs",[]):
                 for t in targets:
                     t["buffs"].append({"stat":b["stat"],"pct":b["pct"],"dur":b["dur"]})
@@ -2150,20 +2162,16 @@ def hero_use_skill(unit, allies, enemies):
                         # 复活后获得技能buff（免疫、攻击加成等）
                         for b in hd.get("skill_buffs",[]):
                             a["buffs"].append({"stat":b["stat"],"pct":b["pct"],"dur":b["dur"]})
-                        if "immunity" in specials:
+                        # 女娲补天复活附带buff
+                        if is_nuwa:
+                            a["buffs"].append({"stat":"immune","pct":1.0,"dur":1})
+                            if sk_lv >= 3:
+                                a["buffs"].append({"stat":"dmg_reduce","pct":0.70,"dur":3})
+                        elif "immunity" in specials:
                             a["buffs"].append({"stat":"immune","pct":1.0,"dur":immune_dur})
                 if revived:
                     buff_tags.append(f"复活:{','.join(revived)}")
-            # 女娲Lv7: 全队无敌 + 重置所有技能冷却
-            if hd.get("id","") == "nuwa" and sk_lv >= 7 and "immunity" in specials:
-                for a in allies:
-                    if a.get("alive", True):
-                        has_immune = any(b["stat"] == "immune" for b in a["buffs"])
-                        if not has_immune:
-                            a["buffs"].append({"stat":"immune","pct":1.0,"dur":immune_dur})
-                        a["energy"] = 200
-                if "immune" not in buff_tags:
-                    buff_tags.append("immune")
+
             # 技能升级效果
             up=apply_skill_upgrades(unit, hd, sk_lv, allies, enemies, {})
             if up and up.get("extra_buffs"):
