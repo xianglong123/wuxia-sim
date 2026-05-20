@@ -293,7 +293,7 @@ reg({"id":"zhangfei","name":"张飞","class":"肉盾","quality":"传说","color"
     "hp":4800,"atk":320,"crit":10,"spd":80,"skill_cost":140,
     "skill_name":"当阳怒吼","skill_desc":"全屏嘲讽全体敌人3回合，全体队友获得护盾(吸收25%最大血量)",
     "skill_aoe":True,"skill_target":"all_enemy","skill_special":["taunt","shield_ally"],
-    "skill_upgrades":{3:"怒吼降低敌人攻击25%",5:"护盾破碎爆炸",7:"全体队友无敌1回合", 9:"#2血量+50%+护盾30%"},
+    "skill_upgrades":{3:"怒吼降低敌人攻击25%",5:"护盾破碎爆炸",7:"全体队友无敌1次伤害", 9:"#2血量+50%+护盾30%"},
     "basic_name":"蛇矛突刺","basic_desc":"丈八蛇矛突刺，造成120%伤害，自身减伤5%×1回合","basic_dmg_pct":1.2,"basic_energy_gain":40,
     "basic_aoe":False,"basic_target":"single","basic_special":[{"type":"self_buff","stat":"dmg_reduce","pct":0.05,"dur":1}],
     "passive_name":"万人敌","passive_desc":"每受一次攻击+5%攻击(最多10层)","passive_upgrades":{3:"上限15层",5:"每层额外+5%减伤",7:"满层反击100%"}})
@@ -307,7 +307,7 @@ reg({"id":"diaochan","name":"貂蝉","class":"刺客","quality":"传说","color"
     "passive_name":"离间","passive_desc":"战斗开始魅惑一个敌人3秒","passive_upgrades":{3:"被魅惑敌人受伤+30%",5:"魅惑结束眩晕2秒",7:"魅惑两个敌人"}})
 reg({"id":"huatuo","name":"华佗","class":"奶妈","quality":"传说","color":"#ffd700",
     "hp":2200,"atk":220,"crit":8,"spd":110,"skill_cost":140,
-    "skill_name":"麻沸散","skill_desc":"全体回复30%+免疫伤害2回合+攻击+30%×2回合",
+    "skill_name":"麻沸散","skill_desc":"全体回复30%+免疫2次伤害+攻击+30%×2回合",
     "skill_aoe":True,"skill_target":"all_ally","skill_heal_pct":0.3,"skill_special":["immunity"],"skill_buffs":[{"stat":"atk","pct":0.3,"dur":2}],
     "skill_upgrades":{3:"免疫期间暴击率+20%",5:"回复40%+附加护盾",7:"免疫结束重置所有冷却", 9:"#3护盾30%+回血15%"},
     "basic_name":"望闻问切","basic_desc":"施以针术，回复最低血量队友20%","basic_dmg_pct":0,"basic_energy_gain":50,
@@ -366,12 +366,12 @@ reg({"id":"houyi","name":"后羿","class":"射手","quality":"神卡","color":"#
     "passive_name":"射日神弓","passive_desc":"战斗开始锁定血量最高敌人，降低其50%血量上限","passive_upgrades":{3:"降低60%",5:"额外降低30%攻击",7:"锁定目标死亡时全体敌人眩晕1回合"}})
 reg({"id":"nuwa","name":"女娲","class":"奶妈","quality":"神卡","color":"#ff3333",
     "hp":5000,"atk":300,"crit":10,"spd":130,"skill_cost":180,
-    "skill_name":"补天","skill_desc":"全体回复50%+免疫伤害3回合+攻击+50%×3回合+复活已死亡队友(20%血量)",
+    "skill_name":"补天","skill_desc":"全体回复50%+免疫3次伤害+攻击+50%×3回合+复活已死亡队友(20%血量)",
     "skill_aoe":True,"skill_target":"all_ally","skill_heal_pct":0.5,"skill_special":["revive","immunity"],"skill_buffs":[{"stat":"atk","pct":0.5,"dur":3}],
-    "skill_upgrades":{3:"回复70%+免疫4回合",5:"复活血量40%+附加30%护盾",7:"补天:全队无敌+重置所有技能冷却", 9:"#3护盾50%+回血30%"},
+    "skill_upgrades":{3:"回复70%+免疫4次伤害",5:"复活血量40%+附加30%护盾",7:"补天:全队无敌+重置所有技能冷却", 9:"#3护盾50%+回血30%"},
     "basic_name":"抟土造人","basic_desc":"造化之力，全体回复15%血量","basic_dmg_pct":0,"basic_energy_gain":50,
     "basic_aoe":True,"basic_target":"all_ally","basic_special":[{"type":"heal","pct":0.15}],
-    "passive_name":"创世","passive_desc":"战斗开始全体获得30%护盾+回复10%","passive_upgrades":{3:"护盾50%+回复20%",5:"队友死亡时立即复活一次(每场1次)",7:"复活时全队无敌1回合"}})
+    "passive_name":"创世","passive_desc":"战斗开始全体获得30%护盾+回复10%","passive_upgrades":{3:"护盾50%+回复20%",5:"队友死亡时立即复活一次(每场1次)",7:"复活时全队无敌1次伤害"}})
 reg({"id":"chiyou","name":"蚩尤","class":"肉盾","quality":"神卡","color":"#ff3333",
     "hp":9000,"atk":400,"crit":10,"spd":90,"skill_cost":140,
     "skill_name":"兵主降临","skill_desc":"自身200%HP护盾+减伤60%×3回合+嘲讽全体3回合+全队减伤30%×3回合",
@@ -735,7 +735,7 @@ BOSS_SKILLS = [
 BOSS_PASSIVES = [
     {"name":"浴血","desc":"HP<30%时攻击翻倍+吸血50%+免疫控制","effect":"bloodbath"},
     {"name":"反伤甲","desc":"受到伤害时反弹15%","effect":"thorn"},
-    {"name":"不屈","desc":"首次死亡回复50%血量+无敌1回合","effect":"undying"},
+    {"name":"不屈","desc":"首次死亡回复50%血量+无敌1次伤害","effect":"undying"},
     {"name":"召唤","desc":"每3回合召唤一个分身小弟","effect":"summon"},
     {"name":"暴君","desc":"HP>80%时伤害+50%","effect":"tyrant"},
     {"name":"瘟疫","desc":"每回合全体5%最大血量伤害","effect":"plague"},
@@ -1012,6 +1012,9 @@ def get_targets(units, mode):
 def apply_dmg(t, raw, ignore_shield=False):
     for b in t.get("buffs",[]):
         if b["stat"]=="immune" and b["dur"]>0:
+            b["dur"] -= 1
+            if b["dur"] <= 0:
+                t["buffs"].remove(b)
             return {"damage":0,"shield_damage":0,"immune":True}
     sh=t.get("shield",0)
     if ignore_shield:
@@ -1022,9 +1025,10 @@ def apply_dmg(t, raw, ignore_shield=False):
 
 def tick_buffs(units):
     for u in units:
-        u["buffs"]=[b for b in u.get("buffs",[]) if b["dur"]>1]
+        u["buffs"]=[b for b in u.get("buffs",[]) if b["stat"]=="immune" or b["dur"]>1]
         for b in u.get("buffs",[]):
-            b["dur"]-=1
+            if b["stat"]!="immune":
+                b["dur"]-=1
         u["debuffs"]=[d for d in u.get("debuffs",[]) if d["dur"]>1]
         for d in u.get("debuffs",[]):
             d["dur"]-=1
@@ -2046,7 +2050,7 @@ def hero_use_skill(unit, allies, enemies):
                 heal = int(t["max_hp"] * hd["skill_heal_pct"] * heal_mult)
                 t["hp"] = min(t["max_hp"], t["hp"] + heal)
             buff_tags=[]
-            # 免疫持续回合（女娲Lv3: 4回合, 否则默认3）
+            # 免疫次数（女娲Lv3: 4次伤害, 否则默认3次）
             immune_dur = 3
             if "immunity" in specials:
                 if hd.get("id","") == "nuwa" and sk_lv >= 3:

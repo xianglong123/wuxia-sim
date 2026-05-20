@@ -478,7 +478,7 @@ def _execute_equip_action(action, unit, allies, enemies, context):
         context.setdefault("all_actions", []).append({
             "side": "ally", "type": "passive", "attacker_name": unit["name"],
             "skill": "装备", "aoe": True,
-            "msg": f"全体无敌{dur}回合"
+            "msg": f"全体无敌{dur}次伤害"
         })
     
     # team_dmg_reduce
@@ -761,7 +761,7 @@ def _execute_action(action, unit, sk_lv, allies, enemies, context, hid):
         unit["buffs"].append({"stat": stat, "pct": pct, "dur": dur})
         label = {"atk":"⚔️攻击","crit":"💥暴击","crit_dmg":"🎯爆伤","dmg_reduce":"🛡️减伤",
                  "immune":"🛡️免疫","dodge":"👻闪避","speed":"👟速度","lifesteal":"🩸吸血"}.get(stat, stat)
-        dur_str = f"×{dur}回合" if dur > 0 else "永久"
+        dur_str = f"×{dur}次伤害" if dur > 0 and stat == "immune" else (f"×{dur}回合" if dur > 0 else "永久")
         context.setdefault("all_actions", []).append({
             "side": "ally", "type": "passive", "attacker_name": unit["name"],
             "skill": "被动", "aoe": False, "target_name": unit["name"],
@@ -777,7 +777,7 @@ def _execute_action(action, unit, sk_lv, allies, enemies, context, hid):
                 a["buffs"].append({"stat": stat, "pct": pct, "dur": dur})
         label = {"atk":"⚔️攻击","crit":"💥暴击","crit_dmg":"🎯爆伤","dmg_reduce":"🛡️减伤",
                  "immune":"🛡️免疫","dodge":"👻闪避"}.get(stat, stat)
-        dur_str = f"×{dur}回合" if dur > 0 else "永久"
+        dur_str = f"×{dur}次伤害" if dur > 0 and stat == "immune" else (f"×{dur}回合" if dur > 0 else "永久")
         context.setdefault("all_actions", []).append({
             "side": "ally", "type": "passive", "attacker_name": unit["name"],
             "skill": "被动", "aoe": True,
@@ -872,7 +872,7 @@ def _execute_action(action, unit, sk_lv, allies, enemies, context, hid):
         context.setdefault("_revive_ally", {"count": 0, "max": mx, "unit_name": unit["name"]})
     
     elif atype == "revive_team_invincible":
-        # 女娲lv7被动: 复活时全队无敌1回合
+        # 女娲lv7被动: 复活时全队无敌1次伤害
         context.setdefault("_revive_team_invincible", True)
     
     elif atype == "revive_on_death":
