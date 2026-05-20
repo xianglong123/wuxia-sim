@@ -387,9 +387,9 @@ MILESTONE_HEROES = {100:"yangjian",200:"taiyizhenren",300:"nezha",400:"zhenyuanz
 
 reg({"id":"yangjian","name":"杨戬","class":"战士","quality":"至尊","color":"#ff6600",
     "hp":7000,"atk":850,"crit":45,"spd":155,"skill_cost":140,
-    "skill_name":"天眼","skill_desc":"攻击血量最高敌人，造成800%真实伤害，HP<20%直接斩杀，对BOSS伤害翻倍",
+    "skill_name":"天眼","skill_desc":"攻击血量最高敌人，造成800%真实伤害，HP<20%直接斩杀，对BOSS+300%",
     "skill_aoe":False,"skill_target":"highest_hp","skill_dmg_pct":8.0,"skill_special":["true_damage","execute"],
-    "skill_upgrades":{3:"伤害1000%",5:"BOSS额外+300%",7:"击杀后追击(重复行动)",9:"#1攻击+50%"},
+    "skill_upgrades":{3:"伤害1000%",5:"对BOSS+300%",7:"击杀后追击(重复行动)",9:"#1攻击+50%"},
     "basic_name":"三尖两刃","basic_desc":"对单个敌人造成120%伤害","basic_dmg_pct":1.2,"basic_energy_gain":45,
     "basic_aoe":False,"basic_target":"single","basic_special":[],
     "passive_name":"天眼通","passive_desc":"普攻附带目标最大生命5%真伤","passive_upgrades":{3:"真伤8%",5:"暴击时15%",7:"对BOSS真伤翻倍"}})
@@ -1278,6 +1278,7 @@ def run_speed_battle(my_heroes, enemies, stage):
                 if uhd.get("id") == "yangjian" and unit.get("_skill_lv", 1) >= 7:
                     unit["energy"] = 200
                     unit["action_bar"] = unit.get("action_bar", 0) + 2000
+                    unit["_pursuit_stacks"] = unit.get("_pursuit_stacks", 0) + 1
 
             # 被动触发检查(效果引擎统一处理)
             process_all_post_action(my_heroes, enemies, passive_ctx, unit, act)
@@ -1487,6 +1488,7 @@ class BattleSession:
                     if uhd.get("id") == "yangjian" and attacker.get("_skill_lv", 1) >= 7:
                         attacker["energy"] = 200
                         attacker["action_bar"] = attacker.get("action_bar", 0) + 2000
+                        attacker["_pursuit_stacks"] = attacker.get("_pursuit_stacks", 0) + 1
 
             # 被动触发检查 (效果引擎统一处理)
             process_all_post_action(self.my_heroes, self.enemies, self.passive_ctx, unit, act)
@@ -1868,7 +1870,7 @@ def apply_skill_upgrades(unit, hd, sk_lv, allies, enemies, sk_context):
             extra["extra_hits"]=2  # 孙悟空Lv5: 额外2次攻击
         # ─── 至尊 Lv5 ───
         if hid=="yangjian":
-            extra["boss_dmg_pct"]=3.0  # 杨戬Lv5: BOSS额外+300%
+            pass  # 杨戬Lv5: 对BOSS+300%已内置（见伤害计算）
         # ─── 肉盾 Lv5 ───
         if hd.get("class")=="肉盾":
             unit["hp"] = int(unit["hp"] * 1.30)
@@ -2288,18 +2290,19 @@ def hero_use_skill(unit, allies, enemies):
             execute_threshold = 0.5  # 基础斩杀阈值50%
         if execute_threshold and t["hp"]/max(1,t["max_hp"])<execute_threshold:
             d=t["hp"]
-        # BOSS伤害翻倍（杨戬天眼 + 羁绊）
+        # 杨戬天眼: 对BOSS伤害+300% + 追击叠加
         is_yangjian = unit.get("_hd",{}).get("id","") == "yangjian"
         is_boss_target = t.get("_boss", False)
-        if is_boss_target:
+        if is_yangjian:
+            if is_boss_target:
+                d = int(d * 4)
+            pursuit = unit.get("_pursuit_stacks", 0)
+            if pursuit > 0:
+                d = int(d * (1 + pursuit))
+        elif is_boss_target:
             bond_boss_pct = unit.get("_boss_dmg_pct", 0)
             if bond_boss_pct:
                 d = int(d * (1 + bond_boss_pct))
-        if is_yangjian and is_boss_target:
-            d = int(d * 2)
-        # Lv5: BOSS额外+200%
-        if is_yangjian and is_boss_target and up and up.get("boss_dmg_pct"):
-            d = int(d * (1 + up["boss_dmg_pct"]))
         # 减伤
         dr=0 if "true_damage" in specials else get_dmg_reduce(t)
         d=int(d*(1-dr)) if dr>0 else d
