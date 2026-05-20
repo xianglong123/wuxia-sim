@@ -176,11 +176,12 @@ HERO_EFFECTS = {
         "lv5_extra": {"type": "debuff_highest_hp_enemy_atk", "pct": -0.30},
         "lv7_extra": {"type": "highest_hp_death_stun"}
     }],
-    # 女娲: 创世 — 战斗开始全体30%护盾+回复10%
+    # 女娲: 创世 — 战斗开始全体30%护盾+回复10% + 免疫1次死亡
     "nuwa": [{
         "event": "on_battle_start",
         "actions": [{"type": "shield_team", "pct": 0.30, "per_lv": {3: 0.50}},
-                     {"type": "heal_team", "pct": 0.10, "per_lv": {3: 0.20}}],
+                     {"type": "heal_team", "pct": 0.10, "per_lv": {3: 0.20}},
+                     {"type": "death_immune_once"}],
         "lv5_extra": {"type": "revive_ally_on_death", "max_per_battle": 1},
         "lv7_extra": {"type": "revive_team_invincible"}
     }],
@@ -879,6 +880,10 @@ def _execute_action(action, unit, sk_lv, allies, enemies, context, hid):
         # 刑天lv7被动: 首次死亡复活
         pct = effective_action.get("pct", 0.60)
         unit["_revive_on_death"] = pct
+
+    elif atype == "death_immune_once":
+        # 女娲被动: 免疫1次死亡（锁血1点，每局一次）
+        unit["_death_immune_once"] = True
 
     return None
 

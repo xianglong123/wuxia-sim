@@ -1063,6 +1063,10 @@ function revivePopup(name){
   const el=document.createElement("div");el.className="revive-popup";
   el.innerHTML=`<div class="ko-text" style="color:#ffd700!important">✨ ${name||""} 复活!</div>`;document.body.appendChild(el);setTimeout(()=>el.remove(),1200);
 }
+function deathImmunePopup(name){
+  const el=document.createElement("div");el.className="revive-popup";
+  el.innerHTML=`<div class="ko-text" style="color:#ff3333!important">🛡️ ${name||""} 锁血!</div>`;document.body.appendChild(el);setTimeout(()=>el.remove(),1200);
+}
 
 /* ── Hero Skill Spotlight: card zooms center, big damage ── */
 function heroSkillSpotlight(act, onDone){
@@ -1199,6 +1203,14 @@ function animateAct(act,cb){
             const d=document.createElement("div");d.className="bc-dmg-num";d.style.color="#a855f7";d.style.fontSize="12px";
             d.textContent=`-${tg.shield_damage}🛡️`;tcard.appendChild(d);setTimeout(()=>d.remove(),(isSkill?1400:900)*_spd);
           }
+          if(tg.death_immune){
+            tcard.classList.add("bc-revive");
+            sfx("gold");deathImmunePopup(tg.name);
+            setTimeout(()=>tcard.classList.remove("bc-revive"),800*_spd);
+            const rd=document.createElement("div");rd.className="bc-dmg-num";
+            rd.style.color="#ff3333";rd.style.fontSize="18px";rd.textContent="🛡️锁血!";
+            tcard.appendChild(rd);setTimeout(()=>rd.remove(),(isSkill?1600:1000)*_spd);
+          }
           if(tg.killed){tcard.classList.add("bc-dead");koPopup();sfx("gold")}
         });
         if(cb)setTimeout(cb,200*_spd);
@@ -1222,6 +1234,13 @@ function animateAct(act,cb){
         if(act.shield_damage>0&&tcard){
           const d=document.createElement("div");d.className="bc-dmg-num";d.style.color="#a855f7";d.style.fontSize="12px";
           d.textContent=`-${act.shield_damage}🛡️`;tcard.appendChild(d);setTimeout(()=>d.remove(),(isSkill?1400:900)*_spd);
+        }
+        if(act.death_immune&&tcard){
+          tcard.classList.add("bc-revive");sfx("gold");deathImmunePopup(act.target_name);
+          setTimeout(()=>tcard.classList.remove("bc-revive"),800*_spd);
+          const rd=document.createElement("div");rd.className="bc-dmg-num";
+          rd.style.color="#ff3333";rd.style.fontSize="18px";rd.textContent="🛡️锁血!";
+          tcard.appendChild(rd);setTimeout(()=>rd.remove(),(isSkill?1600:1000)*_spd);
         }
         if(act.killed&&tcard){tcard.classList.add("bc-dead");koPopup();sfx("gold")}
         if(cb)setTimeout(cb,150*_spd);
@@ -1272,7 +1291,14 @@ function animateAct(act,cb){
           tcard.style.transform=isSkill?"translateX(8px)":"translateX(4px)";
           setTimeout(()=>{tcard.style.transform="";tcard.classList.remove("bc-hit")},(isSkill?400:250)*spd);
         }
-        if(tg.immune){
+        if(tg.death_immune){
+          tcard.classList.add("bc-revive");
+          sfx("gold");deathImmunePopup(tg.name);
+          setTimeout(()=>tcard.classList.remove("bc-revive"),800*spd);
+          const rd=document.createElement("div");rd.className="bc-dmg-num";
+          rd.style.color="#ff3333";rd.style.fontSize="18px";rd.textContent="🛡️锁血!";
+          tcard.appendChild(rd);setTimeout(()=>rd.remove(),(isSkill?1600:1000)*spd);
+        }else if(tg.immune){
           const d=document.createElement("div");d.className="bc-dmg-num";d.style.color="#ffd700";d.style.fontSize="16px";
           d.textContent="🛡️免疫";tcard.appendChild(d);setTimeout(()=>d.remove(),(isSkill?1400:900)*spd);
         }else if(tg.revived){
@@ -1344,6 +1370,13 @@ function animateAct(act,cb){
     if(act.shield_damage>0&&tcard){
       const d=document.createElement("div");d.className="bc-dmg-num";d.style.color="#a855f7";d.style.fontSize="12px";
       d.textContent=`-${act.shield_damage}🛡️`;tcard.appendChild(d);setTimeout(()=>d.remove(),(isSkill?1400:900)*spd);
+    }
+    if(act.death_immune&&tcard){
+      tcard.classList.add("bc-revive");sfx("gold");deathImmunePopup(act.target_name);
+      setTimeout(()=>tcard.classList.remove("bc-revive"),800*spd);
+      const rd=document.createElement("div");rd.className="bc-dmg-num";
+      rd.style.color="#ff3333";rd.style.fontSize="18px";rd.textContent="🛡️锁血!";
+      tcard.appendChild(rd);setTimeout(()=>rd.remove(),(isSkill?1600:1000)*spd);
     }
     if(act.killed&&tcard){tcard.classList.add("bc-dead");koPopup();sfx("gold")}
     if(cb)setTimeout(cb,(isSkill?350:150)*spd);

@@ -371,7 +371,7 @@ reg({"id":"nuwa","name":"女娲","class":"奶妈","quality":"神卡","color":"#f
     "skill_upgrades":{3:"回复70%+免疫4次伤害",5:"复活血量40%+附加30%护盾",7:"补天:全队无敌+重置所有技能冷却", 9:"#3护盾50%+回血30%"},
     "basic_name":"抟土造人","basic_desc":"造化之力，全体回复15%血量","basic_dmg_pct":0,"basic_energy_gain":50,
     "basic_aoe":True,"basic_target":"all_ally","basic_special":[{"type":"heal","pct":0.15}],
-    "passive_name":"创世","passive_desc":"战斗开始全体获得30%护盾+回复10%","passive_upgrades":{3:"护盾50%+回复20%",5:"队友死亡时立即复活一次(每场1次)",7:"复活时全队无敌1次伤害"}})
+    "passive_name":"创世","passive_desc":"开局全体30%护盾+回复10%+免疫1次死亡(锁血1点)","passive_upgrades":{3:"护盾50%+回复20%",5:"队友死亡时立即复活一次(每场1次)",7:"复活时全队无敌1次伤害"}})
 reg({"id":"chiyou","name":"蚩尤","class":"肉盾","quality":"神卡","color":"#ff3333",
     "hp":9000,"atk":400,"crit":10,"spd":90,"skill_cost":140,
     "skill_name":"兵主降临","skill_desc":"自身200%HP护盾+减伤60%×3回合+嘲讽全体3回合+全队减伤30%×3回合",
@@ -1019,9 +1019,19 @@ def apply_dmg(t, raw, ignore_shield=False):
     sh=t.get("shield",0)
     if ignore_shield:
         t["hp"]-=raw
-        return {"damage":raw,"shield_damage":0,"immune":False}
+        result = {"damage":raw,"shield_damage":0,"immune":False}
+        if t["hp"] <= 0 and t.get("_death_immune_once"):
+            t["hp"] = 1
+            t["_death_immune_once"] = False
+            result["death_immune"] = True
+        return result
     sd=min(sh,raw); ad=raw-sd; t["shield"]=sh-sd; t["hp"]-=ad
-    return {"damage":ad,"shield_damage":sd,"immune":False}
+    result = {"damage":ad,"shield_damage":sd,"immune":False}
+    if t["hp"] <= 0 and t.get("_death_immune_once"):
+        t["hp"] = 1
+        t["_death_immune_once"] = False
+        result["death_immune"] = True
+    return result
 
 def tick_buffs(units):
     for u in units:
@@ -1678,7 +1688,8 @@ def hero_basic_attack(unit, allies, enemies):
             r = apply_dmg(t, d)
             killed = t["hp"] <= 0
             if killed: t["alive"] = False
-            targets_data.append({"name":t["name"],"damage":r["damage"],"crit":cr,"killed":killed,"shield_damage":r.get("shield_damage",0),"immune":r.get("immune",False),"max_hp":t["max_hp"],"hp_pct":max(0,t["hp"]/max(1,t["max_hp"]))})
+            killed = killed and not r.get("death_immune", False)
+            targets_data.append({"name":t["name"],"damage":r["damage"],"crit":cr,"killed":killed,"shield_damage":r.get("shield_damage",0),"immune":r.get("immune",False),"death_immune":r.get("death_immune",False),"max_hp":t["max_hp"],"hp_pct":max(0,t["hp"]/max(1,t["max_hp"]))})
         # 应用普攻特殊效果
         apply_basic_specials(unit, hd, tars)
         return {"side":"ally","type":"basic","attacker_name":unit["name"],"skill":skill_name,
@@ -2238,6 +2249,7 @@ def hero_use_skill(unit, allies, enemies):
             ls_heal = int(r["damage"]*ls_pct)
             unit["hp"]=min(unit["max_hp"],unit["hp"]+ls_heal)
         return {"name":t["name"],"damage":r["damage"],"crit":cr,"killed":killed,"immune":r.get("immune",False),
+                "death_immune":r.get("death_immune",False),
                 "max_hp":t["max_hp"],"hp_pct":max(0,t["hp"]/max(1,t["max_hp"])),
                 "shield_damage":r.get("shield_damage",0),
                 "lifesteal_heal":ls_heal,
@@ -2434,7 +2446,7 @@ def enemy_basic_attack(unit, allies, enemies):
     killed = t["hp"] <= 0
     if killed: t["alive"] = False
     return {"side":"enemy","type":"basic","attacker_name":unit["name"],"skill":unit.get("skill_name","攻击"),
-            "aoe":False,"target_name":t["name"],"damage":r["damage"],"crit":cr,"killed":killed,"shield_damage":r.get("shield_damage",0),"immune":r.get("immune",False),"max_hp":t["max_hp"],"hp_pct":max(0,t["hp"]/max(1,t["max_hp"]))}
+            "aoe":False,"target_name":t["name"],"damage":r["damage"],"crit":cr,"killed":killed,"shield_damage":r.get("shield_damage",0),"immune":r.get("immune",False),"death_immune":r.get("death_immune",False),"max_hp":t["max_hp"],"hp_pct":max(0,t["hp"]/max(1,t["max_hp"]))}
 
 def enemy_use_skill(unit, allies, enemies):
     alive_h = [a for a in allies if a.get("alive", True)]
@@ -2508,7 +2520,7 @@ def enemy_use_skill(unit, allies, enemies):
         total_dmg += r["damage"]
         killed = t["hp"] <= 0
         if killed: t["alive"] = False
-        targets_data.append({"name":t["name"],"damage":r["damage"],"crit":cr,"killed":killed,"immune":r.get("immune",False),"max_hp":t["max_hp"],"hp_pct":max(0,t["hp"]/max(1,t["max_hp"])),"shield_damage":r.get("shield_damage",0)})
+        targets_data.append({"name":t["name"],"damage":r["damage"],"crit":cr,"killed":killed,"immune":r.get("immune",False),"death_immune":r.get("death_immune",False),"max_hp":t["max_hp"],"hp_pct":max(0,t["hp"]/max(1,t["max_hp"])),"shield_damage":r.get("shield_damage",0)})
         
         # 技能debuff
         for deb in unit.get("skill_debuffs", []):
@@ -2583,7 +2595,7 @@ def _apply_boss_skill(unit, bs, allies, enemies):
         total_dmg += r["damage"]
         killed = t["hp"] <= 0
         if killed: t["alive"] = False
-        targets_data.append({"name":t["name"],"damage":r["damage"],"crit":cr,"killed":killed,"immune":r.get("immune",False),"shield_damage":r.get("shield_damage",0)})
+        targets_data.append({"name":t["name"],"damage":r["damage"],"crit":cr,"killed":killed,"immune":r.get("immune",False),"death_immune":r.get("death_immune",False),"shield_damage":r.get("shield_damage",0)})
     
     # BOSS技能debuff
     for deb in bs.get("debuffs", []):
